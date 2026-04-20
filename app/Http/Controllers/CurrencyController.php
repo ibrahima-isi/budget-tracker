@@ -9,6 +9,8 @@ class CurrencyController extends Controller
 {
     public function store(Request $request)
     {
+        $request->merge(['code' => strtoupper($request->input('code', ''))]);
+
         $request->validate([
             'code'   => ['required', 'string', 'max:10', 'unique:currencies,code'],
             'name'   => ['required', 'string', 'max:100'],
@@ -16,7 +18,7 @@ class CurrencyController extends Controller
         ]);
 
         Currency::create([
-            'code'       => strtoupper($request->code),
+            'code'       => $request->code,
             'name'       => $request->name,
             'symbol'     => $request->symbol,
             'is_default' => false,
@@ -28,6 +30,8 @@ class CurrencyController extends Controller
 
     public function update(Request $request, Currency $currency)
     {
+        $request->merge(['code' => strtoupper($request->input('code', ''))]);
+
         $request->validate([
             'code'   => ['required', 'string', 'max:10', 'unique:currencies,code,' . $currency->id],
             'name'   => ['required', 'string', 'max:100'],
@@ -35,7 +39,7 @@ class CurrencyController extends Controller
         ]);
 
         $currency->update([
-            'code'   => strtoupper($request->code),
+            'code'   => $request->code,
             'name'   => $request->name,
             'symbol' => $request->symbol,
         ]);

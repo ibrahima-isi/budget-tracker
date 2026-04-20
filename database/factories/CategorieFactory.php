@@ -5,20 +5,16 @@ namespace Database\Factories;
 use App\Models\Categorie;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Categorie>
- */
 class CategorieFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = Categorie::class;
+
     public function definition(): array
     {
         return [
-
+            'nom'     => $this->faker->unique()->word(),
+            'couleur' => $this->faker->hexColor(),
+            'icone'   => $this->faker->randomElement(['shopping-cart', 'home', 'car', 'briefcase', 'heart']),
         ];
     }
 }

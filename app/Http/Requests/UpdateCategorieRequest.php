@@ -23,7 +23,7 @@ class UpdateCategorieRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nom'     => ['required', 'string', 'max:100', 'unique:categories,nom,' . $this->categorie->id],
+            'nom'     => ['required', 'string', 'max:100', 'unique:categories,nom,' . $this->category->id],
             'couleur' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'icone'   => ['required', 'string', 'max:50'],
         ];

@@ -26,17 +26,17 @@ class CategorieController extends Controller
             ->with('success', 'Catégorie créée.');
     }
 
-    public function update(UpdateCategorieRequest $request, Categorie $categorie)
+    public function update(UpdateCategorieRequest $request, Categorie $category)
     {
-        $categorie->update($request->validated());
+        $category->update($request->validated());
 
         return redirect()->route('categories.index')
             ->with('success', 'Catégorie mise à jour.');
     }
 
-    public function destroy(Categorie $categorie)
+    public function destroy(Categorie $category)
     {
-        $categorie->delete();
+        $category->delete();
 
         return redirect()->route('categories.index')
             ->with('success', 'Catégorie supprimée.');
