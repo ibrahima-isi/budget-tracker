@@ -1,7 +1,10 @@
 <script setup>
-import { ref } from 'vue';
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import { ref, computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import Dropdown from '@/Components/Dropdown.vue';
+
+const page = usePage();
+const appSettings = computed(() => page.props.appSettings);
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
@@ -23,9 +26,16 @@ const showingNavigationDropdown = ref(false);
                             <!-- Logo -->
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('dashboard')">
-                                    <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
+                                    <img
+                                        v-if="appSettings?.logo_path"
+                                        :src="`/storage/${appSettings.logo_path}`"
+                                        :alt="appSettings.business_name"
+                                        class="block h-9 w-auto object-contain"
                                     />
+                                    <span
+                                        v-else
+                                        class="text-gray-800 font-bold text-lg"
+                                    >{{ appSettings?.business_name ?? 'BudgetTrack' }}</span>
                                 </Link>
                             </div>
 
