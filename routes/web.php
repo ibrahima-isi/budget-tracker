@@ -20,7 +20,7 @@ Route::get('/', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion'     => PHP_VERSION,
     ]);
-});
+})->name('home');
 
 // Serve the logo from private storage (not publicly accessible via /storage/)
 Route::get('/logo', [LogoController::class, 'show'])->name('logo');
