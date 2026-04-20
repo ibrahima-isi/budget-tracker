@@ -21,10 +21,11 @@ class DatabaseSeeder extends Seeder
             CategorieSeeder::class,
         ]);
 
-        // Créer un user de test avec données réalistes
+        // Créer un user admin de test
         $user = User::factory()->create([
-            'name'  => 'Test User',
-            'email' => 'test@example.com',
+            'name'     => 'Admin',
+            'email'    => 'admin@example.com',
+            'is_admin' => true,
         ]);
 
         $this->call([BudgetSeeder::class, RevenuSeeder::class, DepenseSeeder::class]);
