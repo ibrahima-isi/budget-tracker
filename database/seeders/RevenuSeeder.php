@@ -14,16 +14,17 @@ class RevenuSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::first();
+        $user  = User::first();
+        $annee = now()->year;
 
-        for ($mois = 1; $mois <= 4; $mois++) {
+        for ($mois = 1; $mois <= now()->month; $mois++) {
             Revenu::create([
                 'user_id'     => $user->id,
                 'source'      => 'Salaire',
                 'montant'     => 450000,
-                'date_revenu' => "2025-$mois-01",
+                'date_revenu' => "$annee-$mois-01",
                 'mois'        => $mois,
-                'annee'       => 2025,
+                'annee'       => $annee,
             ]);
         }
     }

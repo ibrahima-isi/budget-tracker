@@ -14,28 +14,27 @@ class BudgetSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::first();
+        $user  = User::first();
+        $annee = now()->year;
 
-        // Budget annuel 2025
         Budget::create([
             'user_id'       => $user->id,
             'type'          => 'annuel',
             'mois'          => null,
-            'annee'         => 2025,
+            'annee'         => $annee,
             'montant_prevu' => 3600000,
-            'libelle'       => 'Budget Annuel 2025',
+            'libelle'       => "Budget Annuel $annee",
         ]);
 
-        // Budgets mensuels jan-avril 2025
-        $mois = ['Janvier', 'Février', 'Mars', 'Avril'];
-        foreach ($mois as $i => $nom) {
+        $nomsMois = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+        for ($m = 1; $m <= now()->month; $m++) {
             Budget::create([
                 'user_id'       => $user->id,
                 'type'          => 'mensuel',
-                'mois'          => $i + 1,
-                'annee'         => 2025,
+                'mois'          => $m,
+                'annee'         => $annee,
                 'montant_prevu' => 300000,
-                'libelle'       => "Budget $nom 2025",
+                'libelle'       => "Budget {$nomsMois[$m - 1]} $annee",
             ]);
         }
     }

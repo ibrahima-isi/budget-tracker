@@ -30,7 +30,7 @@ class DepenseSeeder extends Seeder
                     'categorie_id' => $cat->id,
                     'libelle'      => "Dépense test - {$cat->nom}",
                     'montant'      => rand(5000, 50000),
-                    'date_depense' => "2025-{$budget->mois}-" . rand(1, 28),
+                    'date_depense' => "{$budget->annee}-{$budget->mois}-" . rand(1, 28),
                     'note'         => null,
                 ]);
             }
