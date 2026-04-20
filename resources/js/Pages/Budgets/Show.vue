@@ -1,0 +1,163 @@
+<script setup>
+import { ref } from 'vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AppModal from '@/Components/AppModal.vue';
+import AppBadge from '@/Components/AppBadge.vue';
+import BudgetProgress from '@/Components/BudgetProgress.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
+import InputLabel from '@/Components/InputLabel.vue';
+import TextInput from '@/Components/TextInput.vue';
+import InputError from '@/Components/InputError.vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { useFormatMoney } from '@/composables/useFormatMoney';
+import { useFlash } from '@/composables/useFlash';
+
+const props = defineProps({ budget: Object });
+
+const { format } = useFormatMoney();
+const { success } = useFlash();
+
+const moisLabels = ['', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+const showAdd = ref(false);
+const form = useForm({
+    budget_id:    props.budget.id,
+    categorie_id: '',
+    libelle:      '',
+    montant:      '',
+    date_depense: new Date().toISOString().slice(0, 10),
+    note:         '',
+});
+
+function submitAdd() {
+    form.post(route('depenses.store'), {
+        onSuccess: () => {
+            showAdd.value = false;
+            form.libelle = '';
+            form.montant = '';
+            form.note = '';
+            form.categorie_id = '';
+        },
+    });
+}
+
+const deleteForm = useForm({});
+function deleteDepense(id) {
+    if (confirm('Supprimer cette dépense ?')) {
+        deleteForm.delete(route('depenses.destroy', id));
+    }
+}
+
+const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
+</script>
+
+<template>
+    <Head :title="`Budget — ${budget.libelle ?? budget.type}`" />
+
+    <AuthenticatedLayout>
+        <template #header>
+            <div class="flex items-center justify-between">
+                <div>
+                    <Link :href="route('budgets.index')" class="text-sm text-gray-500 hover:underline">← Budgets</Link>
+                    <h2 class="text-xl font-semibold text-gray-800 mt-1 capitalize">
+                        Budget {{ budget.type }}
+                        {{ budget.type === 'mensuel' ? moisLabels[budget.mois] + ' ' : '' }}{{ budget.annee }}
+                        <span v-if="budget.libelle" class="text-gray-500 font-normal text-base">— {{ budget.libelle }}</span>
+                    </h2>
+                </div>
+                <PrimaryButton @click="showAdd = true">+ Ajouter une dépense</PrimaryButton>
+            </div>
+        </template>
+
+        <div class="py-8">
+            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+                <div v-if="success" class="rounded-lg bg-green-50 px-4 py-3 text-green-700 text-sm">{{ success }}</div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <BudgetProgress :prevu="budget.montant_prevu" :depense="budget.montant_depense" />
+                    <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <p class="text-xs text-gray-500">Prévu</p>
+                            <p class="font-bold text-gray-800">{{ format(budget.montant_prevu) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Dépensé</p>
+                            <p class="font-bold text-red-600">{{ format(budget.montant_depense) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Solde</p>
+                            <p class="font-bold" :class="budget.solde >= 0 ? 'text-green-600' : 'text-red-600'">{{ format(budget.solde) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                            <tr>
+                                <th class="px-6 py-3 text-left">Libellé</th>
+                                <th class="px-6 py-3 text-left">Catégorie</th>
+                                <th class="px-6 py-3 text-left">Date</th>
+                                <th class="px-6 py-3 text-right">Montant</th>
+                                <th class="px-6 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-if="!budget.depenses.length">
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-400">Aucune dépense pour ce budget.</td>
+                            </tr>
+                            <tr v-for="d in budget.depenses" :key="d.id" class="hover:bg-gray-50">
+                                <td class="px-6 py-3 text-gray-900">{{ d.libelle }}</td>
+                                <td class="px-6 py-3">
+                                    <AppBadge v-if="d.categorie" :label="d.categorie.nom" :couleur="d.categorie.couleur" />
+                                    <span v-else class="text-gray-400">—</span>
+                                </td>
+                                <td class="px-6 py-3 text-gray-500">{{ formatDate(d.date_depense) }}</td>
+                                <td class="px-6 py-3 text-right font-medium text-red-600">{{ format(d.montant) }}</td>
+                                <td class="px-6 py-3 text-right">
+                                    <button @click="deleteDepense(d.id)" class="text-red-600 hover:underline text-xs">Supprimer</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </AuthenticatedLayout>
+
+    <AppModal :show="showAdd" title="Ajouter une dépense" @close="showAdd = false">
+        <form @submit.prevent="submitAdd" class="space-y-4">
+            <div>
+                <InputLabel value="Libellé" />
+                <TextInput v-model="form.libelle" class="mt-1 block w-full" />
+                <InputError :message="form.errors.libelle" />
+            </div>
+            <div>
+                <InputLabel value="Catégorie (optionnel)" />
+                <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <option value="">— Aucune —</option>
+                </select>
+                <InputError :message="form.errors.categorie_id" />
+            </div>
+            <div>
+                <InputLabel value="Montant (XOF)" />
+                <TextInput v-model="form.montant" type="number" step="1" class="mt-1 block w-full" />
+                <InputError :message="form.errors.montant" />
+            </div>
+            <div>
+                <InputLabel value="Date" />
+                <TextInput v-model="form.date_depense" type="date" class="mt-1 block w-full" />
+                <InputError :message="form.errors.date_depense" />
+            </div>
+            <div>
+                <InputLabel value="Note (optionnel)" />
+                <textarea v-model="form.note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+            </div>
+            <div class="flex justify-end gap-3 mt-2">
+                <SecondaryButton type="button" @click="showAdd = false">Annuler</SecondaryButton>
+                <PrimaryButton :disabled="form.processing">Ajouter</PrimaryButton>
+            </div>
+        </form>
+    </AppModal>
+</template>
