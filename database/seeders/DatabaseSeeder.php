@@ -15,7 +15,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(CategorieSeeder::class);
+        $this->call([
+            CurrencySeeder::class,
+            SettingSeeder::class,
+            CategorieSeeder::class,
+        ]);
 
         // Créer un user de test avec données réalistes
         $user = User::factory()->create([
@@ -23,10 +27,6 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        $this->call([
-            BudgetSeeder::class,
-            RevenuSeeder::class,
-            DepenseSeeder::class,
-        ]);
+        $this->call([BudgetSeeder::class, RevenuSeeder::class, DepenseSeeder::class]);
     }
 }

@@ -48,6 +48,9 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('categories.index')" :active="route().current('categories.*')">
                                     Catégories
                                 </NavLink>
+                                <NavLink :href="route('settings.index')" :active="route().current('settings.*')">
+                                    Paramètres
+                                </NavLink>
                             </div>
                         </div>
 
@@ -163,6 +166,9 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
                         <ResponsiveNavLink :href="route('categories.index')" :active="route().current('categories.*')">
                             Catégories
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('settings.index')" :active="route().current('settings.*')">
+                            Paramètres
                         </ResponsiveNavLink>
                     </div>
 

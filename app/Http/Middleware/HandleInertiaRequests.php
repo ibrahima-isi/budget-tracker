@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -38,6 +39,9 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error'   => fn () => $request->session()->get('error'),
             ],
+            'appSettings' => fn () => Setting::instance()->only(
+                'business_name', 'business_email', 'phone', 'logo_path', 'language', 'default_currency'
+            ),
         ];
     }
 }
