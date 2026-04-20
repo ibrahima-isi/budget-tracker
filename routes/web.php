@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\LogoController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DashboardController;
@@ -21,6 +22,9 @@ Route::get('/', function () {
     ]);
 });
 
+// Serve the logo from private storage (not publicly accessible via /storage/)
+Route::get('/logo', [LogoController::class, 'show'])->name('logo');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -29,17 +33,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('revenus',    RevenuController::class)->except(['create', 'edit', 'show']);
     Route::resource('categories', CategorieController::class)->except(['create', 'edit', 'show']);
 
-    // Settings
-    Route::get('settings',              [SettingsController::class, 'index'])->name('settings.index');
-    Route::post('settings',             [SettingsController::class, 'update'])->name('settings.update');
-    Route::delete('settings/logo',      [SettingsController::class, 'destroyLogo'])->name('settings.logo.destroy');
+    // Settings & Currencies — admin only
+    Route::middleware('admin')->group(function () {
+        Route::get('settings',              [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('settings',             [SettingsController::class, 'update'])->name('settings.update');
+        Route::delete('settings/logo',      [SettingsController::class, 'destroyLogo'])->name('settings.logo.destroy');
 
-    // Currencies (nested under settings)
-    Route::post('settings/currencies',              [CurrencyController::class, 'store'])->name('currencies.store');
-    Route::patch('settings/currencies/{currency}',  [CurrencyController::class, 'update'])->name('currencies.update');
-    Route::patch('settings/currencies/{currency}/default', [CurrencyController::class, 'setDefault'])->name('currencies.default');
-    Route::patch('settings/currencies/{currency}/toggle',  [CurrencyController::class, 'toggle'])->name('currencies.toggle');
-    Route::delete('settings/currencies/{currency}', [CurrencyController::class, 'destroy'])->name('currencies.destroy');
+        Route::post('settings/currencies',                        [CurrencyController::class, 'store'])->name('currencies.store');
+        Route::patch('settings/currencies/{currency}',            [CurrencyController::class, 'update'])->name('currencies.update');
+        Route::patch('settings/currencies/{currency}/default',    [CurrencyController::class, 'setDefault'])->name('currencies.default');
+        Route::patch('settings/currencies/{currency}/toggle',     [CurrencyController::class, 'toggle'])->name('currencies.toggle');
+        Route::delete('settings/currencies/{currency}',           [CurrencyController::class, 'destroy'])->name('currencies.destroy');
+    });
 });
 
 Route::middleware('auth')->group(function () {

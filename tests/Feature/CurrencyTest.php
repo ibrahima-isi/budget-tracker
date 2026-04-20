@@ -16,7 +16,7 @@ class CurrencyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::factory()->create(['email_verified_at' => now()]);
+        $this->user = User::factory()->create(['email_verified_at' => now(), 'is_admin' => true]);
     }
 
     // ── Store ──────────────────────────────────────────────────────────────────

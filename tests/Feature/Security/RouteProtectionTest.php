@@ -183,6 +183,26 @@ class RouteProtectionTest extends TestCase
         $this->actingAs($this->unverified)->delete("/depenses/{$depense->id}")->assertRedirect('/verify-email');
     }
 
+    // ── Non-admin verified user blocked from settings (403) ──────────────────
+
+    public function test_non_admin_user_cannot_access_settings(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now(), 'is_admin' => false]);
+        $this->actingAs($user)->get('/settings')->assertForbidden();
+    }
+
+    public function test_non_admin_user_cannot_post_to_settings(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now(), 'is_admin' => false]);
+        $this->actingAs($user)->post('/settings')->assertForbidden();
+    }
+
+    public function test_non_admin_user_cannot_manage_currencies(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now(), 'is_admin' => false]);
+        $this->actingAs($user)->post('/settings/currencies')->assertForbidden();
+    }
+
     // ── Public routes remain accessible ───────────────────────────────────────
 
     public function test_welcome_page_is_publicly_accessible(): void

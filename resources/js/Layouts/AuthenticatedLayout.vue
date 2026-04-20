@@ -27,8 +27,8 @@ const showingNavigationDropdown = ref(false);
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('dashboard')">
                                     <img
-                                        v-if="appSettings?.logo_path"
-                                        :src="`/storage/${appSettings.logo_path}`"
+                                        v-if="appSettings?.logo_url"
+                                        :src="appSettings.logo_url"
                                         :alt="appSettings.business_name"
                                         class="block h-9 w-auto object-contain"
                                     />
@@ -58,7 +58,7 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('categories.index')" :active="route().current('categories.*')">
                                     Catégories
                                 </NavLink>
-                                <NavLink :href="route('settings.index')" :active="route().current('settings.*')">
+                                <NavLink v-if="$page.props.auth.user?.is_admin" :href="route('settings.index')" :active="route().current('settings.*')">
                                     Paramètres
                                 </NavLink>
                             </div>
@@ -177,7 +177,7 @@ const showingNavigationDropdown = ref(false);
                         <ResponsiveNavLink :href="route('categories.index')" :active="route().current('categories.*')">
                             Catégories
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('settings.index')" :active="route().current('settings.*')">
+                        <ResponsiveNavLink v-if="$page.props.auth.user?.is_admin" :href="route('settings.index')" :active="route().current('settings.*')">
                             Paramètres
                         </ResponsiveNavLink>
                     </div>

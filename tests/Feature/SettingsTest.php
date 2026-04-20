@@ -18,7 +18,7 @@ class SettingsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user = User::factory()->create(['email_verified_at' => now()]);
+        $this->user = User::factory()->create(['email_verified_at' => now(), 'is_admin' => true]);
     }
 
     // ── Access control ─────────────────────────────────────────────────────────
@@ -34,6 +34,12 @@ class SettingsTest extends TestCase
     {
         $unverified = User::factory()->create(['email_verified_at' => null]);
         $this->actingAs($unverified)->get('/settings')->assertRedirect('/verify-email');
+    }
+
+    public function test_non_admin_user_cannot_access_settings(): void
+    {
+        $regular = User::factory()->create(['email_verified_at' => now(), 'is_admin' => false]);
+        $this->actingAs($regular)->get('/settings')->assertForbidden();
     }
 
     // ── Index ──────────────────────────────────────────────────────────────────
@@ -125,7 +131,7 @@ class SettingsTest extends TestCase
 
     public function test_user_can_upload_logo(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $file = UploadedFile::fake()->image('logo.png', 200, 200);
 
@@ -138,15 +144,15 @@ class SettingsTest extends TestCase
 
         $setting = Setting::instance();
         $this->assertNotNull($setting->logo_path);
-        Storage::disk('public')->assertExists($setting->logo_path);
+        Storage::disk('local')->assertExists($setting->logo_path);
     }
 
     public function test_uploading_new_logo_deletes_old_one(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $oldFile = UploadedFile::fake()->image('old.png');
-        $oldPath = $oldFile->store('logos', 'public');
+        $oldPath = $oldFile->store('logos', 'local');
         Setting::instance()->update(['logo_path' => $oldPath]);
 
         $newFile = UploadedFile::fake()->image('new.png');
@@ -157,13 +163,13 @@ class SettingsTest extends TestCase
             'logo'             => $newFile,
         ]);
 
-        Storage::disk('public')->assertMissing($oldPath);
+        Storage::disk('local')->assertMissing($oldPath);
         $this->assertNotEquals($oldPath, Setting::instance()->logo_path);
     }
 
     public function test_update_rejects_non_image_file_as_logo(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
@@ -177,7 +183,7 @@ class SettingsTest extends TestCase
 
     public function test_update_rejects_logo_larger_than_2mb(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $file = UploadedFile::fake()->image('big.jpg')->size(3000); // 3MB
 
@@ -193,17 +199,17 @@ class SettingsTest extends TestCase
 
     public function test_user_can_delete_logo(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         $file = UploadedFile::fake()->image('logo.png');
-        $path = $file->store('logos', 'public');
+        $path = $file->store('logos', 'local');
         Setting::instance()->update(['logo_path' => $path]);
 
         $this->actingAs($this->user)->delete('/settings/logo')
             ->assertRedirect('/settings');
 
         $this->assertNull(Setting::instance()->logo_path);
-        Storage::disk('public')->assertMissing($path);
+        Storage::disk('local')->assertMissing($path);
     }
 
     public function test_delete_logo_when_no_logo_exists_does_not_error(): void
@@ -216,8 +222,8 @@ class SettingsTest extends TestCase
 
     public function test_delete_logo_flashes_success_message(): void
     {
-        Storage::fake('public');
-        $path = UploadedFile::fake()->image('logo.png')->store('logos', 'public');
+        Storage::fake('local');
+        $path = UploadedFile::fake()->image('logo.png')->store('logos', 'local');
         Setting::instance()->update(['logo_path' => $path]);
 
         $this->actingAs($this->user)->delete('/settings/logo')

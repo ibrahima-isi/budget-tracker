@@ -33,15 +33,21 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? array_merge(
+                    $request->user()->only('id', 'name', 'email'),
+                    ['is_admin' => (bool) $request->user()->is_admin]
+                ) : null,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error'   => fn () => $request->session()->get('error'),
             ],
-            'appSettings' => fn () => Setting::instance()->only(
-                'business_name', 'business_email', 'phone', 'logo_path', 'language', 'default_currency'
-            ),
+            'appSettings' => function () {
+                $settings = Setting::instance();
+                $data = $settings->only('business_name', 'business_email', 'phone', 'language', 'default_currency');
+                $data['logo_url'] = $settings->logo_path ? route('logo') : null;
+                return $data;
+            },
         ];
     }
 }
