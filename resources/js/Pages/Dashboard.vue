@@ -28,6 +28,20 @@ const stored = localStorage.getItem('dashboard_periode');
 const periode = ref(stored === 'annuel' ? 'annuel' : 'mensuel');
 watch(periode, (val) => localStorage.setItem('dashboard_periode', val));
 
+// Per-card periods (start synced with global, can diverge independently)
+const periodeBudget   = ref(periode.value);
+const periodeDepenses = ref(periode.value);
+const periodeRevenus  = ref(periode.value);
+const periodeSolde    = ref(periode.value);
+
+// Global toggle pushes to all cards
+watch(periode, v => {
+    periodeBudget.value   = v;
+    periodeDepenses.value = v;
+    periodeRevenus.value  = v;
+    periodeSolde.value    = v;
+});
+
 const current = computed(() => periode.value === 'mensuel' ? props.mensuel : props.annuel);
 
 const periodeLabel = computed(() => {
@@ -95,24 +109,40 @@ const chartOptions = computed(() => ({
                 <!-- Stat Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
-                        :label="periode === 'mensuel' ? 'Budget du mois' : 'Budgets planifiés'"
-                        :value="current.totalBudget > 0 ? format(current.totalBudget) : '—'"
+                        label="Budget du mois"
+                        labelAnnuel="Budgets planifiés"
+                        :valueMensuel="mensuel.totalBudget > 0 ? format(mensuel.totalBudget) : '—'"
+                        :valueAnnuel="annuel.totalBudget > 0 ? format(annuel.totalBudget) : '—'"
                         color="blue"
+                        :periode="periodeBudget"
+                        @update:periode="v => periodeBudget = v"
                     />
                     <StatCard
-                        :label="periode === 'mensuel' ? 'Dépenses du mois' : 'Dépenses annuelles'"
-                        :value="format(current.totalDepenses)"
+                        label="Dépenses du mois"
+                        labelAnnuel="Dépenses annuelles"
+                        :valueMensuel="format(mensuel.totalDepenses)"
+                        :valueAnnuel="format(annuel.totalDepenses)"
                         color="red"
+                        :periode="periodeDepenses"
+                        @update:periode="v => periodeDepenses = v"
                     />
                     <StatCard
-                        :label="periode === 'mensuel' ? 'Revenus du mois' : 'Revenus annuels'"
-                        :value="format(current.totalRevenus)"
+                        label="Revenus du mois"
+                        labelAnnuel="Revenus annuels"
+                        :valueMensuel="format(mensuel.totalRevenus)"
+                        :valueAnnuel="format(annuel.totalRevenus)"
                         color="green"
+                        :periode="periodeRevenus"
+                        @update:periode="v => periodeRevenus = v"
                     />
                     <StatCard
                         label="Solde"
-                        :value="format(current.solde)"
-                        :color="current.solde >= 0 ? 'green' : 'red'"
+                        :valueMensuel="format(mensuel.solde)"
+                        :valueAnnuel="format(annuel.solde)"
+                        :color="mensuel.solde >= 0 ? 'green' : 'red'"
+                        :colorAnnuel="annuel.solde >= 0 ? 'green' : 'red'"
+                        :periode="periodeSolde"
+                        @update:periode="v => periodeSolde = v"
                     />
                 </div>
 
