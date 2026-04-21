@@ -146,4 +146,5 @@ export default {
         confirmDeleteCurrency: 'Delete this currency?',
     },
     darkMode: 'Dark mode',
+    switchLanguage: 'Switch language',
 };

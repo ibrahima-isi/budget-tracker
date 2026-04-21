@@ -13,10 +13,17 @@ const page       = usePage();
 const appSettings = computed(() => page.props.appSettings);
 
 const { isDark, toggleDark } = useDarkMode();
-useLocale(); // keeps i18n locale in sync
+const { locale, setLocale, supported: supportedLocales } = useLocale();
 const { error: flashError } = useFlash();
 
 const showingNavigationDropdown = ref(false);
+
+const langLabels = { fr: 'FR', en: 'EN', es: 'ES' };
+function nextLocale() {
+    const idx = supportedLocales.indexOf(locale.value);
+    const next = supportedLocales[(idx + 1) % supportedLocales.length];
+    setLocale(next);
+}
 </script>
 
 <template>
@@ -71,6 +78,14 @@ const showingNavigationDropdown = ref(false);
                         </div>
 
                         <div class="hidden sm:ms-6 sm:flex sm:items-center gap-3">
+                            <!-- Language switcher -->
+                            <button
+                                type="button"
+                                @click="nextLocale"
+                                :title="$t('switchLanguage')"
+                                class="rounded-full px-2.5 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition border border-gray-200 dark:border-gray-600"
+                            >{{ langLabels[locale] }}</button>
+
                             <!-- Dark mode toggle -->
                             <button
                                 type="button"
@@ -171,6 +186,16 @@ const showingNavigationDropdown = ref(false);
                         </div>
 
                         <div class="mt-3 space-y-1">
+                            <!-- Language switcher in mobile menu -->
+                            <button
+                                type="button"
+                                @click="nextLocale"
+                                class="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                                <span class="text-xs font-bold border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5">{{ langLabels[locale] }}</span>
+                                {{ $t('switchLanguage') }}
+                            </button>
+
                             <!-- Dark mode toggle in mobile menu -->
                             <button
                                 type="button"
