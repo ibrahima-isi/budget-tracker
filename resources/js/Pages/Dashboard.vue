@@ -115,6 +115,7 @@ const chartOptions = computed(() => ({
                         :valueAnnuel="annuel.totalBudget > 0 ? format(annuel.totalBudget) : '—'"
                         color="blue"
                         :periode="periodeBudget"
+                        :href="route('budgets.index')"
                         @update:periode="v => periodeBudget = v"
                     />
                     <StatCard
@@ -124,6 +125,7 @@ const chartOptions = computed(() => ({
                         :valueAnnuel="format(annuel.totalDepenses)"
                         color="red"
                         :periode="periodeDepenses"
+                        :href="route('depenses.index')"
                         @update:periode="v => periodeDepenses = v"
                     />
                     <StatCard
@@ -133,6 +135,7 @@ const chartOptions = computed(() => ({
                         :valueAnnuel="format(annuel.totalRevenus)"
                         color="green"
                         :periode="periodeRevenus"
+                        :href="route('revenus.index')"
                         @update:periode="v => periodeRevenus = v"
                     />
                     <StatCard
@@ -148,7 +151,7 @@ const chartOptions = computed(() => ({
 
                 <!-- Budget Progress + Chart -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                    <Link :href="route('budgets.index')" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-shadow block">
                         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
                             Avancement du budget {{ periode === 'mensuel' ? 'mensuel' : 'annuel' }}
                         </h3>
@@ -175,15 +178,15 @@ const chartOptions = computed(() => ({
                                 <span>Annuel : {{ format(annuel.totalBudgetAnnuelType) }}</span>
                             </div>
                         </div>
-                    </div>
+                    </Link>
 
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                    <Link :href="route('depenses.index')" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-shadow block">
                         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Dépenses par catégorie</h3>
                         <div v-if="current.depensesParCategorie.length" class="max-w-xs mx-auto">
                             <Doughnut :data="chartData" :options="chartOptions" />
                         </div>
                         <p v-else class="text-sm text-gray-400 dark:text-gray-500">Aucune dépense sur cette période.</p>
-                    </div>
+                    </Link>
                 </div>
 
                 <!-- Last 5 expenses -->

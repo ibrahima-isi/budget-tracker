@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { Link } from '@inertiajs/vue3';
+
+const resolvedLink = Link;
 
 const props = defineProps({
     label:        { type: String, required: true },
@@ -14,6 +17,8 @@ const props = defineProps({
     colorAnnuel:  { type: String, default: null },
     // External sync (from global toggle)
     periode:      { type: String, default: null },
+    // Optional link destination
+    href:         { type: String, default: null },
 });
 
 const emit = defineEmits(['update:periode']);
@@ -44,7 +49,12 @@ function setToggle(v) {
 </script>
 
 <template>
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 flex flex-col gap-1 border border-gray-100 dark:border-gray-700">
+    <component
+        :is="href ? resolvedLink : 'div'"
+        v-bind="href ? { href } : {}"
+        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 flex flex-col gap-1 border border-gray-100 dark:border-gray-700 transition-shadow"
+        :class="href ? 'hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 cursor-pointer' : ''"
+    >
         <!-- Mini pricing-style toggle -->
         <div v-if="hasToggle" class="flex justify-end -mt-1 mb-0.5">
             <div class="inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-700 p-0.5">
@@ -77,5 +87,6 @@ function setToggle(v) {
                 'text-yellow-600 dark:text-yellow-400': displayColor === 'yellow',
             }"
         >{{ displayValue }}</span>
-    </div>
+        <span v-if="href" class="text-xs text-blue-500 dark:text-blue-400 mt-1">Voir tout →</span>
+    </component>
 </template>
