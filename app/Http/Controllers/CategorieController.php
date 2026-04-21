@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DeleteCategorieRequest;
 use App\Http\Requests\StoreCategorieRequest;
 use App\Http\Requests\UpdateCategorieRequest;
 use App\Models\Categorie;
@@ -54,14 +55,9 @@ class CategorieController extends Controller
             ->with('success', 'Catégorie mise à jour.');
     }
 
-    public function destroy(Categorie $category)
+    public function destroy(DeleteCategorieRequest $request, Categorie $category)
     {
-        $user = Auth::user();
-
-        if (!$user->is_admin && $category->user_id !== $user->id) {
-            abort(403, 'Action non autorisée.');
-        }
-
+        // Authorization is handled in DeleteCategorieRequest::authorize()
         $category->delete();
 
         return redirect()->route('categories.index')
@@ -72,15 +68,24 @@ class CategorieController extends Controller
     {
         $user = Auth::user();
 
-        // Reject if the category is not visible to this user (IDOR prevention)
-        if (!Categorie::visibleFor($user)->where('id', $category->id)->exists()) {
+        // Query 1: load existing setting or build an unsaved instance
+        $setting = CategorieUserSetting::firstOrNew([
+            'user_id'      => $user->id,
+            'categorie_id' => $category->id,
+        ]);
+
+        // For a brand-new setting, verify the category is visible to this user (IDOR prevention).
+        // If a setting row already exists, the category was visible when it was created and
+        // cascade deletes ensure the row is gone if the category was deleted.
+        if (!$setting->exists && !Categorie::visibleFor($user)->where('id', $category->id)->exists()) {
             abort(403, 'Action non autorisée.');
         }
 
-        CategorieUserSetting::updateOrCreate(
-            ['user_id' => $user->id, 'categorie_id' => $category->id],
-            ['enabled' => !Categorie::enabledFor($user)->where('id', $category->id)->exists()]
-        );
+        // Default state is "enabled"; first toggle of a new setting means disabling.
+        $setting->enabled = $setting->exists ? !$setting->enabled : false;
+
+        // Query 2: INSERT or UPDATE
+        $setting->save();
 
         return back();
     }
