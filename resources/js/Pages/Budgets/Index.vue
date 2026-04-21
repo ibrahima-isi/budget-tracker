@@ -165,9 +165,9 @@ function deleteBudget(id) {
                 <TextInput v-model="form.libelle" class="mt-1 block w-full" />
             </div>
             <div>
-                <InputLabel value="Catégorie (optionnel)" />
+                <InputLabel value="Catégorie" />
                 <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option :value="null">— Aucune —</option>
+                    <option :value="null" disabled>— Sélectionner —</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
                 <InputError :message="form.errors.categorie_id" />
@@ -212,9 +212,9 @@ function deleteBudget(id) {
                 <TextInput v-model="editForm.libelle" class="mt-1 block w-full" />
             </div>
             <div>
-                <InputLabel value="Catégorie (optionnel)" />
+                <InputLabel value="Catégorie" />
                 <select v-model="editForm.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option :value="null">— Aucune —</option>
+                    <option :value="null" disabled>— Sélectionner —</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
                 <InputError :message="editForm.errors.categorie_id" />

@@ -26,7 +26,7 @@ class UpdateBudgetRequest extends FormRequest
             'annee'         => ['required', 'integer', 'min:2000', 'max:2100'],
             'montant_prevu' => ['required', 'numeric', 'min:0'],
             'libelle'       => ['nullable', 'string', 'max:150'],
-            'categorie_id'  => ['nullable', 'exists:categories,id'],
+            'categorie_id'  => ['required', 'exists:categories,id'],
         ];
     }
 }
