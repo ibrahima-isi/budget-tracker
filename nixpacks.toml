@@ -24,4 +24,4 @@ cmds = [
 cmds = ["npm run build"]
 
 [start]
-cmd = "mkdir -p storage/framework/{sessions,views,cache} storage/logs storage/app/private && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php -S 0.0.0.0:$PORT -t public"
+cmd = "mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/logs storage/app/private && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && php -S 0.0.0.0:$PORT -t public"
