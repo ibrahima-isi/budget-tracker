@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatCard from '@/Components/StatCard.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
@@ -13,28 +13,33 @@ import { useLocale } from '@/composables/useLocale';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const props = defineProps({
-    budgetMensuel:        Object,
-    totalDepenses:        Number,
-    totalRevenus:         Number,
-    solde:                Number,
-    depensesParCategorie: Array,
-    dernieresDepenses:    Array,
-    mois:                 Number,
-    annee:                Number,
+    mensuel:           Object,
+    annuel:            Object,
+    dernieresDepenses: Array,
+    mois:              Number,
+    annee:             Number,
 });
 
 const { format } = useFormatMoney();
 const { locale, formatDate } = useLocale();
 
-const moisNom = computed(() => {
-    return new Date(props.annee, props.mois - 1).toLocaleString(locale.value, { month: 'long', year: 'numeric' });
+const periode = ref('mensuel');
+
+const current = computed(() => periode.value === 'mensuel' ? props.mensuel : props.annuel);
+
+const periodeLabel = computed(() => {
+    if (periode.value === 'mensuel') {
+        return new Date(props.annee, props.mois - 1)
+            .toLocaleString(locale.value, { month: 'long', year: 'numeric' });
+    }
+    return String(props.annee);
 });
 
 const chartData = computed(() => ({
-    labels: props.depensesParCategorie.map(d => d.categorie?.nom ?? 'Sans catégorie'),
+    labels: current.value.depensesParCategorie.map(d => d.categorie?.nom ?? 'Sans catégorie'),
     datasets: [{
-        data:            props.depensesParCategorie.map(d => d.total),
-        backgroundColor: props.depensesParCategorie.map(d => d.categorie?.couleur ?? '#6b7280'),
+        data:            current.value.depensesParCategorie.map(d => d.total),
+        backgroundColor: current.value.depensesParCategorie.map(d => d.categorie?.couleur ?? '#6b7280'),
         borderWidth: 2,
     }],
 }));
@@ -50,9 +55,29 @@ const chartOptions = {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-100 capitalize">
-                {{ moisNom }}
-            </h2>
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-100 capitalize">
+                    {{ periodeLabel }}
+                </h2>
+
+                <!-- Period toggle -->
+                <div class="inline-flex items-center rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
+                    <button
+                        @click="periode = 'mensuel'"
+                        :class="periode === 'mensuel'
+                            ? 'bg-white dark:bg-gray-600 shadow text-gray-900 dark:text-gray-100'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+                        class="px-4 py-1.5 rounded-md text-sm font-medium transition-all"
+                    >Mensuel</button>
+                    <button
+                        @click="periode = 'annuel'"
+                        :class="periode === 'annuel'
+                            ? 'bg-white dark:bg-gray-600 shadow text-gray-900 dark:text-gray-100'
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+                        class="px-4 py-1.5 rounded-md text-sm font-medium transition-all"
+                    >Annuel</button>
+                </div>
+            </div>
         </template>
 
         <div class="py-8">
@@ -61,40 +86,56 @@ const chartOptions = {
                 <!-- Stat Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
-                        label="Budget du mois"
-                        :value="budgetMensuel ? format(budgetMensuel.montant_prevu) : '—'"
+                        :label="periode === 'mensuel' ? 'Budget du mois' : 'Budget annuel'"
+                        :value="current.totalBudget > 0 ? format(current.totalBudget) : '—'"
                         color="blue"
                     />
-                    <StatCard label="Total dépensé"   :value="format(totalDepenses)"  color="red"   />
-                    <StatCard label="Total revenus"   :value="format(totalRevenus)"   color="green" />
+                    <StatCard
+                        :label="periode === 'mensuel' ? 'Dépenses du mois' : 'Dépenses annuelles'"
+                        :value="format(current.totalDepenses)"
+                        color="red"
+                    />
+                    <StatCard
+                        :label="periode === 'mensuel' ? 'Revenus du mois' : 'Revenus annuels'"
+                        :value="format(current.totalRevenus)"
+                        color="green"
+                    />
                     <StatCard
                         label="Solde"
-                        :value="format(solde)"
-                        :color="solde >= 0 ? 'green' : 'red'"
+                        :value="format(current.solde)"
+                        :color="current.solde >= 0 ? 'green' : 'red'"
                     />
                 </div>
 
                 <!-- Budget Progress + Chart -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
-                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Avancement du budget mensuel</h3>
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+                            Avancement du budget {{ periode === 'mensuel' ? 'mensuel' : 'annuel' }}
+                        </h3>
                         <BudgetProgress
-                            v-if="budgetMensuel"
-                            :prevu="budgetMensuel.montant_prevu"
-                            :depense="budgetMensuel.montant_depense"
+                            v-if="current.totalBudget > 0"
+                            :prevu="current.totalBudget"
+                            :depense="current.totalDepenses"
                         />
-                        <p v-else class="text-sm text-gray-400 dark:text-gray-500">Aucun budget mensuel défini pour ce mois.</p>
-                        <div v-if="budgetMensuel" class="mt-3 text-sm text-gray-500">
-                            Solde budget : <span class="font-semibold" :class="budgetMensuel.solde >= 0 ? 'text-green-600' : 'text-red-600'">{{ format(budgetMensuel.solde) }}</span>
+                        <p v-else class="text-sm text-gray-400 dark:text-gray-500">
+                            Aucun budget {{ periode === 'mensuel' ? 'pour ce mois' : 'pour cette année' }}.
+                        </p>
+                        <div v-if="current.totalBudget > 0" class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                            Solde :
+                            <span
+                                class="font-semibold"
+                                :class="current.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
+                            >{{ format(current.solde) }}</span>
                         </div>
                     </div>
 
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
                         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Dépenses par catégorie</h3>
-                        <div v-if="depensesParCategorie.length" class="max-w-xs mx-auto">
+                        <div v-if="current.depensesParCategorie.length" class="max-w-xs mx-auto">
                             <Doughnut :data="chartData" :options="chartOptions" />
                         </div>
-                        <p v-else class="text-sm text-gray-400 dark:text-gray-500">Aucune dépense ce mois-ci.</p>
+                        <p v-else class="text-sm text-gray-400 dark:text-gray-500">Aucune dépense sur cette période.</p>
                     </div>
                 </div>
 
