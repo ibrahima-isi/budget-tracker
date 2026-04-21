@@ -127,6 +127,15 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // Dedicated activity audit log — one file per day, kept 90 days
+        'activity' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/activity.log'),
+            'level'  => 'info',
+            'days'   => 90,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

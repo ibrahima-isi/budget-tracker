@@ -6,6 +6,7 @@ export default {
         revenues:   'Revenues',
         categories: 'Categories',
         settings:   'Settings',
+        activityLogs: 'Activity Log',
         profile:    'Profile',
         logout:     'Log Out',
     },

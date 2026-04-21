@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\LogoController;
@@ -34,8 +35,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('categories', CategorieController::class)->except(['create', 'edit', 'show']);
     Route::post('categories/{category}/toggle-enabled', [CategorieController::class, 'toggleEnabled'])->name('categories.toggleEnabled');
 
-    // Settings & Currencies — admin only
+    // Settings, Currencies & Activity Logs — admin only
     Route::middleware('admin')->group(function () {
+        Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
         Route::get('settings',              [SettingsController::class, 'index'])->name('settings.index');
         Route::post('settings',             [SettingsController::class, 'update'])->name('settings.update');
         Route::delete('settings/logo',      [SettingsController::class, 'destroyLogo'])->name('settings.logo.destroy');

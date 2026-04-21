@@ -1,3 +1,52 @@
+/* ── Self-hosted fonts (bundlées par Vite — pas de dépendance CDN) ── */
+@import '@fontsource/public-sans/400.css';
+@import '@fontsource/public-sans/400-italic.css';
+@import '@fontsource/public-sans/500.css';
+@import '@fontsource/public-sans/600.css';
+@import '@fontsource/inknut-antiqua/400.css';
+@import '@fontsource/inknut-antiqua/600.css';
+@import '@fontsource/inknut-antiqua/700.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    /* ── Palette gray — light mode (valeurs Tailwind standard) ── */
+    :root {
+        --tw-gray-50:  249 250 251;
+        --tw-gray-100: 243 244 246;
+        --tw-gray-200: 229 231 235;
+        --tw-gray-300: 209 213 219;
+        --tw-gray-400: 156 163 175;
+        --tw-gray-500: 107 114 128;
+        --tw-gray-600: 75  85  99;
+        --tw-gray-700: 55  65  81;
+        --tw-gray-800: 31  41  55;
+        --tw-gray-900: 17  24  39;
+        --tw-gray-950: 3   7   18;
+    }
+
+    /* ── Palette gray — dark mode ───────────────────────────────
+       Surfaces : légèrement plus sombres qu'avant
+       Textes   : légèrement plus clairs / blancs               */
+    .dark {
+        /* Backgrounds (plus foncés, ton bleu-nuit) */
+        --tw-gray-950: 5   8   15;   /* quasi-noir pour body si besoin */
+        --tw-gray-900: 11  16  27;   /* fond de page principal */
+        --tw-gray-800: 18  26  42;   /* cartes, navbar */
+        --tw-gray-700: 28  40  62;   /* inputs, hovers, separateurs */
+
+        /* Textes (plus blancs / lisibles) */
+        --tw-gray-100: 238 242 250;  /* titres & textes forts */
+        --tw-gray-200: 215 223 238;  /* corps de paragraphe */
+        --tw-gray-300: 183 196 218;  /* texte secondaire */
+        --tw-gray-400: 148 164 190;  /* texte muted */
+        --tw-gray-500: 110 126 155;  /* placeholders */
+    }
+
+    /* ── Titres en Inknut Antiqua ───────────────────────────── */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inknut Antiqua', serif;
+    }
+}

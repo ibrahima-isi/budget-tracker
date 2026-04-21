@@ -74,6 +74,13 @@ function nextLocale() {
                                 >
                                     {{ $t('nav.settings') }}
                                 </NavLink>
+                                <NavLink
+                                    v-if="$page.props.auth.user?.is_admin"
+                                    :href="route('activity-logs.index')"
+                                    :active="route().current('activity-logs.*')"
+                                >
+                                    {{ $t('nav.activityLogs') }}
+                                </NavLink>
                             </div>
                         </div>
 
@@ -171,6 +178,13 @@ function nextLocale() {
                             :active="route().current('settings.*')"
                         >
                             {{ $t('nav.settings') }}
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.user?.is_admin"
+                            :href="route('activity-logs.index')"
+                            :active="route().current('activity-logs.*')"
+                        >
+                            {{ $t('nav.activityLogs') }}
                         </ResponsiveNavLink>
                     </div>
 
