@@ -23,7 +23,7 @@ class CategorieController extends Controller
             ->map(function ($cat) {
                 $setting = $cat->userSettings->first();
                 $cat->enabled = $setting ? $setting->enabled : true;
-                unset($cat->userSettings);
+                $cat->unsetRelation('userSettings');
                 return $cat;
             });
 
@@ -47,12 +47,7 @@ class CategorieController extends Controller
 
     public function update(UpdateCategorieRequest $request, Categorie $category)
     {
-        $user = Auth::user();
-
-        if (!$user->is_admin && $category->user_id !== $user->id) {
-            abort(403);
-        }
-
+        // Authorization is handled in UpdateCategorieRequest::authorize()
         $category->update($request->validated());
 
         return redirect()->route('categories.index')
@@ -64,7 +59,7 @@ class CategorieController extends Controller
         $user = Auth::user();
 
         if (!$user->is_admin && $category->user_id !== $user->id) {
-            abort(403);
+            abort(403, 'Action non autorisée.');
         }
 
         $category->delete();
@@ -77,12 +72,15 @@ class CategorieController extends Controller
     {
         $user = Auth::user();
 
-        $setting = CategorieUserSetting::firstOrCreate(
-            ['user_id' => $user->id, 'categorie_id' => $category->id],
-            ['enabled' => true]
-        );
+        // Reject if the category is not visible to this user (IDOR prevention)
+        if (!Categorie::visibleFor($user)->where('id', $category->id)->exists()) {
+            abort(403, 'Action non autorisée.');
+        }
 
-        $setting->update(['enabled' => !$setting->enabled]);
+        CategorieUserSetting::updateOrCreate(
+            ['user_id' => $user->id, 'categorie_id' => $category->id],
+            ['enabled' => !Categorie::enabledFor($user)->where('id', $category->id)->exists()]
+        );
 
         return back();
     }

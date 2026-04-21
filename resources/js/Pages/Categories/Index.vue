@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AppModal from '@/Components/AppModal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -52,9 +53,18 @@ function deleteCategorie(id) {
 }
 
 // ── Toggle enabled ────────────────────────────────────────────────────────────
-const toggleForm = useForm({});
+const toggling = ref(new Set());
 function toggleEnabled(id) {
-    toggleForm.post(route('categories.toggleEnabled', id));
+    if (toggling.value.has(id)) return;
+    toggling.value = new Set([...toggling.value, id]);
+    router.post(route('categories.toggleEnabled', id), {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            const next = new Set(toggling.value);
+            next.delete(id);
+            toggling.value = next;
+        },
+    });
 }
 
 // ── Permissions ───────────────────────────────────────────────────────────────
@@ -120,7 +130,7 @@ function canEditOrDelete(c) {
                                 <button
                                     type="button"
                                     @click="toggleEnabled(c.id)"
-                                    :disabled="toggleForm.processing"
+                                    :disabled="toggling.has(c.id)"
                                     :title="c.enabled ? 'Désactiver' : 'Activer'"
                                     class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none"
                                     :class="c.enabled
