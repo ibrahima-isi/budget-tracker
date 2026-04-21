@@ -78,7 +78,7 @@ function canEditOrDelete(c) {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Catégories</h2>
                 <PrimaryButton @click="showCreate = true">+ Nouvelle catégorie</PrimaryButton>
             </div>

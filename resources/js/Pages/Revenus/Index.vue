@@ -60,7 +60,7 @@ function deleteRevenu(id) {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Revenus</h2>
                 <PrimaryButton @click="showCreate = true">+ Nouveau revenu</PrimaryButton>
             </div>
@@ -71,6 +71,7 @@ function deleteRevenu(id) {
                 <div v-if="success" class="mb-4 rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
 
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
@@ -97,6 +98,7 @@ function deleteRevenu(id) {
                             </tr>
                         </tbody>
                     </table>
+                    </div>
 
                     <div v-if="revenus.last_page > 1" class="px-6 py-4 flex gap-2 border-t border-gray-100 dark:border-gray-700">
                         <template v-for="link in revenus.links" :key="link.label">

@@ -81,7 +81,7 @@ function budgetLabel(b) {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Dépenses</h2>
                 <PrimaryButton @click="showCreate = true">+ Nouvelle dépense</PrimaryButton>
             </div>
@@ -92,17 +92,17 @@ function budgetLabel(b) {
                 <div v-if="success" class="rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
 
                 <!-- Filters -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 px-6 py-4 flex flex-wrap gap-4 items-end">
-                    <div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-6 py-4 flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-end">
+                    <div class="w-full sm:w-auto">
                         <InputLabel value="Budget" />
-                        <select v-model="filterBudget" @change="applyFilters" class="mt-1 block rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
+                        <select v-model="filterBudget" @change="applyFilters" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
                             <option value="">Tous les budgets</option>
                             <option v-for="b in budgets" :key="b.id" :value="b.id">{{ budgetLabel(b) }}</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="w-full sm:w-auto">
                         <InputLabel value="Catégorie" />
-                        <select v-model="filterCategorie" @change="applyFilters" class="mt-1 block rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
+                        <select v-model="filterCategorie" @change="applyFilters" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
                             <option value="">Toutes les catégories</option>
                             <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                         </select>
@@ -111,6 +111,7 @@ function budgetLabel(b) {
 
                 <!-- Table -->
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
@@ -144,6 +145,7 @@ function budgetLabel(b) {
                             </tr>
                         </tbody>
                     </table>
+                    </div>
 
                     <div v-if="depenses.last_page > 1" class="px-6 py-4 flex gap-2 border-t border-gray-100 dark:border-gray-700">
                         <template v-for="link in depenses.links" :key="link.label">

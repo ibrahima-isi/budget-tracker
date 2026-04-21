@@ -195,6 +195,7 @@ const chartOptions = computed(() => ({
                         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Dernières dépenses</h3>
                         <Link :href="route('depenses.index')" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Voir tout</Link>
                     </div>
+                    <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
@@ -219,6 +220,7 @@ const chartOptions = computed(() => ({
                             </tr>
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
             </div>

@@ -213,6 +213,7 @@ function deleteCurrency(id) {
                     </div>
 
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="overflow-x-auto">
                         <table class="min-w-full text-sm dark:text-gray-300">
                             <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                                 <tr>
@@ -255,6 +256,7 @@ function deleteCurrency(id) {
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
 
