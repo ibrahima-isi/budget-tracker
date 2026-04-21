@@ -32,6 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('depenses',   DepenseController::class)->except(['create', 'edit', 'show']);
     Route::resource('revenus',    RevenuController::class)->except(['create', 'edit', 'show']);
     Route::resource('categories', CategorieController::class)->except(['create', 'edit', 'show']);
+    Route::post('categories/{category}/toggle-enabled', [CategorieController::class, 'toggleEnabled'])->name('categories.toggleEnabled');
 
     // Settings & Currencies — admin only
     Route::middleware('admin')->group(function () {

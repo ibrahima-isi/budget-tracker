@@ -23,7 +23,7 @@ class BudgetController extends Controller
 
         return Inertia::render('Budgets/Index', [
             'budgets'    => $budgets,
-            'categories' => Categorie::orderBy('nom')->get(['id', 'nom', 'couleur']),
+            'categories' => Categorie::enabledFor(Auth::user())->orderBy('nom')->get(['id', 'nom', 'couleur']),
         ]);
     }
 
@@ -35,7 +35,7 @@ class BudgetController extends Controller
 
         return Inertia::render('Budgets/Show', [
             'budget'     => $budget,
-            'categories' => Categorie::orderBy('nom')->get(['id', 'nom', 'couleur']),
+            'categories' => Categorie::enabledFor(Auth::user())->orderBy('nom')->get(['id', 'nom', 'couleur']),
         ]);
     }
 

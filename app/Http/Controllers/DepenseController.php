@@ -29,7 +29,7 @@ class DepenseController extends Controller
 
         $depenses    = $query->paginate(20)->withQueryString();
         $budgets     = Budget::where('user_id', Auth::id())->orderBy('annee', 'desc')->orderBy('mois', 'desc')->get(['id', 'libelle', 'type', 'mois', 'annee']);
-        $categories  = Categorie::orderBy('nom')->get(['id', 'nom', 'couleur']);
+        $categories  = Categorie::enabledFor(Auth::user())->orderBy('nom')->get(['id', 'nom', 'couleur']);
 
         return Inertia::render('Depenses/Index', [
             'depenses'   => $depenses,
