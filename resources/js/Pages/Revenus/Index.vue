@@ -10,13 +10,13 @@ import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useFormatMoney } from '@/composables/useFormatMoney';
 import { useFlash } from '@/composables/useFlash';
+import { useLocale } from '@/composables/useLocale';
 
 const props = defineProps({ revenus: Object });
 
 const { format } = useFormatMoney();
 const { success } = useFlash();
-
-const moisLabels = ['', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+const { moisCourts, formatDate } = useLocale();
 
 const showCreate = ref(false);
 const form = useForm({ source: '', montant: '', date_revenu: new Date().toISOString().slice(0, 10), note: '' });
@@ -53,7 +53,6 @@ function deleteRevenu(id) {
     }
 }
 
-const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
 </script>
 
 <template>
@@ -88,7 +87,7 @@ const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
                             </tr>
                             <tr v-for="r in revenus.data" :key="r.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-6 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ r.source }}</td>
-                                <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ moisLabels[r.mois] }} {{ r.annee }}</td>
+                                <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ moisCourts[r.mois] }} {{ r.annee }}</td>
                                 <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(r.date_revenu) }}</td>
                                 <td class="px-6 py-3 text-right font-medium text-green-600 dark:text-green-400">{{ format(r.montant) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">

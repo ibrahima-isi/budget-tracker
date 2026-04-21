@@ -10,13 +10,13 @@ import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useFormatMoney } from '@/composables/useFormatMoney';
 import { useFlash } from '@/composables/useFlash';
+import { useLocale } from '@/composables/useLocale';
 
 const props = defineProps({ budgets: Object });
 
 const { format } = useFormatMoney();
 const { success } = useFlash();
-
-const moisLabels = ['', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+const { moisCourts } = useLocale();
 
 // Create
 const showCreate = ref(false);
@@ -92,7 +92,7 @@ function deleteBudget(id) {
                                 <td class="px-6 py-3">
                                     <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{ b.type }}</span>
                                     <span class="ml-2 text-gray-500 dark:text-gray-400">
-                                        {{ b.type === 'mensuel' ? moisLabels[b.mois] + ' ' : '' }}{{ b.annee }}
+                                        {{ b.type === 'mensuel' ? moisCourts[b.mois] + ' ' : '' }}{{ b.annee }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-gray-600 dark:text-gray-300">{{ b.libelle ?? '—' }}</td>
@@ -136,7 +136,7 @@ function deleteBudget(id) {
             <div v-if="form.type === 'mensuel'">
                 <InputLabel value="Mois" />
                 <select v-model="form.mois" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option v-for="(m, i) in moisLabels.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
+                    <option v-for="(m, i) in moisCourts.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
                 </select>
                 <InputError :message="form.errors.mois" />
             </div>
@@ -174,7 +174,7 @@ function deleteBudget(id) {
             <div v-if="editForm.type === 'mensuel'">
                 <InputLabel value="Mois" />
                 <select v-model="editForm.mois" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option v-for="(m, i) in moisLabels.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
+                    <option v-for="(m, i) in moisCourts.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
                 </select>
             </div>
             <div>

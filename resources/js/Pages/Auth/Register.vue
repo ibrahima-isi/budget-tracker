@@ -53,7 +53,7 @@ const submit = () => {
                 <InputError class="mt-1.5" :message="form.errors.email" />
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-300 mb-1.5">Mot de passe</label>
                     <input

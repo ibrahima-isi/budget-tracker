@@ -11,6 +11,7 @@ import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { useFormatMoney } from '@/composables/useFormatMoney';
 import { useFlash } from '@/composables/useFlash';
+import { useLocale } from '@/composables/useLocale';
 
 const props = defineProps({
     depenses:   Object,
@@ -21,6 +22,7 @@ const props = defineProps({
 
 const { format } = useFormatMoney();
 const { success } = useFlash();
+const { moisCourts, formatDate } = useLocale();
 
 const filterBudget    = ref(props.filters.budget_id    ?? '');
 const filterCategorie = ref(props.filters.categorie_id ?? '');
@@ -69,11 +71,8 @@ function deleteDepense(id) {
     }
 }
 
-const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
-
 function budgetLabel(b) {
-    const mois = ['', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-    return (b.libelle ? b.libelle + ' — ' : '') + (b.type === 'mensuel' ? mois[b.mois] + ' ' : '') + b.annee;
+    return (b.libelle ? b.libelle + ' — ' : '') + (b.type === 'mensuel' ? moisCourts.value[b.mois] + ' ' : '') + b.annee;
 }
 </script>
 

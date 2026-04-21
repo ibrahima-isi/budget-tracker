@@ -8,6 +8,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { Doughnut } from 'vue-chartjs';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { useFormatMoney } from '@/composables/useFormatMoney';
+import { useLocale } from '@/composables/useLocale';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -23,9 +24,10 @@ const props = defineProps({
 });
 
 const { format } = useFormatMoney();
+const { locale, formatDate } = useLocale();
 
 const moisNom = computed(() => {
-    return new Date(props.annee, props.mois - 1).toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
+    return new Date(props.annee, props.mois - 1).toLocaleString(locale.value, { month: 'long', year: 'numeric' });
 });
 
 const chartData = computed(() => ({
@@ -41,8 +43,6 @@ const chartOptions = {
     responsive: true,
     plugins: { legend: { position: 'bottom' } },
 };
-
-const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
 </script>
 
 <template>
