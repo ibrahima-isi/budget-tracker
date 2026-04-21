@@ -36,17 +36,25 @@ class DashboardController extends Controller
         $depensesParCategorieMensuel = Depense::where('user_id', $user->id)
             ->whereMonth('date_depense', $mois)
             ->whereYear('date_depense', $annee)
+            ->selectRaw('categorie_id, SUM(montant) as total')
+            ->groupBy('categorie_id')
             ->with('categorie:id,nom,couleur')
             ->get()
-            ->groupBy('categorie_id')
-            ->map(fn ($items) => [
-                'categorie' => $items->first()->categorie,
-                'total'     => (float) $items->sum('montant'),
+            ->map(fn ($item) => [
+                'categorie' => $item->categorie,
+                'total'     => (float) $item->total,
             ])
             ->values();
 
         // ── Annual ───────────────────────────────────────────────────────────
-        $totalBudgetAnnuel = Budget::where('user_id', $user->id)
+        // Split monthly-cumulated vs annual-type so the UI can show a breakdown
+        $totalBudgetMensualise = Budget::where('user_id', $user->id)
+            ->where('type', 'mensuel')
+            ->where('annee', $annee)
+            ->sum('montant_prevu');
+
+        $totalBudgetAnnuelType = Budget::where('user_id', $user->id)
+            ->where('type', 'annuel')
             ->where('annee', $annee)
             ->sum('montant_prevu');
 
@@ -60,12 +68,13 @@ class DashboardController extends Controller
 
         $depensesParCategorieAnnuel = Depense::where('user_id', $user->id)
             ->whereYear('date_depense', $annee)
+            ->selectRaw('categorie_id, SUM(montant) as total')
+            ->groupBy('categorie_id')
             ->with('categorie:id,nom,couleur')
             ->get()
-            ->groupBy('categorie_id')
-            ->map(fn ($items) => [
-                'categorie' => $items->first()->categorie,
-                'total'     => (float) $items->sum('montant'),
+            ->map(fn ($item) => [
+                'categorie' => $item->categorie,
+                'total'     => (float) $item->total,
             ])
             ->values();
 
@@ -85,11 +94,13 @@ class DashboardController extends Controller
                 'depensesParCategorie' => $depensesParCategorieMensuel,
             ],
             'annuel' => [
-                'totalBudget'          => (float) $totalBudgetAnnuel,
-                'totalDepenses'        => (float) $totalDepensesAnnuel,
-                'totalRevenus'         => (float) $totalRevenusAnnuel,
-                'solde'                => (float) $totalRevenusAnnuel - (float) $totalDepensesAnnuel,
-                'depensesParCategorie' => $depensesParCategorieAnnuel,
+                'totalBudget'           => (float) $totalBudgetMensualise + (float) $totalBudgetAnnuelType,
+                'totalBudgetMensualise' => (float) $totalBudgetMensualise,
+                'totalBudgetAnnuelType' => (float) $totalBudgetAnnuelType,
+                'totalDepenses'         => (float) $totalDepensesAnnuel,
+                'totalRevenus'          => (float) $totalRevenusAnnuel,
+                'solde'                 => (float) $totalRevenusAnnuel - (float) $totalDepensesAnnuel,
+                'depensesParCategorie'  => $depensesParCategorieAnnuel,
             ],
             'dernieresDepenses' => $dernieresDepenses,
             'mois'              => $mois,

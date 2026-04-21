@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import StatCard from '@/Components/StatCard.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
@@ -23,7 +23,10 @@ const props = defineProps({
 const { format } = useFormatMoney();
 const { locale, formatDate } = useLocale();
 
-const periode = ref('mensuel');
+// Persist toggle selection across navigations
+const stored = localStorage.getItem('dashboard_periode');
+const periode = ref(stored === 'annuel' ? 'annuel' : 'mensuel');
+watch(periode, (val) => localStorage.setItem('dashboard_periode', val));
 
 const current = computed(() => periode.value === 'mensuel' ? props.mensuel : props.annuel);
 
@@ -44,10 +47,11 @@ const chartData = computed(() => ({
     }],
 }));
 
-const chartOptions = {
+// computed so dark-mode theming can be added here later
+const chartOptions = computed(() => ({
     responsive: true,
     plugins: { legend: { position: 'bottom' } },
-};
+}));
 </script>
 
 <template>
@@ -56,13 +60,17 @@ const chartOptions = {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between flex-wrap gap-3">
-                <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-100 capitalize">
+                <h2
+                    class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-100"
+                    :class="{ capitalize: periode === 'mensuel' }"
+                >
                     {{ periodeLabel }}
                 </h2>
 
                 <!-- Period toggle -->
                 <div class="inline-flex items-center rounded-lg bg-gray-100 dark:bg-gray-700 p-1">
                     <button
+                        type="button"
                         @click="periode = 'mensuel'"
                         :class="periode === 'mensuel'
                             ? 'bg-white dark:bg-gray-600 shadow text-gray-900 dark:text-gray-100'
@@ -70,6 +78,7 @@ const chartOptions = {
                         class="px-4 py-1.5 rounded-md text-sm font-medium transition-all"
                     >Mensuel</button>
                     <button
+                        type="button"
                         @click="periode = 'annuel'"
                         :class="periode === 'annuel'
                             ? 'bg-white dark:bg-gray-600 shadow text-gray-900 dark:text-gray-100'
@@ -86,7 +95,7 @@ const chartOptions = {
                 <!-- Stat Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard
-                        :label="periode === 'mensuel' ? 'Budget du mois' : 'Budget annuel'"
+                        :label="periode === 'mensuel' ? 'Budget du mois' : 'Budgets planifiés'"
                         :value="current.totalBudget > 0 ? format(current.totalBudget) : '—'"
                         color="blue"
                     />
@@ -121,12 +130,20 @@ const chartOptions = {
                         <p v-else class="text-sm text-gray-400 dark:text-gray-500">
                             Aucun budget {{ periode === 'mensuel' ? 'pour ce mois' : 'pour cette année' }}.
                         </p>
-                        <div v-if="current.totalBudget > 0" class="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                            Solde :
-                            <span
-                                class="font-semibold"
-                                :class="current.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
-                            >{{ format(current.solde) }}</span>
+                        <div v-if="current.totalBudget > 0" class="mt-3 space-y-1">
+                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                Solde :
+                                <span
+                                    class="font-semibold"
+                                    :class="current.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
+                                >{{ format(current.solde) }}</span>
+                            </div>
+                            <!-- Annual breakdown: monthly-cumulated vs annual-type -->
+                            <div v-if="periode === 'annuel'" class="text-xs text-gray-400 dark:text-gray-500 flex gap-3">
+                                <span>Mensuel cumulé : {{ format(annuel.totalBudgetMensualise) }}</span>
+                                <span>·</span>
+                                <span>Annuel : {{ format(annuel.totalBudgetAnnuelType) }}</span>
+                            </div>
                         </div>
                     </div>
 
