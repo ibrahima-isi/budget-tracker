@@ -31,11 +31,13 @@ const clear = () => form.reset();
     <GuestLayout>
         <Head title="Connexion" />
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Connexion</h1>
+
+        <div v-if="status" class="mb-4 rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-sm font-medium text-green-700 dark:text-green-400">
             {{ status }}
         </div>
 
-        <form @submit.prevent="submit">
+        <form @submit.prevent="submit" class="space-y-5">
             <div>
                 <InputLabel for="email" value="Email" />
                 <TextInput
@@ -47,11 +49,20 @@ const clear = () => form.reset();
                     autofocus
                     autocomplete="username"
                 />
-                <InputError class="mt-2" :message="form.errors.email" />
+                <InputError class="mt-1" :message="form.errors.email" />
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Mot de passe" />
+            <div>
+                <div class="flex items-center justify-between">
+                    <InputLabel for="password" value="Mot de passe" />
+                    <Link
+                        v-if="canResetPassword"
+                        :href="route('password.request')"
+                        class="text-xs text-gray-500 dark:text-gray-400 underline hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
+                    >
+                        Mot de passe oublié ?
+                    </Link>
+                </div>
                 <TextInput
                     id="password"
                     type="password"
@@ -60,48 +71,49 @@ const clear = () => form.reset();
                     required
                     autocomplete="current-password"
                 />
-                <InputError class="mt-2" :message="form.errors.password" />
+                <InputError class="mt-1" :message="form.errors.password" />
             </div>
 
-            <div class="mt-4 block">
-                <label class="flex items-center">
+            <div>
+                <label class="flex items-center gap-2">
                     <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-gray-600">Se souvenir de moi</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-300">Se souvenir de moi</span>
                 </label>
             </div>
 
-            <div class="mt-6 flex items-center justify-between gap-2">
-                <!-- Left: back to home + forgot password -->
-                <div class="flex items-center gap-3">
+            <!-- Actions -->
+            <div class="pt-2 flex flex-col gap-3">
+                <PrimaryButton
+                    class="w-full justify-center py-3 text-base"
+                    :class="{ 'opacity-25': form.processing }"
+                    :disabled="form.processing"
+                >
+                    Se connecter
+                </PrimaryButton>
+
+                <div class="flex items-center justify-between text-sm">
                     <Link
                         :href="route('home')"
-                        class="rounded-md text-sm text-gray-500 hover:text-gray-700 underline focus:outline-none"
+                        class="text-gray-500 dark:text-gray-400 underline hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
                     >
                         ← Accueil
                     </Link>
-                    <Link
-                        v-if="canResetPassword"
-                        :href="route('password.request')"
-                        class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none"
-                    >
-                        Mot de passe oublié ?
-                    </Link>
-                </div>
-
-                <!-- Right: clear + submit -->
-                <div class="flex items-center gap-2">
                     <button
                         type="button"
                         @click="clear"
-                        class="rounded-md px-4 py-2 text-sm text-gray-600 border border-gray-300 hover:bg-gray-50 focus:outline-none"
+                        class="text-gray-500 dark:text-gray-400 underline hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
                     >
                         Effacer
                     </button>
-                    <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                        Se connecter
-                    </PrimaryButton>
                 </div>
             </div>
         </form>
+
+        <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            Pas encore de compte ?
+            <Link :href="route('register')" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Créer un compte
+            </Link>
+        </p>
     </GuestLayout>
 </template>
