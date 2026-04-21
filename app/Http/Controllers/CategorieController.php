@@ -7,6 +7,7 @@ use App\Http\Requests\StoreCategorieRequest;
 use App\Http\Requests\UpdateCategorieRequest;
 use App\Models\Categorie;
 use App\Models\CategorieUserSetting;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -48,7 +49,6 @@ class CategorieController extends Controller
 
     public function update(UpdateCategorieRequest $request, Categorie $category)
     {
-        // Authorization is handled in UpdateCategorieRequest::authorize()
         $category->update($request->validated());
 
         return redirect()->route('categories.index')
@@ -57,7 +57,6 @@ class CategorieController extends Controller
 
     public function destroy(DeleteCategorieRequest $request, Categorie $category)
     {
-        // Authorization is handled in DeleteCategorieRequest::authorize()
         $category->delete();
 
         return redirect()->route('categories.index')
@@ -68,15 +67,19 @@ class CategorieController extends Controller
     {
         $user = Auth::user();
 
-        // Query 1: load existing setting or build an unsaved instance
+        // Query 1: load existing setting or build an unsaved instance.
         $setting = CategorieUserSetting::firstOrNew([
             'user_id'      => $user->id,
             'categorie_id' => $category->id,
         ]);
 
-        // For a brand-new setting, verify the category is visible to this user (IDOR prevention).
-        // If a setting row already exists, the category was visible when it was created and
-        // cascade deletes ensure the row is gone if the category was deleted.
+        // IDOR prevention: only check visibility when no setting row exists yet.
+        // When a row already exists the category is guaranteed visible because:
+        //   (a) we enforce visibility before creating any setting row (see below), and
+        //   (b) categorie_user_settings.categorie_id cascades on delete, so orphan rows
+        //       are impossible.
+        // NOTE: this invariant relies on user_id NOT being an editable field on Categorie.
+        //       If a category-reassignment feature is ever added, revisit this check.
         if (!$setting->exists && !Categorie::visibleFor($user)->where('id', $category->id)->exists()) {
             abort(403, 'Action non autorisée.');
         }
@@ -84,8 +87,18 @@ class CategorieController extends Controller
         // Default state is "enabled"; first toggle of a new setting means disabling.
         $setting->enabled = $setting->exists ? !$setting->enabled : false;
 
-        // Query 2: INSERT or UPDATE
-        $setting->save();
+        // Query 2: INSERT or UPDATE.
+        // Guard against the extremely unlikely race where two simultaneous requests
+        // both see $setting->exists = false and both attempt the INSERT.
+        try {
+            $setting->save();
+        } catch (UniqueConstraintViolationException) {
+            // The concurrent request already created the row (default = enabled → disabling).
+            CategorieUserSetting::where([
+                'user_id'      => $user->id,
+                'categorie_id' => $category->id,
+            ])->update(['enabled' => false]);
+        }
 
         return back();
     }
