@@ -15,8 +15,8 @@ A personal budget tracking web application built with Laravel 12, Inertia.js, an
 - **Budgets** — create monthly or annual budgets, track planned vs. spent amounts in real time
 - **Expenses** — log expenses against a budget and category, filter by budget or category
 - **Revenues** — record income sources by date, automatically grouped by month/year
-- **Categories** — manage expense categories with custom colors and icons
-- **Dashboard** — summary cards, budget progress bar, donut chart by category, last 5 expenses
+- **Categories** — global categories (seeded or admin-created) are available to all users; users can also create personal categories visible only to themselves. Any user can enable or disable a category for their own account — disabled categories are hidden from all budget and expense select lists. Only admins can edit or delete global categories; users can edit or delete their own.
+- **Dashboard** — summary cards (budget, expenses, revenues, balance) each have an independent M/A toggle to switch between monthly and annual view; a global toggle in the header syncs all cards at once. Includes a budget progress bar, donut chart by category, and the last 5 expenses.
 - **Admin backoffice** — manage app settings (business name, logo, language, default currency) and currencies
 - **Dark mode** — toggleable, persisted in `localStorage`, respects system preference on first visit
 - **Multi-language** — French, English, Spanish (set by admin in Settings; applied app-wide via vue-i18n)
@@ -218,8 +218,11 @@ app/
 │   │                         CategorieController, DashboardController,
 │   │                         SettingsController, CurrencyController, LogoController
 │   ├── Middleware/         # EnsureUserIsAdmin, HandleInertiaRequests
-│   └── Requests/           # Form request validation classes
-├── Models/                 # User, Budget, Depense, Revenu, Categorie, Setting, Currency
+│   └── Requests/           # Form request validation + authorization classes
+│                             (StoreCategorieRequest, UpdateCategorieRequest,
+│                              DeleteCategorieRequest, StoreBudgetRequest, …)
+├── Models/                 # User, Budget, Depense, Revenu, Categorie,
+│                             CategorieUserSetting, Setting, Currency
 ├── Notifications/          # VerifyEmailNotification, ResetPasswordNotification
 └── Policies/               # BudgetPolicy, DepensePolicy, RevenuPolicy
 
@@ -245,6 +248,8 @@ database/
 
 ## Key Design Decisions
 
+- **Category scoping** — `categories.user_id` is `NULL` for global (admin/seeded) categories and set to the creator's id for personal ones. `Categorie::visibleFor($user)` and `Categorie::enabledFor($user)` scopes are used everywhere so users never see each other's personal categories or their own disabled ones. Per-user enable/disable state is stored in a separate `categorie_user_settings` pivot table to avoid mutating shared data.
+- **Form Request authorization** — ownership checks (`is_admin || user_id === auth id`) live in `authorize()` on each Form Request (`UpdateCategorieRequest`, `DeleteCategorieRequest`) so authorization always runs before validation, not after.
 - **No raw SQL** — all queries go through Eloquent for MySQL/PostgreSQL compatibility
 - **Private logo storage** — uploaded logos use `Storage::disk('local')` and are served via `LogoController`, never accessible via a public path
 - **Trusted proxies** — `trustProxies(at: '*')` in `bootstrap/app.php` ensures Railway's HTTPS proxy headers are respected, which is required for signed email verification URLs to work correctly
