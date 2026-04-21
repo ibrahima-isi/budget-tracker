@@ -43,7 +43,11 @@ class HandleInertiaRequests extends Middleware
                 'error'   => fn () => $request->session()->get('error'),
             ],
             'appSettings' => function () {
-                $settings = Setting::instance();
+                // Cache within the request so the closure is only evaluated once
+                // even when multiple Inertia partial-reload cycles share props.
+                static $settings = null;
+                $settings ??= Setting::instance();
+
                 $data = $settings->only('business_name', 'business_email', 'phone', 'language', 'default_currency');
                 $data['logo_url'] = $settings->logo_path ? route('logo') : null;
                 return $data;

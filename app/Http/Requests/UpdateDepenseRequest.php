@@ -25,7 +25,11 @@ class UpdateDepenseRequest extends FormRequest
     {
         return [
             'budget_id'    => ['required', Rule::exists('budgets', 'id')->where('user_id', $this->user()->id)],
-            'categorie_id' => ['nullable', 'exists:categories,id'],
+            'categorie_id' => ['nullable', Rule::exists('categories', 'id')->where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->whereNull('user_id')->orWhere('user_id', $this->user()->id);
+                });
+            })],
             'libelle'      => ['required', 'string', 'max:200'],
             'montant'      => ['required', 'numeric', 'min:0'],
             'date_depense' => ['required', 'date'],

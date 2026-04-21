@@ -34,6 +34,11 @@ class Budget extends Model
 
     public function getMontantDepenseAttribute(): float
     {
+        // Use the in-memory collection when depenses are eager-loaded (avoids N+1)
+        if ($this->relationLoaded('depenses')) {
+            return (float) $this->depenses->sum('montant');
+        }
+
         return (float) $this->depenses()->sum('montant');
     }
 
