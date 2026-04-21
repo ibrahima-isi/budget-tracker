@@ -7,8 +7,8 @@ defineProps({
 </script>
 
 <template>
-    <div class="bg-white rounded-xl shadow-sm p-5 flex flex-col gap-1 border border-gray-100">
-        <span class="text-sm text-gray-500 font-medium">{{ label }}</span>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 flex flex-col gap-1 border border-gray-100 dark:border-gray-700">
+        <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">{{ label }}</span>
         <span
             class="text-2xl font-bold"
             :class="{

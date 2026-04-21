@@ -13,7 +13,7 @@ const emit = defineEmits(['close']);
 <template>
     <Modal :show="show" :max-width="maxWidth" @close="emit('close')">
         <div class="p-6">
-            <h2 v-if="title" class="text-lg font-semibold text-gray-900 mb-4">{{ title }}</h2>
+            <h2 v-if="title" class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ title }}</h2>
             <slot />
         </div>
     </Modal>

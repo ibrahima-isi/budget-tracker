@@ -90,7 +90,12 @@ const submit = () => {
 
         </form>
 
-        <p class="mt-6 text-center text-sm text-slate-500">
+        <div class="mt-5 flex items-center justify-between text-sm">
+            <Link :href="route('home')" class="text-slate-500 hover:text-slate-300 transition">← Accueil</Link>
+            <button type="button" @click="form.reset()" class="text-slate-500 hover:text-slate-300 transition">Effacer</button>
+        </div>
+
+        <p class="mt-5 text-center text-sm text-slate-500 border-t border-white/10 pt-5">
             Pas encore de compte ?
             <Link :href="route('register')" class="text-blue-400 hover:text-blue-300 font-medium transition">
                 Créer un compte

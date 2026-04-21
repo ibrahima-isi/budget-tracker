@@ -13,7 +13,6 @@ import { useFlash } from '@/composables/useFlash';
 const props = defineProps({ categories: Array });
 const { success } = useFlash();
 
-// Create
 const showCreate = ref(false);
 const form = useForm({ nom: '', couleur: '#3b82f6', icone: 'shopping-cart' });
 
@@ -23,16 +22,15 @@ function submitCreate() {
     });
 }
 
-// Edit
 const showEdit = ref(false);
 const editForm = useForm({ nom: '', couleur: '#3b82f6', icone: '' });
 let editId = null;
 
 function openEdit(c) {
-    editId          = c.id;
-    editForm.nom    = c.nom;
+    editId           = c.id;
+    editForm.nom     = c.nom;
     editForm.couleur = c.couleur;
-    editForm.icone  = c.icone;
+    editForm.icone   = c.icone;
     showEdit.value = true;
 }
 
@@ -56,20 +54,20 @@ function deleteCategorie(id) {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-gray-800">Catégories</h2>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Catégories</h2>
                 <PrimaryButton @click="showCreate = true">+ Nouvelle catégorie</PrimaryButton>
             </div>
         </template>
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div v-if="success" class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-green-700 text-sm">{{ success }}</div>
+                <div v-if="success" class="mb-4 rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div
                         v-for="c in categories"
                         :key="c.id"
-                        class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between"
+                        class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex items-center justify-between"
                     >
                         <div class="flex items-center gap-3">
                             <span
@@ -79,16 +77,16 @@ function deleteCategorie(id) {
                                 {{ c.nom.charAt(0).toUpperCase() }}
                             </span>
                             <div>
-                                <p class="font-medium text-gray-900">{{ c.nom }}</p>
-                                <p class="text-xs text-gray-400">{{ c.depenses_count }} dépense{{ c.depenses_count !== 1 ? 's' : '' }}</p>
+                                <p class="font-medium text-gray-900 dark:text-gray-100">{{ c.nom }}</p>
+                                <p class="text-xs text-gray-400 dark:text-gray-500">{{ c.depenses_count }} dépense{{ c.depenses_count !== 1 ? 's' : '' }}</p>
                             </div>
                         </div>
                         <div class="flex gap-2 text-xs">
-                            <button @click="openEdit(c)" class="text-yellow-600 hover:underline">Modifier</button>
-                            <button @click="deleteCategorie(c.id)" class="text-red-600 hover:underline">Supprimer</button>
+                            <button @click="openEdit(c)" class="text-yellow-600 dark:text-yellow-400 hover:underline">Modifier</button>
+                            <button @click="deleteCategorie(c.id)" class="text-red-600 dark:text-red-400 hover:underline">Supprimer</button>
                         </div>
                     </div>
-                    <div v-if="!categories.length" class="col-span-3 text-center text-gray-400 py-12">
+                    <div v-if="!categories.length" class="col-span-3 text-center text-gray-400 dark:text-gray-500 py-12">
                         Aucune catégorie. Créez-en une !
                     </div>
                 </div>
@@ -107,7 +105,7 @@ function deleteCategorie(id) {
             <div>
                 <InputLabel value="Couleur" />
                 <div class="mt-1 flex items-center gap-3">
-                    <input v-model="form.couleur" type="color" class="h-10 w-16 rounded border border-gray-300 cursor-pointer" />
+                    <input v-model="form.couleur" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-700" />
                     <TextInput v-model="form.couleur" placeholder="#3b82f6" class="block w-full" />
                 </div>
                 <InputError :message="form.errors.couleur" />
@@ -135,7 +133,7 @@ function deleteCategorie(id) {
             <div>
                 <InputLabel value="Couleur" />
                 <div class="mt-1 flex items-center gap-3">
-                    <input v-model="editForm.couleur" type="color" class="h-10 w-16 rounded border border-gray-300 cursor-pointer" />
+                    <input v-model="editForm.couleur" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-700" />
                     <TextInput v-model="editForm.couleur" class="block w-full" />
                 </div>
                 <InputError :message="editForm.errors.couleur" />

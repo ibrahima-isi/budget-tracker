@@ -50,7 +50,7 @@ const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800 capitalize">
+            <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-100 capitalize">
                 {{ moisNom }}
             </h2>
         </template>
@@ -76,36 +76,36 @@ const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
 
                 <!-- Budget Progress + Chart -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h3 class="text-base font-semibold text-gray-800 mb-4">Avancement du budget mensuel</h3>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Avancement du budget mensuel</h3>
                         <BudgetProgress
                             v-if="budgetMensuel"
                             :prevu="budgetMensuel.montant_prevu"
                             :depense="budgetMensuel.montant_depense"
                         />
-                        <p v-else class="text-sm text-gray-400">Aucun budget mensuel défini pour ce mois.</p>
+                        <p v-else class="text-sm text-gray-400 dark:text-gray-500">Aucun budget mensuel défini pour ce mois.</p>
                         <div v-if="budgetMensuel" class="mt-3 text-sm text-gray-500">
                             Solde budget : <span class="font-semibold" :class="budgetMensuel.solde >= 0 ? 'text-green-600' : 'text-red-600'">{{ format(budgetMensuel.solde) }}</span>
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h3 class="text-base font-semibold text-gray-800 mb-4">Dépenses par catégorie</h3>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Dépenses par catégorie</h3>
                         <div v-if="depensesParCategorie.length" class="max-w-xs mx-auto">
                             <Doughnut :data="chartData" :options="chartOptions" />
                         </div>
-                        <p v-else class="text-sm text-gray-400">Aucune dépense ce mois-ci.</p>
+                        <p v-else class="text-sm text-gray-400 dark:text-gray-500">Aucune dépense ce mois-ci.</p>
                     </div>
                 </div>
 
                 <!-- Last 5 expenses -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 flex items-center justify-between border-b border-gray-100">
-                        <h3 class="text-base font-semibold text-gray-800">Dernières dépenses</h3>
-                        <Link :href="route('depenses.index')" class="text-sm text-blue-600 hover:underline">Voir tout</Link>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
+                        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Dernières dépenses</h3>
+                        <Link :href="route('depenses.index')" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Voir tout</Link>
                     </div>
                     <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                        <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
                                 <th class="px-6 py-3 text-left">Libellé</th>
                                 <th class="px-6 py-3 text-left">Catégorie</th>
@@ -113,18 +113,18 @@ const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
                                 <th class="px-6 py-3 text-right">Montant</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             <tr v-if="!dernieresDepenses.length">
-                                <td colspan="4" class="px-6 py-4 text-center text-gray-400">Aucune dépense.</td>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-400 dark:text-gray-500">Aucune dépense.</td>
                             </tr>
-                            <tr v-for="d in dernieresDepenses" :key="d.id" class="hover:bg-gray-50">
-                                <td class="px-6 py-3 text-gray-900">{{ d.libelle }}</td>
+                            <tr v-for="d in dernieresDepenses" :key="d.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td class="px-6 py-3 text-gray-900 dark:text-gray-100">{{ d.libelle }}</td>
                                 <td class="px-6 py-3">
                                     <AppBadge v-if="d.categorie" :label="d.categorie.nom" :couleur="d.categorie.couleur" />
-                                    <span v-else class="text-gray-400">—</span>
+                                    <span v-else class="text-gray-400 dark:text-gray-500">—</span>
                                 </td>
-                                <td class="px-6 py-3 text-gray-500">{{ formatDate(d.date_depense) }}</td>
-                                <td class="px-6 py-3 text-right font-medium text-red-600">{{ format(d.montant) }}</td>
+                                <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(d.date_depense) }}</td>
+                                <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">{{ format(d.montant) }}</td>
                             </tr>
                         </tbody>
                     </table>

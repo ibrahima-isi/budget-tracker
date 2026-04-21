@@ -63,18 +63,18 @@ function deleteBudget(id) {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-gray-800">Budgets</h2>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Budgets</h2>
                 <PrimaryButton @click="showCreate = true">+ Nouveau budget</PrimaryButton>
             </div>
         </template>
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div v-if="success" class="mb-4 rounded-lg bg-green-50 px-4 py-3 text-green-700 text-sm">{{ success }}</div>
+                <div v-if="success" class="mb-4 rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                        <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
                                 <th class="px-6 py-3 text-left">Type / Période</th>
                                 <th class="px-6 py-3 text-left">Libellé</th>
@@ -84,38 +84,38 @@ function deleteBudget(id) {
                                 <th class="px-6 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             <tr v-if="!budgets.data.length">
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-400">Aucun budget trouvé.</td>
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">Aucun budget trouvé.</td>
                             </tr>
-                            <tr v-for="b in budgets.data" :key="b.id" class="hover:bg-gray-50">
+                            <tr v-for="b in budgets.data" :key="b.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-6 py-3">
-                                    <span class="font-medium text-gray-900 capitalize">{{ b.type }}</span>
-                                    <span class="ml-2 text-gray-500">
+                                    <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{ b.type }}</span>
+                                    <span class="ml-2 text-gray-500 dark:text-gray-400">
                                         {{ b.type === 'mensuel' ? moisLabels[b.mois] + ' ' : '' }}{{ b.annee }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-3 text-gray-600">{{ b.libelle ?? '—' }}</td>
-                                <td class="px-6 py-3 text-right text-gray-800 font-medium">{{ format(b.montant_prevu) }}</td>
-                                <td class="px-6 py-3 text-right text-red-600">{{ format(b.montant_depense) }}</td>
-                                <td class="px-6 py-3 text-right font-semibold" :class="b.solde >= 0 ? 'text-green-600' : 'text-red-600'">{{ format(b.solde) }}</td>
+                                <td class="px-6 py-3 text-gray-600 dark:text-gray-300">{{ b.libelle ?? '—' }}</td>
+                                <td class="px-6 py-3 text-right text-gray-800 dark:text-gray-200 font-medium">{{ format(b.montant_prevu) }}</td>
+                                <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">{{ format(b.montant_depense) }}</td>
+                                <td class="px-6 py-3 text-right font-semibold" :class="b.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ format(b.solde) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">
-                                    <Link :href="route('budgets.show', b.id)" class="text-blue-600 hover:underline text-xs">Détail</Link>
-                                    <button @click="openEdit(b)" class="text-yellow-600 hover:underline text-xs">Modifier</button>
-                                    <button @click="deleteBudget(b.id)" class="text-red-600 hover:underline text-xs">Supprimer</button>
+                                    <Link :href="route('budgets.show', b.id)" class="text-blue-600 dark:text-blue-400 hover:underline text-xs">Détail</Link>
+                                    <button @click="openEdit(b)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">Modifier</button>
+                                    <button @click="deleteBudget(b.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Supprimer</button>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
 
-                    <div v-if="budgets.last_page > 1" class="px-6 py-4 flex gap-2 border-t border-gray-100">
+                    <div v-if="budgets.last_page > 1" class="px-6 py-4 flex gap-2 border-t border-gray-100 dark:border-gray-700">
                         <Link
                             v-for="link in budgets.links"
                             :key="link.label"
                             :href="link.url ?? '#'"
                             v-html="link.label"
                             class="px-3 py-1 rounded text-sm border"
-                            :class="link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'"
+                            :class="link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
                         />
                     </div>
                 </div>
@@ -128,14 +128,14 @@ function deleteBudget(id) {
         <form @submit.prevent="submitCreate" class="space-y-4">
             <div>
                 <InputLabel value="Type" />
-                <select v-model="form.type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="form.type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="mensuel">Mensuel</option>
                     <option value="annuel">Annuel</option>
                 </select>
             </div>
             <div v-if="form.type === 'mensuel'">
                 <InputLabel value="Mois" />
-                <select v-model="form.mois" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="form.mois" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option v-for="(m, i) in moisLabels.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
                 </select>
                 <InputError :message="form.errors.mois" />
@@ -166,14 +166,14 @@ function deleteBudget(id) {
         <form @submit.prevent="submitEdit" class="space-y-4">
             <div>
                 <InputLabel value="Type" />
-                <select v-model="editForm.type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="editForm.type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="mensuel">Mensuel</option>
                     <option value="annuel">Annuel</option>
                 </select>
             </div>
             <div v-if="editForm.type === 'mensuel'">
                 <InputLabel value="Mois" />
-                <select v-model="editForm.mois" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="editForm.mois" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option v-for="(m, i) in moisLabels.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
                 </select>
             </div>
