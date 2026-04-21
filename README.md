@@ -1,8 +1,12 @@
 # BudgetTrack
 
-A personal budget tracking web application built with Laravel 12, Inertia.js, and Vue 3. Track your budgets, expenses, revenues, and categories with a clean interface, dark mode, and multi-language support.
-
 ![CI/CD](https://github.com/ibrahima-isi/budget-tracker/actions/workflows/ci.yml/badge.svg)
+![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
+![Composer](https://img.shields.io/badge/Composer-2.9-885630?logo=composer&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
+
+A personal budget tracking web application built with Laravel 12, Inertia.js, and Vue 3. Track your budgets, expenses, revenues, and categories with a clean interface, dark mode, and multi-language support.
 
 ---
 
