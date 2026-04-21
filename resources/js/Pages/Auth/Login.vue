@@ -1,10 +1,6 @@
 <script setup>
-import Checkbox from '@/Components/Checkbox.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 defineProps({
@@ -23,97 +19,83 @@ const submit = () => {
         onFinish: () => form.reset('password'),
     });
 };
-
-const clear = () => form.reset();
 </script>
 
 <template>
     <GuestLayout>
         <Head title="Connexion" />
 
-        <h1 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Connexion</h1>
+        <h1 class="text-xl font-bold text-white mb-1">Connexion</h1>
+        <p class="text-slate-400 text-sm mb-7">Bienvenue ! Entrez vos identifiants pour continuer.</p>
 
-        <div v-if="status" class="mb-4 rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-sm font-medium text-green-700 dark:text-green-400">
+        <div v-if="status" class="mb-5 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-400">
             {{ status }}
         </div>
 
         <form @submit.prevent="submit" class="space-y-5">
+
             <div>
-                <InputLabel for="email" value="Email" />
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
+                <label class="block text-sm font-medium text-slate-300 mb-1.5">Email</label>
+                <input
                     v-model="form.email"
+                    type="email"
                     required
                     autofocus
                     autocomplete="username"
+                    placeholder="vous@exemple.com"
+                    class="w-full rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                 />
-                <InputError class="mt-1" :message="form.errors.email" />
+                <InputError class="mt-1.5" :message="form.errors.email" />
             </div>
 
             <div>
-                <div class="flex items-center justify-between">
-                    <InputLabel for="password" value="Mot de passe" />
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="text-sm font-medium text-slate-300">Mot de passe</label>
                     <Link
                         v-if="canResetPassword"
                         :href="route('password.request')"
-                        class="text-xs text-gray-500 dark:text-gray-400 underline hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
+                        class="text-xs text-blue-400 hover:text-blue-300 transition"
                     >
                         Mot de passe oublié ?
                     </Link>
                 </div>
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
+                <input
                     v-model="form.password"
+                    type="password"
                     required
                     autocomplete="current-password"
+                    placeholder="••••••••"
+                    class="w-full rounded-xl bg-white/10 border border-white/20 text-white placeholder-slate-500 px-4 py-3 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                 />
-                <InputError class="mt-1" :message="form.errors.password" />
+                <InputError class="mt-1.5" :message="form.errors.password" />
             </div>
 
-            <div>
-                <label class="flex items-center gap-2">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="text-sm text-gray-600 dark:text-gray-300">Se souvenir de moi</span>
-                </label>
+            <div class="flex items-center gap-2.5">
+                <input
+                    id="remember"
+                    v-model="form.remember"
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
+                />
+                <label for="remember" class="text-sm text-slate-400">Se souvenir de moi</label>
             </div>
 
-            <!-- Actions -->
-            <div class="pt-2 flex flex-col gap-3">
-                <PrimaryButton
-                    class="w-full justify-center py-3 text-base"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Se connecter
-                </PrimaryButton>
+            <button
+                type="submit"
+                :disabled="form.processing"
+                class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 text-sm transition"
+            >
+                {{ form.processing ? 'Connexion…' : 'Se connecter' }}
+            </button>
 
-                <div class="flex items-center justify-between text-sm">
-                    <Link
-                        :href="route('home')"
-                        class="text-gray-500 dark:text-gray-400 underline hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
-                    >
-                        ← Accueil
-                    </Link>
-                    <button
-                        type="button"
-                        @click="clear"
-                        class="text-gray-500 dark:text-gray-400 underline hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
-                    >
-                        Effacer
-                    </button>
-                </div>
-            </div>
         </form>
 
-        <p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p class="mt-6 text-center text-sm text-slate-500">
             Pas encore de compte ?
-            <Link :href="route('register')" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+            <Link :href="route('register')" class="text-blue-400 hover:text-blue-300 font-medium transition">
                 Créer un compte
             </Link>
         </p>
+
     </GuestLayout>
 </template>
