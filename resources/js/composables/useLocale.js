@@ -21,7 +21,9 @@ export function useLocale() {
 
     function formatDate(dateStr) {
         if (!dateStr) return '';
-        return new Date(dateStr).toLocaleDateString(locale.value);
+        // Append noon to avoid UTC-midnight → local-previous-day shift
+        const d = new Date(dateStr.slice(0, 10) + 'T12:00:00');
+        return d.toLocaleDateString(locale.value);
     }
 
     return { locale, moisCourts, formatDate };

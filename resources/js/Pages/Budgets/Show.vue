@@ -58,7 +58,7 @@ function deleteDepense(id) {
         <template #header>
             <div class="flex items-center justify-between">
                 <div>
-                    <Link :href="route('budgets.index')" class="text-sm text-gray-500 hover:underline">← Budgets</Link>
+                    <Link :href="route('budgets.index')" class="text-sm text-gray-500 dark:text-gray-400 hover:underline">← Budgets</Link>
                     <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mt-1 capitalize">
                         Budget {{ budget.type }}
                         {{ budget.type === 'mensuel' ? moisCourts[budget.mois] + ' ' : '' }}{{ budget.annee }}
@@ -152,7 +152,7 @@ function deleteDepense(id) {
             </div>
             <div>
                 <InputLabel value="Note (optionnel)" />
-                <textarea v-model="form.note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm" />
+                <textarea v-model="form.note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm text-sm" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
                 <SecondaryButton type="button" @click="showAdd = false">Annuler</SecondaryButton>

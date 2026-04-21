@@ -24,7 +24,7 @@ const appSettings = computed(() => usePage().props.appSettings);
         </Link>
 
         <!-- Card -->
-        <div class="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+        <div class="w-full max-w-md bg-white/10 border border-white/20 rounded-2xl p-8 backdrop-blur-md shadow-xl">
             <slot />
         </div>
 

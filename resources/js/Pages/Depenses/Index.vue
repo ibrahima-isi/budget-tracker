@@ -146,14 +146,20 @@ function budgetLabel(b) {
                     </table>
 
                     <div v-if="depenses.last_page > 1" class="px-6 py-4 flex gap-2 border-t border-gray-100 dark:border-gray-700">
-                        <Link
-                            v-for="link in depenses.links"
-                            :key="link.label"
-                            :href="link.url ?? '#'"
-                            v-html="link.label"
-                            class="px-3 py-1 rounded text-sm border"
-                            :class="link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
-                        />
+                        <template v-for="link in depenses.links" :key="link.label">
+                            <Link
+                                v-if="link.url"
+                                :href="link.url"
+                                v-html="link.label"
+                                class="px-3 py-1 rounded text-sm border"
+                                :class="link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+                            />
+                            <span
+                                v-else
+                                v-html="link.label"
+                                class="px-3 py-1 rounded text-sm border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 cursor-default"
+                            />
+                        </template>
                     </div>
                 </div>
             </div>

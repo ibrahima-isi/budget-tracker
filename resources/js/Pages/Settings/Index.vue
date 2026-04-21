@@ -226,30 +226,30 @@ function deleteCurrency(id) {
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                                 <tr v-for="c in currencies" :key="c.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td class="px-6 py-3 font-mono font-semibold text-gray-900">{{ c.code }}</td>
-                                    <td class="px-6 py-3 text-gray-700">{{ c.name }}</td>
-                                    <td class="px-6 py-3 text-gray-500">{{ c.symbol }}</td>
+                                    <td class="px-6 py-3 font-mono font-semibold text-gray-900 dark:text-gray-100">{{ c.code }}</td>
+                                    <td class="px-6 py-3 text-gray-700 dark:text-gray-300">{{ c.name }}</td>
+                                    <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ c.symbol }}</td>
                                     <td class="px-6 py-3 text-center">
                                         <button
                                             v-if="!c.is_default"
                                             @click="setDefault(c.id)"
-                                            class="text-xs text-blue-600 hover:underline"
+                                            class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                                         >Définir</button>
-                                        <span v-else class="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                                        <span v-else class="inline-flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
                                             ✓ Défaut
                                         </span>
                                     </td>
                                     <td class="px-6 py-3 text-center">
-                                        <button @click="toggleCurrency(c.id)" class="text-xs" :class="c.is_active ? 'text-green-600' : 'text-gray-400'">
+                                        <button @click="toggleCurrency(c.id)" class="text-xs" :class="c.is_active ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'">
                                             {{ c.is_active ? '● Activée' : '○ Désactivée' }}
                                         </button>
                                     </td>
                                     <td class="px-6 py-3 text-right space-x-2">
-                                        <button @click="openEditCurrency(c)" class="text-yellow-600 hover:underline text-xs">Modifier</button>
+                                        <button @click="openEditCurrency(c)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">Modifier</button>
                                         <button
                                             v-if="!c.is_default"
                                             @click="deleteCurrency(c.id)"
-                                            class="text-red-600 hover:underline text-xs"
+                                            class="text-red-600 dark:text-red-400 hover:underline text-xs"
                                         >Supprimer</button>
                                     </td>
                                 </tr>
