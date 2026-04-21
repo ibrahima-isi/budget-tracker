@@ -12,7 +12,7 @@ import { useFormatMoney } from '@/composables/useFormatMoney';
 import { useFlash } from '@/composables/useFlash';
 import { useLocale } from '@/composables/useLocale';
 
-const props = defineProps({ budgets: Object });
+const props = defineProps({ budgets: Object, categories: Array });
 
 const { format } = useFormatMoney();
 const { success } = useFlash();
@@ -20,7 +20,7 @@ const { moisCourts } = useLocale();
 
 // Create
 const showCreate = ref(false);
-const form = useForm({ type: 'mensuel', mois: new Date().getMonth() + 1, annee: new Date().getFullYear(), montant_prevu: '', libelle: '' });
+const form = useForm({ type: 'mensuel', mois: new Date().getMonth() + 1, annee: new Date().getFullYear(), montant_prevu: '', libelle: '', categorie_id: null });
 
 function submitCreate() {
     form.post(route('budgets.store'), {
@@ -30,7 +30,7 @@ function submitCreate() {
 
 // Edit
 const showEdit = ref(false);
-const editForm = useForm({ type: 'mensuel', mois: null, annee: new Date().getFullYear(), montant_prevu: '', libelle: '' });
+const editForm = useForm({ type: 'mensuel', mois: null, annee: new Date().getFullYear(), montant_prevu: '', libelle: '', categorie_id: null });
 let editId = null;
 
 function openEdit(budget) {
@@ -40,6 +40,7 @@ function openEdit(budget) {
     editForm.annee         = budget.annee;
     editForm.montant_prevu = budget.montant_prevu;
     editForm.libelle       = budget.libelle ?? '';
+    editForm.categorie_id  = budget.categorie_id ?? null;
     showEdit.value = true;
 }
 
@@ -78,6 +79,7 @@ function deleteBudget(id) {
                             <tr>
                                 <th class="px-6 py-3 text-left">Type / Période</th>
                                 <th class="px-6 py-3 text-left">Libellé</th>
+                                <th class="px-6 py-3 text-left">Catégorie</th>
                                 <th class="px-6 py-3 text-right">Prévu</th>
                                 <th class="px-6 py-3 text-right">Dépensé</th>
                                 <th class="px-6 py-3 text-right">Solde</th>
@@ -86,7 +88,7 @@ function deleteBudget(id) {
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             <tr v-if="!budgets.data.length">
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">Aucun budget trouvé.</td>
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">Aucun budget trouvé.</td>
                             </tr>
                             <tr v-for="b in budgets.data" :key="b.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-6 py-3">
@@ -96,6 +98,14 @@ function deleteBudget(id) {
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-gray-600 dark:text-gray-300">{{ b.libelle ?? '—' }}</td>
+                                <td class="px-6 py-3">
+                                    <span
+                                        v-if="b.categorie"
+                                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
+                                        :style="{ backgroundColor: b.categorie.couleur }"
+                                    >{{ b.categorie.nom }}</span>
+                                    <span v-else class="text-gray-400 dark:text-gray-500">—</span>
+                                </td>
                                 <td class="px-6 py-3 text-right text-gray-800 dark:text-gray-200 font-medium">{{ format(b.montant_prevu) }}</td>
                                 <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">{{ format(b.montant_depense) }}</td>
                                 <td class="px-6 py-3 text-right font-semibold" :class="b.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ format(b.solde) }}</td>
@@ -154,6 +164,17 @@ function deleteBudget(id) {
                 <InputLabel value="Libellé (optionnel)" />
                 <TextInput v-model="form.libelle" class="mt-1 block w-full" />
             </div>
+            <div>
+                <InputLabel value="Catégorie (optionnel)" />
+                <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <option :value="null">— Aucune —</option>
+                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
+                </select>
+                <InputError :message="form.errors.categorie_id" />
+            </div>
+            <div v-if="form.errors.periode" class="rounded-md bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+                {{ form.errors.periode }}
+            </div>
             <div class="flex justify-end gap-3 mt-2">
                 <SecondaryButton type="button" @click="showCreate = false">Annuler</SecondaryButton>
                 <PrimaryButton :disabled="form.processing">Créer</PrimaryButton>
@@ -189,6 +210,17 @@ function deleteBudget(id) {
             <div>
                 <InputLabel value="Libellé (optionnel)" />
                 <TextInput v-model="editForm.libelle" class="mt-1 block w-full" />
+            </div>
+            <div>
+                <InputLabel value="Catégorie (optionnel)" />
+                <select v-model="editForm.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    <option :value="null">— Aucune —</option>
+                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
+                </select>
+                <InputError :message="editForm.errors.categorie_id" />
+            </div>
+            <div v-if="editForm.errors.periode" class="rounded-md bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+                {{ editForm.errors.periode }}
             </div>
             <div class="flex justify-end gap-3 mt-2">
                 <SecondaryButton type="button" @click="showEdit = false">Annuler</SecondaryButton>

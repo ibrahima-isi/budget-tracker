@@ -221,6 +221,7 @@ function budgetLabel(b) {
                     <option value="">— Aucune —</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
+                <InputError :message="editForm.errors.categorie_id" />
             </div>
             <div>
                 <InputLabel value="Libellé" />
@@ -235,6 +236,7 @@ function budgetLabel(b) {
             <div>
                 <InputLabel value="Date" />
                 <TextInput v-model="editForm.date_depense" type="date" class="mt-1 block w-full" />
+                <InputError :message="editForm.errors.date_depense" />
             </div>
             <div>
                 <InputLabel value="Note (optionnel)" />

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateDepenseRequest extends FormRequest
 {
@@ -23,12 +24,12 @@ class UpdateDepenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'budget_id'    => ['required', 'exists:budgets,id'],
-            'categorie_id' => ['required', 'exists:categories,id'],
+            'budget_id'    => ['required', Rule::exists('budgets', 'id')->where('user_id', $this->user()->id)],
+            'categorie_id' => ['nullable', 'exists:categories,id'],
             'libelle'      => ['required', 'string', 'max:200'],
             'montant'      => ['required', 'numeric', 'min:0'],
             'date_depense' => ['required', 'date'],
-            'note'         => ['nullable', 'string'],
+            'note'         => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

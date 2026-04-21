@@ -23,5 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Auth\Access\AuthorizationException $e, $request) {
+            if ($request->header('X-Inertia')) {
+                return back()->with('error', 'Vous n\'êtes pas autorisé à effectuer cette action.');
+            }
+        });
     })->create();

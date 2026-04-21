@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Categorie;
 
 class Budget extends Model
 {
@@ -11,7 +12,7 @@ class Budget extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'type', 'mois', 'annee', 'montant_prevu', 'libelle'
+        'user_id', 'type', 'mois', 'annee', 'montant_prevu', 'libelle', 'categorie_id'
     ];
 
     protected $appends = ['montant_depense', 'solde'];
@@ -19,6 +20,11 @@ class Budget extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function categorie()
+    {
+        return $this->belongsTo(Categorie::class);
     }
 
     public function depenses()

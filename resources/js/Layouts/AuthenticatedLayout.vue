@@ -7,12 +7,14 @@ import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { useDarkMode } from '@/composables/useDarkMode';
 import { useLocale } from '@/composables/useLocale';
+import { useFlash } from '@/composables/useFlash';
 
 const page       = usePage();
 const appSettings = computed(() => page.props.appSettings);
 
 const { isDark, toggleDark } = useDarkMode();
 useLocale(); // keeps i18n locale in sync
+const { error: flashError } = useFlash();
 
 const showingNavigationDropdown = ref(false);
 </script>
@@ -200,6 +202,16 @@ const showingNavigationDropdown = ref(false);
                     <slot name="header" />
                 </div>
             </header>
+
+            <!-- Global error flash -->
+            <div
+                v-if="flashError"
+                class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4"
+            >
+                <div class="rounded-lg bg-red-50 dark:bg-red-900/30 px-4 py-3 text-red-700 dark:text-red-400 text-sm">
+                    {{ flashError }}
+                </div>
+            </div>
 
             <!-- Page Content -->
             <main>

@@ -12,13 +12,13 @@ import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useFormatMoney } from '@/composables/useFormatMoney';
 import { useFlash } from '@/composables/useFlash';
+import { useLocale } from '@/composables/useLocale';
 
-const props = defineProps({ budget: Object });
+const props = defineProps({ budget: Object, categories: Array });
 
 const { format } = useFormatMoney();
 const { success } = useFlash();
-
-const moisLabels = ['', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+const { moisCourts, formatDate } = useLocale();
 
 const showAdd = ref(false);
 const form = useForm({
@@ -49,7 +49,6 @@ function deleteDepense(id) {
     }
 }
 
-const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
 </script>
 
 <template>
@@ -60,9 +59,9 @@ const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
             <div class="flex items-center justify-between">
                 <div>
                     <Link :href="route('budgets.index')" class="text-sm text-gray-500 hover:underline">← Budgets</Link>
-                    <h2 class="text-xl font-semibold text-gray-800 mt-1 capitalize">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mt-1 capitalize">
                         Budget {{ budget.type }}
-                        {{ budget.type === 'mensuel' ? moisLabels[budget.mois] + ' ' : '' }}{{ budget.annee }}
+                        {{ budget.type === 'mensuel' ? moisCourts[budget.mois] + ' ' : '' }}{{ budget.annee }}
                         <span v-if="budget.libelle" class="text-gray-500 font-normal text-base">— {{ budget.libelle }}</span>
                     </h2>
                 </div>
@@ -72,29 +71,29 @@ const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
-                <div v-if="success" class="rounded-lg bg-green-50 px-4 py-3 text-green-700 text-sm">{{ success }}</div>
+                <div v-if="success" class="rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                     <BudgetProgress :prevu="budget.montant_prevu" :depense="budget.montant_depense" />
                     <div class="mt-4 grid grid-cols-3 gap-4 text-center">
                         <div>
-                            <p class="text-xs text-gray-500">Prévu</p>
-                            <p class="font-bold text-gray-800">{{ format(budget.montant_prevu) }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Prévu</p>
+                            <p class="font-bold text-gray-800 dark:text-gray-100">{{ format(budget.montant_prevu) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Dépensé</p>
-                            <p class="font-bold text-red-600">{{ format(budget.montant_depense) }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Dépensé</p>
+                            <p class="font-bold text-red-600 dark:text-red-400">{{ format(budget.montant_depense) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500">Solde</p>
-                            <p class="font-bold" :class="budget.solde >= 0 ? 'text-green-600' : 'text-red-600'">{{ format(budget.solde) }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Solde</p>
+                            <p class="font-bold" :class="budget.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ format(budget.solde) }}</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                        <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
                                 <th class="px-6 py-3 text-left">Libellé</th>
                                 <th class="px-6 py-3 text-left">Catégorie</th>
@@ -103,20 +102,20 @@ const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
                                 <th class="px-6 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100">
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             <tr v-if="!budget.depenses.length">
-                                <td colspan="5" class="px-6 py-8 text-center text-gray-400">Aucune dépense pour ce budget.</td>
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">Aucune dépense pour ce budget.</td>
                             </tr>
-                            <tr v-for="d in budget.depenses" :key="d.id" class="hover:bg-gray-50">
-                                <td class="px-6 py-3 text-gray-900">{{ d.libelle }}</td>
+                            <tr v-for="d in budget.depenses" :key="d.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td class="px-6 py-3 text-gray-900 dark:text-gray-100">{{ d.libelle }}</td>
                                 <td class="px-6 py-3">
                                     <AppBadge v-if="d.categorie" :label="d.categorie.nom" :couleur="d.categorie.couleur" />
-                                    <span v-else class="text-gray-400">—</span>
+                                    <span v-else class="text-gray-400 dark:text-gray-500">—</span>
                                 </td>
-                                <td class="px-6 py-3 text-gray-500">{{ formatDate(d.date_depense) }}</td>
-                                <td class="px-6 py-3 text-right font-medium text-red-600">{{ format(d.montant) }}</td>
+                                <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(d.date_depense) }}</td>
+                                <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">{{ format(d.montant) }}</td>
                                 <td class="px-6 py-3 text-right">
-                                    <button @click="deleteDepense(d.id)" class="text-red-600 hover:underline text-xs">Supprimer</button>
+                                    <button @click="deleteDepense(d.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Supprimer</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -135,8 +134,9 @@ const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR');
             </div>
             <div>
                 <InputLabel value="Catégorie (optionnel)" />
-                <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option value="">— Aucune —</option>
+                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
                 <InputError :message="form.errors.categorie_id" />
             </div>
