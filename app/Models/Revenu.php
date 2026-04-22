@@ -11,7 +11,7 @@ class Revenu extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'source', 'montant', 'date_revenu', 'mois', 'annee', 'note'
+        'user_id', 'source', 'montant', 'date_revenu', 'mois', 'annee', 'note', 'currency_code'
     ];
 
     protected $casts = [

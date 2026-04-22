@@ -15,7 +15,10 @@ class DepenseController extends Controller
 {
     public function index(Request $request)
     {
+        $currency = $this->currentCurrency();
+
         $query = Depense::where('user_id', Auth::id())
+            ->where('currency_code', $currency)
             ->with('categorie:id,nom,couleur', 'budget:id,libelle,type,mois,annee')
             ->latest('date_depense');
 
@@ -27,9 +30,12 @@ class DepenseController extends Controller
             $query->where('categorie_id', $request->integer('categorie_id'));
         }
 
-        $depenses    = $query->paginate(20)->withQueryString();
-        $budgets     = Budget::where('user_id', Auth::id())->orderBy('annee', 'desc')->orderBy('mois', 'desc')->get(['id', 'libelle', 'type', 'mois', 'annee']);
-        $categories  = Categorie::enabledFor(Auth::user())->orderBy('nom')->get(['id', 'nom', 'couleur']);
+        $depenses   = $query->paginate(20)->withQueryString();
+        $budgets    = Budget::where('user_id', Auth::id())
+            ->where('currency_code', $currency)
+            ->orderBy('annee', 'desc')->orderBy('mois', 'desc')
+            ->get(['id', 'libelle', 'type', 'mois', 'annee']);
+        $categories = Categorie::enabledFor(Auth::user())->orderBy('nom')->get(['id', 'nom', 'couleur']);
 
         return Inertia::render('Depenses/Index', [
             'depenses'   => $depenses,
@@ -41,10 +47,11 @@ class DepenseController extends Controller
 
     public function store(StoreDepenseRequest $request)
     {
-        Depense::create([
-            ...$request->validated(),
-            'user_id' => Auth::id(),
-        ]);
+        $data                  = $request->validated();
+        $data['user_id']       = Auth::id();
+        $data['currency_code'] ??= $this->currentCurrency();
+
+        Depense::create($data);
 
         return redirect()->back()->with('success', 'Dépense ajoutée.');
     }
@@ -53,7 +60,9 @@ class DepenseController extends Controller
     {
         $this->authorize('update', $depense);
 
-        $depense->update($request->validated());
+        $data                  = $request->validated();
+        $data['currency_code'] ??= $depense->currency_code ?? $this->currentCurrency();
+        $depense->update($data);
 
         return redirect()->back()->with('success', 'Dépense mise à jour.');
     }

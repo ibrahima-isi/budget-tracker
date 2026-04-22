@@ -12,7 +12,7 @@ class Budget extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'type', 'mois', 'annee', 'montant_prevu', 'libelle', 'categorie_id'
+        'user_id', 'type', 'mois', 'annee', 'montant_prevu', 'libelle', 'categorie_id', 'currency_code'
     ];
 
     protected $appends = ['montant_depense', 'solde'];

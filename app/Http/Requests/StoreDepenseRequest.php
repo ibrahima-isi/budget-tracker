@@ -34,6 +34,7 @@ class StoreDepenseRequest extends FormRequest
             'montant'      => ['required', 'numeric', 'min:0'],
             'date_depense' => ['required', 'date'],
             'note'         => ['nullable', 'string', 'max:1000'],
+            'currency_code' => ['nullable', 'string', 'max:10', Rule::exists('currencies', 'code')],
         ];
     }
 }

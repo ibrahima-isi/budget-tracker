@@ -12,7 +12,7 @@ class Depense extends Model
 
     protected $fillable = [
         'user_id', 'budget_id', 'categorie_id',
-        'libelle', 'montant', 'date_depense', 'note'
+        'libelle', 'montant', 'date_depense', 'note', 'currency_code'
     ];
 
     protected $casts = [

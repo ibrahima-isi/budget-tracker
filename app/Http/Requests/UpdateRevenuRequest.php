@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateRevenuRequest extends FormRequest
 {
@@ -23,10 +24,11 @@ class UpdateRevenuRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'source'      => ['required', 'string', 'max:150'],
-            'montant'     => ['required', 'numeric', 'min:0'],
-            'date_revenu' => ['required', 'date'],
-            'note'        => ['nullable', 'string'],
+            'source'        => ['required', 'string', 'max:150'],
+            'montant'       => ['required', 'numeric', 'min:0'],
+            'date_revenu'   => ['required', 'date'],
+            'note'          => ['nullable', 'string'],
+            'currency_code' => ['nullable', 'string', 'max:10', Rule::exists('currencies', 'code')],
         ];
     }
 }

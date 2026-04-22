@@ -15,7 +15,10 @@ class BudgetController extends Controller
 {
     public function index()
     {
+        $currency = $this->currentCurrency();
+
         $budgets = Budget::where('user_id', Auth::id())
+            ->where('currency_code', $currency)
             ->with('categorie')
             ->withCount('depenses')
             ->latest()
@@ -42,10 +45,11 @@ class BudgetController extends Controller
     public function store(StoreBudgetRequest $request)
     {
         try {
-            Budget::create([
-                ...$request->validated(),
-                'user_id' => Auth::id(),
-            ]);
+            $data                  = $request->validated();
+            $data['user_id']       = Auth::id();
+            $data['currency_code'] ??= $this->currentCurrency();
+
+            Budget::create($data);
         } catch (UniqueConstraintViolationException) {
             throw ValidationException::withMessages([
                 'periode' => ['Un budget de ce type existe déjà pour cette période.'],
@@ -61,7 +65,9 @@ class BudgetController extends Controller
         $this->authorize('update', $budget);
 
         try {
-            $budget->update($request->validated());
+            $data                  = $request->validated();
+            $data['currency_code'] ??= $budget->currency_code ?? $this->currentCurrency();
+            $budget->update($data);
         } catch (UniqueConstraintViolationException) {
             throw ValidationException::withMessages([
                 'periode' => ['Un budget de ce type existe déjà pour cette période.'],

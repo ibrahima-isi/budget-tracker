@@ -10,6 +10,7 @@ import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { useFormatMoney } from '@/composables/useFormatMoney';
+import { useCurrency } from '@/composables/useCurrency';
 import { useFlash } from '@/composables/useFlash';
 import { useLocale } from '@/composables/useLocale';
 
@@ -17,11 +18,12 @@ const props = defineProps({ revenus: Object });
 
 const { t } = useI18n();
 const { format } = useFormatMoney();
+const { currencies, currentCode } = useCurrency();
 const { success } = useFlash();
 const { moisCourts, formatDate } = useLocale();
 
 const showCreate = ref(false);
-const form = useForm({ source: '', montant: '', date_revenu: new Date().toISOString().slice(0, 10), note: '' });
+const form = useForm({ source: '', montant: '', date_revenu: new Date().toISOString().slice(0, 10), note: '', currency_code: currentCode.value });
 
 function submitCreate() {
     form.post(route('revenus.store'), {
@@ -30,15 +32,16 @@ function submitCreate() {
 }
 
 const showEdit = ref(false);
-const editForm = useForm({ source: '', montant: '', date_revenu: '', note: '' });
+const editForm = useForm({ source: '', montant: '', date_revenu: '', note: '', currency_code: currentCode.value });
 let editId = null;
 
 function openEdit(r) {
-    editId               = r.id;
-    editForm.source      = r.source;
-    editForm.montant     = r.montant;
-    editForm.date_revenu = r.date_revenu?.slice(0, 10) ?? '';
-    editForm.note        = r.note ?? '';
+    editId                 = r.id;
+    editForm.source        = r.source;
+    editForm.montant       = r.montant;
+    editForm.date_revenu   = r.date_revenu?.slice(0, 10) ?? '';
+    editForm.note          = r.note ?? '';
+    editForm.currency_code = r.currency_code ?? currentCode.value;
     showEdit.value = true;
 }
 
@@ -126,6 +129,13 @@ function deleteRevenu(id) {
     <AppModal :show="showCreate" :title="$t('revenues.createTitle')" @close="showCreate = false">
         <form @submit.prevent="submitCreate" class="space-y-4">
             <div>
+                <InputLabel :value="$t('common.currency')" />
+                <select v-model="form.currency_code" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
+                    <option v-for="c in currencies" :key="c.code" :value="c.code">{{ c.code }} — {{ c.name }}</option>
+                </select>
+                <InputError :message="form.errors.currency_code" />
+            </div>
+            <div>
                 <InputLabel :value="$t('revenues.source')" />
                 <TextInput v-model="form.source" :placeholder="$t('revenues.sourcePlaceholder')" class="mt-1 block w-full" />
                 <InputError :message="form.errors.source" />
@@ -154,6 +164,13 @@ function deleteRevenu(id) {
     <!-- Edit Modal -->
     <AppModal :show="showEdit" :title="$t('revenues.editTitle')" @close="showEdit = false">
         <form @submit.prevent="submitEdit" class="space-y-4">
+            <div>
+                <InputLabel :value="$t('common.currency')" />
+                <select v-model="editForm.currency_code" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
+                    <option v-for="c in currencies" :key="c.code" :value="c.code">{{ c.code }} — {{ c.name }}</option>
+                </select>
+                <InputError :message="editForm.errors.currency_code" />
+            </div>
             <div>
                 <InputLabel :value="$t('revenues.source')" />
                 <TextInput v-model="editForm.source" class="mt-1 block w-full" />

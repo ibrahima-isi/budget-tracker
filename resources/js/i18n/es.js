@@ -41,6 +41,7 @@ export default {
         label:    'Etiqueta',
         note:     'Nota (opcional)',
         category: 'Categoría',
+        currency: 'Divisa',
     },
     dashboard: {
         title:           'Panel',

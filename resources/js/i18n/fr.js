@@ -41,6 +41,7 @@ export default {
         label:    'Libellé',
         note:     'Note (optionnel)',
         category: 'Catégorie',
+        currency: 'Devise',
     },
     dashboard: {
         title:           'Dashboard',

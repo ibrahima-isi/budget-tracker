@@ -11,6 +11,7 @@ import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { useFormatMoney } from '@/composables/useFormatMoney';
+import { useCurrency } from '@/composables/useCurrency';
 import { useFlash } from '@/composables/useFlash';
 import { useLocale } from '@/composables/useLocale';
 
@@ -23,6 +24,7 @@ const props = defineProps({
 
 const { t } = useI18n();
 const { format } = useFormatMoney();
+const { currencies, currentCode } = useCurrency();
 const { success } = useFlash();
 const { moisCourts, formatDate } = useLocale();
 
@@ -37,7 +39,7 @@ function applyFilters() {
 }
 
 const showCreate = ref(false);
-const form = useForm({ budget_id: '', categorie_id: '', libelle: '', montant: '', date_depense: new Date().toISOString().slice(0, 10), note: '' });
+const form = useForm({ budget_id: '', categorie_id: '', libelle: '', montant: '', date_depense: new Date().toISOString().slice(0, 10), note: '', currency_code: currentCode.value });
 
 function submitCreate() {
     form.post(route('depenses.store'), {
@@ -46,7 +48,7 @@ function submitCreate() {
 }
 
 const showEdit = ref(false);
-const editForm = useForm({ budget_id: '', categorie_id: '', libelle: '', montant: '', date_depense: '', note: '' });
+const editForm = useForm({ budget_id: '', categorie_id: '', libelle: '', montant: '', date_depense: '', note: '', currency_code: currentCode.value });
 let editId = null;
 
 function openEdit(d) {
@@ -57,6 +59,7 @@ function openEdit(d) {
     editForm.montant        = d.montant;
     editForm.date_depense   = d.date_depense?.slice(0, 10) ?? '';
     editForm.note           = d.note ?? '';
+    editForm.currency_code  = d.currency_code ?? currentCode.value;
     showEdit.value = true;
 }
 
@@ -174,6 +177,13 @@ function budgetLabel(b) {
     <AppModal :show="showCreate" :title="$t('expenses.createTitle')" @close="showCreate = false">
         <form @submit.prevent="submitCreate" class="space-y-4">
             <div>
+                <InputLabel :value="$t('common.currency')" />
+                <select v-model="form.currency_code" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
+                    <option v-for="c in currencies" :key="c.code" :value="c.code">{{ c.code }} — {{ c.name }}</option>
+                </select>
+                <InputError :message="form.errors.currency_code" />
+            </div>
+            <div>
                 <InputLabel :value="$t('expenses.budget')" />
                 <select v-model="form.budget_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
                     <option value="">{{ $t('common.select') }}</option>
@@ -218,6 +228,13 @@ function budgetLabel(b) {
     <!-- Edit Modal -->
     <AppModal :show="showEdit" :title="$t('expenses.editTitle')" @close="showEdit = false">
         <form @submit.prevent="submitEdit" class="space-y-4">
+            <div>
+                <InputLabel :value="$t('common.currency')" />
+                <select v-model="editForm.currency_code" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
+                    <option v-for="c in currencies" :key="c.code" :value="c.code">{{ c.code }} — {{ c.name }}</option>
+                </select>
+                <InputError :message="editForm.errors.currency_code" />
+            </div>
             <div>
                 <InputLabel :value="$t('expenses.budget')" />
                 <select v-model="editForm.budget_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">

@@ -1,10 +1,5 @@
-import { computed, ref } from 'vue';
-import { usePage }       from '@inertiajs/vue3';
-
-const USER_CURRENCY_KEY = 'userCurrency';
-
-// Module-level reactive ref so all composable instances share the same state.
-const _selected = ref(localStorage.getItem(USER_CURRENCY_KEY) ?? null);
+import { computed }      from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
 
 export function useCurrency() {
     const page = usePage();
@@ -12,19 +7,16 @@ export function useCurrency() {
     /** Active currencies list from the Inertia shared prop. */
     const currencies = computed(() => page.props.currencies ?? []);
 
-    /** App-wide default code from admin settings. */
-    const defaultCode = computed(() => page.props.appSettings?.default_currency ?? 'XOF');
-
     /**
-     * Resolved currency code:
-     *   1. User's localStorage preference (if still active)
-     *   2. App default from Settings
+     * The currency the current user has selected, driven by the server-side
+     * session value shared as `currentCurrency` by HandleInertiaRequests.
+     * Falls back to the app default, then to 'XOF'.
      */
-    const currentCode = computed(() => {
-        const stored = _selected.value;
-        if (stored && currencies.value.some(c => c.code === stored)) return stored;
-        return defaultCode.value;
-    });
+    const currentCode = computed(() =>
+        page.props.currentCurrency
+        ?? page.props.appSettings?.default_currency
+        ?? 'XOF'
+    );
 
     /** Full currency object { code, name, symbol } for the current selection. */
     const currentCurrency = computed(() =>
@@ -32,11 +24,15 @@ export function useCurrency() {
         ?? { code: currentCode.value, name: currentCode.value, symbol: currentCode.value }
     );
 
-    /** Persist the user's currency choice. */
+    /**
+     * Persist the user's currency choice in the server session.
+     * The POST to /user/currency stores it and redirects back, which triggers
+     * an Inertia page reload with the updated `currentCurrency` shared prop and
+     * freshly filtered data from the backend.
+     */
     function setCurrency(code) {
         if (!currencies.value.some(c => c.code === code)) return;
-        localStorage.setItem(USER_CURRENCY_KEY, code);
-        _selected.value = code;
+        router.post(route('user.currency'), { currency: code }, { preserveScroll: true });
     }
 
     /**

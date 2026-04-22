@@ -59,6 +59,11 @@ class HandleInertiaRequests extends Middleware
                 ->orderBy('is_default', 'desc')
                 ->orderBy('code')
                 ->get(['code', 'name', 'symbol']),
+
+            // The currency the user has selected (session), used as the active filter.
+            'currentCurrency' => fn () => $request->session()->get('current_currency')
+                ?? Setting::instance()->default_currency
+                ?? 'XOF',
         ];
     }
 }

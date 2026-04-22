@@ -11,6 +11,7 @@ use App\Http\Controllers\DepenseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RevenuController;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -28,6 +29,13 @@ Route::get('/logo', [LogoController::class, 'show'])->name('logo');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // User preference: store selected currency in session
+    Route::post('/user/currency', function (Request $request) {
+        $request->validate(['currency' => 'required|string|max:10|exists:currencies,code']);
+        $request->session()->put('current_currency', $request->input('currency'));
+        return back();
+    })->name('user.currency');
 
     Route::resource('budgets',    BudgetController::class)->except(['create', 'edit']);
     Route::resource('depenses',   DepenseController::class)->except(['create', 'edit', 'show']);

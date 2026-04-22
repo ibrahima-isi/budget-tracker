@@ -26,6 +26,7 @@ class StoreBudgetRequest extends FormRequest
             'annee'         => ['required', 'integer', 'min:2000', 'max:2100'],
             'montant_prevu' => ['required', 'numeric', 'min:0'],
             'libelle'       => ['nullable', 'string', 'max:150'],
+            'currency_code' => ['nullable', 'string', 'max:10', Rule::exists('currencies', 'code')],
             'categorie_id'  => ['nullable', Rule::exists('categories', 'id')->where(function ($q) {
                 $q->where(function ($inner) {
                     $inner->whereNull('user_id')->orWhere('user_id', $this->user()->id);
