@@ -33,7 +33,7 @@ function nextLocale() {
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div class="flex h-16 justify-between">
-                        <div class="flex">
+                        <div class="flex min-w-0">
                             <!-- Logo -->
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('dashboard')">
@@ -51,7 +51,7 @@ function nextLocale() {
                             </div>
 
                             <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden lg:-my-px lg:ms-6 lg:flex lg:items-center lg:space-x-1 xl:space-x-6">
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     {{ $t('nav.dashboard') }}
                                 </NavLink>
@@ -84,7 +84,7 @@ function nextLocale() {
                             </div>
                         </div>
 
-                        <div class="hidden sm:ms-6 sm:flex sm:items-center gap-3">
+                        <div class="hidden lg:ms-6 lg:flex lg:items-center gap-3">
                             <!-- Language switcher -->
                             <button
                                 type="button"
@@ -140,7 +140,7 @@ function nextLocale() {
                         </div>
 
                         <!-- Hamburger -->
-                        <div class="-me-2 flex items-center sm:hidden">
+                        <div class="-me-2 flex items-center lg:hidden">
                             <button
                                 @click="showingNavigationDropdown = !showingNavigationDropdown"
                                 class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-500 focus:outline-none transition"
@@ -155,7 +155,7 @@ function nextLocale() {
                 </div>
 
                 <!-- Responsive Navigation Menu -->
-                <div :class="{ block: showingNavigationDropdown, hidden: !showingNavigationDropdown }" class="sm:hidden">
+                <div :class="{ block: showingNavigationDropdown, hidden: !showingNavigationDropdown }" class="lg:hidden">
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
                             {{ $t('nav.dashboard') }}
