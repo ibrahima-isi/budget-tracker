@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AppModal from '@/Components/AppModal.vue';
 import AppBadge from '@/Components/AppBadge.vue';
@@ -16,6 +17,7 @@ import { useLocale } from '@/composables/useLocale';
 
 const props = defineProps({ budget: Object, categories: Array });
 
+const { t } = useI18n();
 const { format } = useFormatMoney();
 const { success } = useFlash();
 const { moisCourts, formatDate } = useLocale();
@@ -44,11 +46,10 @@ function submitAdd() {
 
 const deleteForm = useForm({});
 function deleteDepense(id) {
-    if (confirm('Supprimer cette dépense ?')) {
+    if (confirm(t('expenses.confirmDelete'))) {
         deleteForm.delete(route('depenses.destroy', id));
     }
 }
-
 </script>
 
 <template>
@@ -58,14 +59,14 @@ function deleteDepense(id) {
         <template #header>
             <div class="flex items-center justify-between">
                 <div>
-                    <Link :href="route('budgets.index')" class="text-sm text-gray-500 dark:text-gray-400 hover:underline">← Budgets</Link>
+                    <Link :href="route('budgets.index')" class="text-sm text-gray-500 dark:text-gray-400 hover:underline">← {{ $t('budgets.title') }}</Link>
                     <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mt-1 capitalize">
                         Budget {{ budget.type }}
                         {{ budget.type === 'mensuel' ? moisCourts[budget.mois] + ' ' : '' }}{{ budget.annee }}
                         <span v-if="budget.libelle" class="text-gray-500 font-normal text-base">— {{ budget.libelle }}</span>
                     </h2>
                 </div>
-                <PrimaryButton @click="showAdd = true">+ Ajouter une dépense</PrimaryButton>
+                <PrimaryButton @click="showAdd = true">{{ $t('expenses.new') }}</PrimaryButton>
             </div>
         </template>
 
@@ -77,15 +78,15 @@ function deleteDepense(id) {
                     <BudgetProgress :prevu="budget.montant_prevu" :depense="budget.montant_depense" />
                     <div class="mt-4 grid grid-cols-3 gap-4 text-center">
                         <div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Prévu</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('budgets.planned') }}</p>
                             <p class="font-bold text-gray-800 dark:text-gray-100">{{ format(budget.montant_prevu) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Dépensé</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('budgets.spent') }}</p>
                             <p class="font-bold text-red-600 dark:text-red-400">{{ format(budget.montant_depense) }}</p>
                         </div>
                         <div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">Solde</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('budgets.balance') }}</p>
                             <p class="font-bold" :class="budget.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ format(budget.solde) }}</p>
                         </div>
                     </div>
@@ -96,16 +97,16 @@ function deleteDepense(id) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
-                                <th class="px-6 py-3 text-left">Libellé</th>
-                                <th class="px-6 py-3 text-left">Catégorie</th>
-                                <th class="px-6 py-3 text-left">Date</th>
-                                <th class="px-6 py-3 text-right">Montant</th>
-                                <th class="px-6 py-3 text-right">Actions</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.label') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.category') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.date') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('common.amount') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('common.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             <tr v-if="!budget.depenses.length">
-                                <td colspan="5" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">Aucune dépense pour ce budget.</td>
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">{{ $t('budgets.noExpenses') }}</td>
                             </tr>
                             <tr v-for="d in budget.depenses" :key="d.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-6 py-3 text-gray-900 dark:text-gray-100">{{ d.libelle }}</td>
@@ -116,7 +117,7 @@ function deleteDepense(id) {
                                 <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(d.date_depense) }}</td>
                                 <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">{{ format(d.montant) }}</td>
                                 <td class="px-6 py-3 text-right">
-                                    <button @click="deleteDepense(d.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Supprimer</button>
+                                    <button @click="deleteDepense(d.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">{{ $t('common.delete') }}</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -127,38 +128,38 @@ function deleteDepense(id) {
         </div>
     </AuthenticatedLayout>
 
-    <AppModal :show="showAdd" title="Ajouter une dépense" @close="showAdd = false">
+    <AppModal :show="showAdd" :title="$t('expenses.createTitle')" @close="showAdd = false">
         <form @submit.prevent="submitAdd" class="space-y-4">
             <div>
-                <InputLabel value="Libellé" />
+                <InputLabel :value="$t('common.label')" />
                 <TextInput v-model="form.libelle" class="mt-1 block w-full" />
                 <InputError :message="form.errors.libelle" />
             </div>
             <div>
-                <InputLabel value="Catégorie (optionnel)" />
+                <InputLabel :value="`${$t('common.category')} ${$t('common.optional')}`" />
                 <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option value="">— Aucune —</option>
+                    <option value="">{{ $t('common.none') }}</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
                 <InputError :message="form.errors.categorie_id" />
             </div>
             <div>
-                <InputLabel value="Montant (XOF)" />
+                <InputLabel :value="$t('expenses.amountLabel')" />
                 <TextInput v-model="form.montant" type="number" step="1" class="mt-1 block w-full" />
                 <InputError :message="form.errors.montant" />
             </div>
             <div>
-                <InputLabel value="Date" />
+                <InputLabel :value="$t('common.date')" />
                 <TextInput v-model="form.date_depense" type="date" class="mt-1 block w-full" />
                 <InputError :message="form.errors.date_depense" />
             </div>
             <div>
-                <InputLabel value="Note (optionnel)" />
+                <InputLabel :value="$t('common.note')" />
                 <textarea v-model="form.note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm text-sm" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showAdd = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="form.processing">Ajouter</PrimaryButton>
+                <SecondaryButton type="button" @click="showAdd = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="form.processing">{{ $t('common.add') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>

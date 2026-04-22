@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AppModal from '@/Components/AppModal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -14,6 +15,7 @@ import { useLocale } from '@/composables/useLocale';
 
 const props = defineProps({ budgets: Object, categories: Array });
 
+const { t } = useI18n();
 const { format } = useFormatMoney();
 const { success } = useFlash();
 const { moisCourts } = useLocale();
@@ -52,20 +54,20 @@ function submitEdit() {
 
 const deleteForm = useForm({});
 function deleteBudget(id) {
-    if (confirm('Supprimer ce budget ?')) {
+    if (confirm(t('budgets.confirmDelete'))) {
         deleteForm.delete(route('budgets.destroy', id));
     }
 }
 </script>
 
 <template>
-    <Head title="Budgets" />
+    <Head :title="$t('budgets.title')" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Budgets</h2>
-                <PrimaryButton @click="showCreate = true">+ Nouveau budget</PrimaryButton>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('budgets.title') }}</h2>
+                <PrimaryButton @click="showCreate = true">{{ $t('budgets.new') }}</PrimaryButton>
             </div>
         </template>
 
@@ -78,18 +80,18 @@ function deleteBudget(id) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
-                                <th class="px-6 py-3 text-left">Type / Période</th>
-                                <th class="px-6 py-3 text-left">Libellé</th>
-                                <th class="px-6 py-3 text-left">Catégorie</th>
-                                <th class="px-6 py-3 text-right">Prévu</th>
-                                <th class="px-6 py-3 text-right">Dépensé</th>
-                                <th class="px-6 py-3 text-right">Solde</th>
-                                <th class="px-6 py-3 text-right">Actions</th>
+                                <th class="px-6 py-3 text-left">{{ $t('budgets.typePeriod') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.label') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.category') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('budgets.planned') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('budgets.spent') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('budgets.balance') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('common.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             <tr v-if="!budgets.data.length">
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">Aucun budget trouvé.</td>
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">{{ $t('budgets.noData') }}</td>
                             </tr>
                             <tr v-for="b in budgets.data" :key="b.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-6 py-3">
@@ -111,9 +113,9 @@ function deleteBudget(id) {
                                 <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">{{ format(b.montant_depense) }}</td>
                                 <td class="px-6 py-3 text-right font-semibold" :class="b.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ format(b.solde) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">
-                                    <Link :href="route('budgets.show', b.id)" class="text-blue-600 dark:text-blue-400 hover:underline text-xs">Détail</Link>
-                                    <button @click="openEdit(b)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">Modifier</button>
-                                    <button @click="deleteBudget(b.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Supprimer</button>
+                                    <Link :href="route('budgets.show', b.id)" class="text-blue-600 dark:text-blue-400 hover:underline text-xs">{{ $t('common.detail') }}</Link>
+                                    <button @click="openEdit(b)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">{{ $t('common.edit') }}</button>
+                                    <button @click="deleteBudget(b.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">{{ $t('common.delete') }}</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -142,40 +144,40 @@ function deleteBudget(id) {
     </AuthenticatedLayout>
 
     <!-- Create Modal -->
-    <AppModal :show="showCreate" title="Nouveau budget" @close="showCreate = false">
+    <AppModal :show="showCreate" :title="$t('budgets.createTitle')" @close="showCreate = false">
         <form @submit.prevent="submitCreate" class="space-y-4">
             <div>
-                <InputLabel value="Type" />
+                <InputLabel :value="$t('budgets.type')" />
                 <select v-model="form.type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option value="mensuel">Mensuel</option>
-                    <option value="annuel">Annuel</option>
+                    <option value="mensuel">{{ $t('budgets.monthly') }}</option>
+                    <option value="annuel">{{ $t('budgets.annual') }}</option>
                 </select>
             </div>
             <div v-if="form.type === 'mensuel'">
-                <InputLabel value="Mois" />
+                <InputLabel :value="$t('budgets.month')" />
                 <select v-model="form.mois" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option v-for="(m, i) in moisCourts.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
                 </select>
                 <InputError :message="form.errors.mois" />
             </div>
             <div>
-                <InputLabel value="Année" />
+                <InputLabel :value="$t('budgets.year')" />
                 <TextInput v-model="form.annee" type="number" class="mt-1 block w-full" />
                 <InputError :message="form.errors.annee" />
             </div>
             <div>
-                <InputLabel value="Montant prévu (XOF)" />
+                <InputLabel :value="$t('budgets.plannedAmount')" />
                 <TextInput v-model="form.montant_prevu" type="number" step="1" class="mt-1 block w-full" />
                 <InputError :message="form.errors.montant_prevu" />
             </div>
             <div>
-                <InputLabel value="Libellé (optionnel)" />
+                <InputLabel :value="$t('budgets.labelOptional')" />
                 <TextInput v-model="form.libelle" class="mt-1 block w-full" />
             </div>
             <div>
-                <InputLabel value="Catégorie" />
+                <InputLabel :value="$t('common.category')" />
                 <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option :value="null" disabled>— Sélectionner —</option>
+                    <option :value="null" disabled>{{ $t('common.select') }}</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
                 <InputError :message="form.errors.categorie_id" />
@@ -184,45 +186,45 @@ function deleteBudget(id) {
                 {{ form.errors.periode }}
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showCreate = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="form.processing">Créer</PrimaryButton>
+                <SecondaryButton type="button" @click="showCreate = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="form.processing">{{ $t('common.create') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>
 
     <!-- Edit Modal -->
-    <AppModal :show="showEdit" title="Modifier le budget" @close="showEdit = false">
+    <AppModal :show="showEdit" :title="$t('budgets.editTitle')" @close="showEdit = false">
         <form @submit.prevent="submitEdit" class="space-y-4">
             <div>
-                <InputLabel value="Type" />
+                <InputLabel :value="$t('budgets.type')" />
                 <select v-model="editForm.type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option value="mensuel">Mensuel</option>
-                    <option value="annuel">Annuel</option>
+                    <option value="mensuel">{{ $t('budgets.monthly') }}</option>
+                    <option value="annuel">{{ $t('budgets.annual') }}</option>
                 </select>
             </div>
             <div v-if="editForm.type === 'mensuel'">
-                <InputLabel value="Mois" />
+                <InputLabel :value="$t('budgets.month')" />
                 <select v-model="editForm.mois" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option v-for="(m, i) in moisCourts.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
                 </select>
             </div>
             <div>
-                <InputLabel value="Année" />
+                <InputLabel :value="$t('budgets.year')" />
                 <TextInput v-model="editForm.annee" type="number" class="mt-1 block w-full" />
             </div>
             <div>
-                <InputLabel value="Montant prévu (XOF)" />
+                <InputLabel :value="$t('budgets.plannedAmount')" />
                 <TextInput v-model="editForm.montant_prevu" type="number" step="1" class="mt-1 block w-full" />
                 <InputError :message="editForm.errors.montant_prevu" />
             </div>
             <div>
-                <InputLabel value="Libellé (optionnel)" />
+                <InputLabel :value="$t('budgets.labelOptional')" />
                 <TextInput v-model="editForm.libelle" class="mt-1 block w-full" />
             </div>
             <div>
-                <InputLabel value="Catégorie" />
+                <InputLabel :value="$t('common.category')" />
                 <select v-model="editForm.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
-                    <option :value="null" disabled>— Sélectionner —</option>
+                    <option :value="null" disabled>{{ $t('common.select') }}</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
                 <InputError :message="editForm.errors.categorie_id" />
@@ -231,8 +233,8 @@ function deleteBudget(id) {
                 {{ editForm.errors.periode }}
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showEdit = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="editForm.processing">Enregistrer</PrimaryButton>
+                <SecondaryButton type="button" @click="showEdit = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="editForm.processing">{{ $t('common.save') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>

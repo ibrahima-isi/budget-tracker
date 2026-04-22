@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AppModal from '@/Components/AppModal.vue';
 import AppBadge from '@/Components/AppBadge.vue';
@@ -20,6 +21,7 @@ const props = defineProps({
     filters:    Object,
 });
 
+const { t } = useI18n();
 const { format } = useFormatMoney();
 const { success } = useFlash();
 const { moisCourts, formatDate } = useLocale();
@@ -66,7 +68,7 @@ function submitEdit() {
 
 const deleteForm = useForm({});
 function deleteDepense(id) {
-    if (confirm('Supprimer cette dépense ?')) {
+    if (confirm(t('expenses.confirmDelete'))) {
         deleteForm.delete(route('depenses.destroy', id));
     }
 }
@@ -77,13 +79,13 @@ function budgetLabel(b) {
 </script>
 
 <template>
-    <Head title="Dépenses" />
+    <Head :title="$t('expenses.title')" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Dépenses</h2>
-                <PrimaryButton @click="showCreate = true">+ Nouvelle dépense</PrimaryButton>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('expenses.title') }}</h2>
+                <PrimaryButton @click="showCreate = true">{{ $t('expenses.new') }}</PrimaryButton>
             </div>
         </template>
 
@@ -94,16 +96,16 @@ function budgetLabel(b) {
                 <!-- Filters -->
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-6 py-4 flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-end">
                     <div class="w-full sm:w-auto">
-                        <InputLabel value="Budget" />
+                        <InputLabel :value="$t('expenses.budget')" />
                         <select v-model="filterBudget" @change="applyFilters" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
-                            <option value="">Tous les budgets</option>
+                            <option value="">{{ $t('expenses.allBudgets') }}</option>
                             <option v-for="b in budgets" :key="b.id" :value="b.id">{{ budgetLabel(b) }}</option>
                         </select>
                     </div>
                     <div class="w-full sm:w-auto">
-                        <InputLabel value="Catégorie" />
+                        <InputLabel :value="$t('common.category')" />
                         <select v-model="filterCategorie" @change="applyFilters" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
-                            <option value="">Toutes les catégories</option>
+                            <option value="">{{ $t('expenses.allCategories') }}</option>
                             <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                         </select>
                     </div>
@@ -115,17 +117,17 @@ function budgetLabel(b) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
-                                <th class="px-6 py-3 text-left">Libellé</th>
-                                <th class="px-6 py-3 text-left">Catégorie</th>
-                                <th class="px-6 py-3 text-left">Budget</th>
-                                <th class="px-6 py-3 text-left">Date</th>
-                                <th class="px-6 py-3 text-right">Montant</th>
-                                <th class="px-6 py-3 text-right">Actions</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.label') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.category') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('expenses.budget') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.date') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('common.amount') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('common.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             <tr v-if="!depenses.data.length">
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">Aucune dépense trouvée.</td>
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">{{ $t('expenses.noData') }}</td>
                             </tr>
                             <tr v-for="d in depenses.data" :key="d.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-6 py-3 text-gray-900 dark:text-gray-100">{{ d.libelle }}</td>
@@ -139,8 +141,8 @@ function budgetLabel(b) {
                                 <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(d.date_depense) }}</td>
                                 <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">{{ format(d.montant) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">
-                                    <button @click="openEdit(d)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">Modifier</button>
-                                    <button @click="deleteDepense(d.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Supprimer</button>
+                                    <button @click="openEdit(d)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">{{ $t('common.edit') }}</button>
+                                    <button @click="deleteDepense(d.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">{{ $t('common.delete') }}</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -169,90 +171,90 @@ function budgetLabel(b) {
     </AuthenticatedLayout>
 
     <!-- Create Modal -->
-    <AppModal :show="showCreate" title="Nouvelle dépense" @close="showCreate = false">
+    <AppModal :show="showCreate" :title="$t('expenses.createTitle')" @close="showCreate = false">
         <form @submit.prevent="submitCreate" class="space-y-4">
             <div>
-                <InputLabel value="Budget" />
+                <InputLabel :value="$t('expenses.budget')" />
                 <select v-model="form.budget_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
-                    <option value="">— Sélectionner —</option>
+                    <option value="">{{ $t('common.select') }}</option>
                     <option v-for="b in budgets" :key="b.id" :value="b.id">{{ budgetLabel(b) }}</option>
                 </select>
                 <InputError :message="form.errors.budget_id" />
             </div>
             <div>
-                <InputLabel value="Catégorie" />
+                <InputLabel :value="$t('common.category')" />
                 <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
-                    <option value="">— Aucune —</option>
+                    <option value="">{{ $t('common.none') }}</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
                 <InputError :message="form.errors.categorie_id" />
             </div>
             <div>
-                <InputLabel value="Libellé" />
+                <InputLabel :value="$t('common.label')" />
                 <TextInput v-model="form.libelle" class="mt-1 block w-full" />
                 <InputError :message="form.errors.libelle" />
             </div>
             <div>
-                <InputLabel value="Montant (XOF)" />
+                <InputLabel :value="$t('expenses.amountLabel')" />
                 <TextInput v-model="form.montant" type="number" step="1" class="mt-1 block w-full" />
                 <InputError :message="form.errors.montant" />
             </div>
             <div>
-                <InputLabel value="Date" />
+                <InputLabel :value="$t('common.date')" />
                 <TextInput v-model="form.date_depense" type="date" class="mt-1 block w-full" />
                 <InputError :message="form.errors.date_depense" />
             </div>
             <div>
-                <InputLabel value="Note (optionnel)" />
+                <InputLabel :value="$t('common.note')" />
                 <textarea v-model="form.note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showCreate = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="form.processing">Ajouter</PrimaryButton>
+                <SecondaryButton type="button" @click="showCreate = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="form.processing">{{ $t('common.add') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>
 
     <!-- Edit Modal -->
-    <AppModal :show="showEdit" title="Modifier la dépense" @close="showEdit = false">
+    <AppModal :show="showEdit" :title="$t('expenses.editTitle')" @close="showEdit = false">
         <form @submit.prevent="submitEdit" class="space-y-4">
             <div>
-                <InputLabel value="Budget" />
+                <InputLabel :value="$t('expenses.budget')" />
                 <select v-model="editForm.budget_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
                     <option v-for="b in budgets" :key="b.id" :value="b.id">{{ budgetLabel(b) }}</option>
                 </select>
                 <InputError :message="editForm.errors.budget_id" />
             </div>
             <div>
-                <InputLabel value="Catégorie" />
+                <InputLabel :value="$t('common.category')" />
                 <select v-model="editForm.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
-                    <option value="">— Aucune —</option>
+                    <option value="">{{ $t('common.none') }}</option>
                     <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                 </select>
                 <InputError :message="editForm.errors.categorie_id" />
             </div>
             <div>
-                <InputLabel value="Libellé" />
+                <InputLabel :value="$t('common.label')" />
                 <TextInput v-model="editForm.libelle" class="mt-1 block w-full" />
                 <InputError :message="editForm.errors.libelle" />
             </div>
             <div>
-                <InputLabel value="Montant (XOF)" />
+                <InputLabel :value="$t('expenses.amountLabel')" />
                 <TextInput v-model="editForm.montant" type="number" step="1" class="mt-1 block w-full" />
                 <InputError :message="editForm.errors.montant" />
             </div>
             <div>
-                <InputLabel value="Date" />
+                <InputLabel :value="$t('common.date')" />
                 <TextInput v-model="editForm.date_depense" type="date" class="mt-1 block w-full" />
                 <InputError :message="editForm.errors.date_depense" />
             </div>
             <div>
-                <InputLabel value="Note (optionnel)" />
+                <InputLabel :value="$t('common.note')" />
                 <textarea v-model="editForm.note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showEdit = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="editForm.processing">Enregistrer</PrimaryButton>
+                <SecondaryButton type="button" @click="showEdit = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="editForm.processing">{{ $t('common.save') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>

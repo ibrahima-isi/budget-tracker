@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AppModal from '@/Components/AppModal.vue';
@@ -12,6 +13,7 @@ import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { useFlash } from '@/composables/useFlash';
 
 const props = defineProps({ categories: Array });
+const { t } = useI18n();
 const { success } = useFlash();
 const authUser = usePage().props.auth.user;
 
@@ -47,7 +49,7 @@ function submitEdit() {
 // ── Delete ────────────────────────────────────────────────────────────────────
 const deleteForm = useForm({});
 function deleteCategorie(id) {
-    if (confirm('Supprimer cette catégorie ? Les dépenses liées ne seront pas supprimées.')) {
+    if (confirm(t('categories.confirmDelete'))) {
         deleteForm.delete(route('categories.destroy', id));
     }
 }
@@ -74,13 +76,13 @@ function canEditOrDelete(c) {
 </script>
 
 <template>
-    <Head title="Catégories" />
+    <Head :title="$t('categories.title')" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Catégories</h2>
-                <PrimaryButton @click="showCreate = true">+ Nouvelle catégorie</PrimaryButton>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('categories.title') }}</h2>
+                <PrimaryButton @click="showCreate = true">{{ $t('categories.new') }}</PrimaryButton>
             </div>
         </template>
 
@@ -115,11 +117,11 @@ function canEditOrDelete(c) {
                                         <span
                                             v-if="c.user_id === null"
                                             class="text-xs px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                                        >Global</span>
+                                        >{{ $t('categories.global') }}</span>
                                         <span
                                             v-else
                                             class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                                        >Personnel</span>
+                                        >{{ $t('categories.personal') }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -131,7 +133,7 @@ function canEditOrDelete(c) {
                                     type="button"
                                     @click="toggleEnabled(c.id)"
                                     :disabled="toggling.has(c.id)"
-                                    :title="c.enabled ? 'Désactiver' : 'Activer'"
+                                    :title="c.enabled ? $t('settings.disabled') : $t('settings.enabled')"
                                     class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none"
                                     :class="c.enabled
                                         ? 'bg-blue-500'
@@ -145,15 +147,15 @@ function canEditOrDelete(c) {
 
                                 <!-- Edit / Delete — admin or owner only -->
                                 <template v-if="canEditOrDelete(c)">
-                                    <button @click="openEdit(c)" class="text-xs text-yellow-600 dark:text-yellow-400 hover:underline">Modifier</button>
-                                    <button @click="deleteCategorie(c.id)" class="text-xs text-red-600 dark:text-red-400 hover:underline">Supprimer</button>
+                                    <button @click="openEdit(c)" class="text-xs text-yellow-600 dark:text-yellow-400 hover:underline">{{ $t('common.edit') }}</button>
+                                    <button @click="deleteCategorie(c.id)" class="text-xs text-red-600 dark:text-red-400 hover:underline">{{ $t('common.delete') }}</button>
                                 </template>
                             </div>
                         </div>
                     </div>
 
                     <div v-if="!categories.length" class="col-span-3 text-center text-gray-400 dark:text-gray-500 py-12">
-                        Aucune catégorie. Créez-en une !
+                        {{ $t('categories.noData') }}
                     </div>
                 </div>
             </div>
@@ -161,15 +163,15 @@ function canEditOrDelete(c) {
     </AuthenticatedLayout>
 
     <!-- Create Modal -->
-    <AppModal :show="showCreate" title="Nouvelle catégorie" max-width="lg" @close="showCreate = false">
+    <AppModal :show="showCreate" :title="$t('categories.createTitle')" max-width="lg" @close="showCreate = false">
         <form @submit.prevent="submitCreate" class="space-y-4">
             <div>
-                <InputLabel value="Nom" />
+                <InputLabel :value="$t('categories.name')" />
                 <TextInput v-model="form.nom" class="mt-1 block w-full" />
                 <InputError :message="form.errors.nom" />
             </div>
             <div>
-                <InputLabel value="Couleur" />
+                <InputLabel :value="$t('categories.color')" />
                 <div class="mt-1 flex items-center gap-3">
                     <input v-model="form.couleur" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-700" />
                     <TextInput v-model="form.couleur" placeholder="#3b82f6" class="block w-full" />
@@ -177,27 +179,27 @@ function canEditOrDelete(c) {
                 <InputError :message="form.errors.couleur" />
             </div>
             <div>
-                <InputLabel value="Icône (nom Heroicon)" />
-                <TextInput v-model="form.icone" placeholder="shopping-cart" class="mt-1 block w-full" />
+                <InputLabel :value="$t('categories.icon')" />
+                <TextInput v-model="form.icone" :placeholder="$t('categories.iconPlaceholder')" class="mt-1 block w-full" />
                 <InputError :message="form.errors.icone" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showCreate = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="form.processing">Créer</PrimaryButton>
+                <SecondaryButton type="button" @click="showCreate = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="form.processing">{{ $t('common.create') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>
 
     <!-- Edit Modal -->
-    <AppModal :show="showEdit" title="Modifier la catégorie" max-width="lg" @close="showEdit = false">
+    <AppModal :show="showEdit" :title="$t('categories.editTitle')" max-width="lg" @close="showEdit = false">
         <form @submit.prevent="submitEdit" class="space-y-4">
             <div>
-                <InputLabel value="Nom" />
+                <InputLabel :value="$t('categories.name')" />
                 <TextInput v-model="editForm.nom" class="mt-1 block w-full" />
                 <InputError :message="editForm.errors.nom" />
             </div>
             <div>
-                <InputLabel value="Couleur" />
+                <InputLabel :value="$t('categories.color')" />
                 <div class="mt-1 flex items-center gap-3">
                     <input v-model="editForm.couleur" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-700" />
                     <TextInput v-model="editForm.couleur" class="block w-full" />
@@ -205,13 +207,13 @@ function canEditOrDelete(c) {
                 <InputError :message="editForm.errors.couleur" />
             </div>
             <div>
-                <InputLabel value="Icône (nom Heroicon)" />
+                <InputLabel :value="$t('categories.icon')" />
                 <TextInput v-model="editForm.icone" class="mt-1 block w-full" />
                 <InputError :message="editForm.errors.icone" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showEdit = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="editForm.processing">Enregistrer</PrimaryButton>
+                <SecondaryButton type="button" @click="showEdit = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="editForm.processing">{{ $t('common.save') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>

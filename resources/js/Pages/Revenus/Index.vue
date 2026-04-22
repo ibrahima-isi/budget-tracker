@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import AppModal from '@/Components/AppModal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -14,6 +15,7 @@ import { useLocale } from '@/composables/useLocale';
 
 const props = defineProps({ revenus: Object });
 
+const { t } = useI18n();
 const { format } = useFormatMoney();
 const { success } = useFlash();
 const { moisCourts, formatDate } = useLocale();
@@ -48,21 +50,20 @@ function submitEdit() {
 
 const deleteForm = useForm({});
 function deleteRevenu(id) {
-    if (confirm('Supprimer ce revenu ?')) {
+    if (confirm(t('revenues.confirmDelete'))) {
         deleteForm.delete(route('revenus.destroy', id));
     }
 }
-
 </script>
 
 <template>
-    <Head title="Revenus" />
+    <Head :title="$t('revenues.title')" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Revenus</h2>
-                <PrimaryButton @click="showCreate = true">+ Nouveau revenu</PrimaryButton>
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('revenues.title') }}</h2>
+                <PrimaryButton @click="showCreate = true">{{ $t('revenues.new') }}</PrimaryButton>
             </div>
         </template>
 
@@ -75,16 +76,16 @@ function deleteRevenu(id) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                             <tr>
-                                <th class="px-6 py-3 text-left">Source</th>
-                                <th class="px-6 py-3 text-left">Période</th>
-                                <th class="px-6 py-3 text-left">Date</th>
-                                <th class="px-6 py-3 text-right">Montant</th>
-                                <th class="px-6 py-3 text-right">Actions</th>
+                                <th class="px-6 py-3 text-left">{{ $t('revenues.source') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('revenues.period') }}</th>
+                                <th class="px-6 py-3 text-left">{{ $t('common.date') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('common.amount') }}</th>
+                                <th class="px-6 py-3 text-right">{{ $t('common.actions') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             <tr v-if="!revenus.data.length">
-                                <td colspan="5" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">Aucun revenu trouvé.</td>
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">{{ $t('revenues.noData') }}</td>
                             </tr>
                             <tr v-for="r in revenus.data" :key="r.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-6 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ r.source }}</td>
@@ -92,8 +93,8 @@ function deleteRevenu(id) {
                                 <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(r.date_revenu) }}</td>
                                 <td class="px-6 py-3 text-right font-medium text-green-600 dark:text-green-400">{{ format(r.montant) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">
-                                    <button @click="openEdit(r)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">Modifier</button>
-                                    <button @click="deleteRevenu(r.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Supprimer</button>
+                                    <button @click="openEdit(r)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">{{ $t('common.edit') }}</button>
+                                    <button @click="deleteRevenu(r.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">{{ $t('common.delete') }}</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -122,58 +123,58 @@ function deleteRevenu(id) {
     </AuthenticatedLayout>
 
     <!-- Create Modal -->
-    <AppModal :show="showCreate" title="Nouveau revenu" @close="showCreate = false">
+    <AppModal :show="showCreate" :title="$t('revenues.createTitle')" @close="showCreate = false">
         <form @submit.prevent="submitCreate" class="space-y-4">
             <div>
-                <InputLabel value="Source" />
-                <TextInput v-model="form.source" placeholder="Salaire, Freelance…" class="mt-1 block w-full" />
+                <InputLabel :value="$t('revenues.source')" />
+                <TextInput v-model="form.source" :placeholder="$t('revenues.sourcePlaceholder')" class="mt-1 block w-full" />
                 <InputError :message="form.errors.source" />
             </div>
             <div>
-                <InputLabel value="Montant (XOF)" />
+                <InputLabel :value="$t('revenues.amountLabel')" />
                 <TextInput v-model="form.montant" type="number" step="1" class="mt-1 block w-full" />
                 <InputError :message="form.errors.montant" />
             </div>
             <div>
-                <InputLabel value="Date" />
+                <InputLabel :value="$t('common.date')" />
                 <TextInput v-model="form.date_revenu" type="date" class="mt-1 block w-full" />
                 <InputError :message="form.errors.date_revenu" />
             </div>
             <div>
-                <InputLabel value="Note (optionnel)" />
+                <InputLabel :value="$t('common.note')" />
                 <textarea v-model="form.note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showCreate = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="form.processing">Ajouter</PrimaryButton>
+                <SecondaryButton type="button" @click="showCreate = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="form.processing">{{ $t('common.add') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>
 
     <!-- Edit Modal -->
-    <AppModal :show="showEdit" title="Modifier le revenu" @close="showEdit = false">
+    <AppModal :show="showEdit" :title="$t('revenues.editTitle')" @close="showEdit = false">
         <form @submit.prevent="submitEdit" class="space-y-4">
             <div>
-                <InputLabel value="Source" />
+                <InputLabel :value="$t('revenues.source')" />
                 <TextInput v-model="editForm.source" class="mt-1 block w-full" />
                 <InputError :message="editForm.errors.source" />
             </div>
             <div>
-                <InputLabel value="Montant (XOF)" />
+                <InputLabel :value="$t('revenues.amountLabel')" />
                 <TextInput v-model="editForm.montant" type="number" step="1" class="mt-1 block w-full" />
                 <InputError :message="editForm.errors.montant" />
             </div>
             <div>
-                <InputLabel value="Date" />
+                <InputLabel :value="$t('common.date')" />
                 <TextInput v-model="editForm.date_revenu" type="date" class="mt-1 block w-full" />
             </div>
             <div>
-                <InputLabel value="Note (optionnel)" />
+                <InputLabel :value="$t('common.note')" />
                 <textarea v-model="editForm.note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
-                <SecondaryButton type="button" @click="showEdit = false">Annuler</SecondaryButton>
-                <PrimaryButton :disabled="editForm.processing">Enregistrer</PrimaryButton>
+                <SecondaryButton type="button" @click="showEdit = false">{{ $t('common.cancel') }}</SecondaryButton>
+                <PrimaryButton :disabled="editForm.processing">{{ $t('common.save') }}</PrimaryButton>
             </div>
         </form>
     </AppModal>

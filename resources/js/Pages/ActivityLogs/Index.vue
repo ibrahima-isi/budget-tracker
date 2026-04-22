@@ -66,11 +66,11 @@ function formatTs(ts) {
 </script>
 
 <template>
-    <Head title="Journal d'activité" />
+    <Head :title="$t('nav.activityLogs')" />
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Journal d'activité</h2>
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('nav.activityLogs') }}</h2>
         </template>
 
         <div class="py-8">
@@ -81,30 +81,30 @@ function formatTs(ts) {
                     <div class="flex flex-col sm:flex-row gap-3 flex-wrap items-end">
                         <!-- Search -->
                         <div class="flex-1 min-w-[200px]">
-                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Recherche</label>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ $t('activityLog.search') }}</label>
                             <input
                                 v-model="search"
                                 @keyup.enter="applyFilters"
                                 type="text"
-                                placeholder="Utilisateur, ressource, IP…"
+                                :placeholder="$t('activityLog.searchPlaceholder')"
                                 class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
                             />
                         </div>
 
                         <!-- Event filter -->
                         <div class="w-full sm:w-40">
-                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Événement</label>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ $t('activityLog.event') }}</label>
                             <select v-model="filterEvent" @change="applyFilters" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm">
-                                <option value="">Tous</option>
+                                <option value="">{{ $t('activityLog.all') }}</option>
                                 <option v-for="e in eventOptions" :key="e" :value="e">{{ e }}</option>
                             </select>
                         </div>
 
                         <!-- Subject type filter -->
                         <div class="w-full sm:w-40">
-                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Ressource</label>
+                            <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ $t('activityLog.resource') }}</label>
                             <select v-model="filterType" @change="applyFilters" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm">
-                                <option value="">Toutes</option>
+                                <option value="">{{ $t('activityLog.allTypes') }}</option>
                                 <option v-for="t in subjectOptions" :key="t" :value="t">{{ t }}</option>
                             </select>
                         </div>
@@ -112,10 +112,10 @@ function formatTs(ts) {
                         <!-- Buttons -->
                         <div class="flex gap-2">
                             <button @click="applyFilters" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition">
-                                Filtrer
+                                {{ $t('activityLog.filter') }}
                             </button>
                             <button @click="resetFilters" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                                Réinitialiser
+                                {{ $t('activityLog.reset') }}
                             </button>
                         </div>
                     </div>
@@ -127,18 +127,18 @@ function formatTs(ts) {
                         <table class="min-w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-700 text-xs text-gray-500 dark:text-gray-400 uppercase">
                                 <tr>
-                                    <th class="px-4 py-3 text-left">Date</th>
-                                    <th class="px-4 py-3 text-left">Utilisateur</th>
-                                    <th class="px-4 py-3 text-left">Événement</th>
-                                    <th class="px-4 py-3 text-left">Ressource</th>
-                                    <th class="px-4 py-3 text-left">IP</th>
-                                    <th class="px-4 py-3 text-left">Détails</th>
+                                    <th class="px-4 py-3 text-left">{{ $t('common.date') }}</th>
+                                    <th class="px-4 py-3 text-left">{{ $t('activityLog.user') }}</th>
+                                    <th class="px-4 py-3 text-left">{{ $t('activityLog.event') }}</th>
+                                    <th class="px-4 py-3 text-left">{{ $t('activityLog.resource') }}</th>
+                                    <th class="px-4 py-3 text-left">{{ $t('activityLog.ip') }}</th>
+                                    <th class="px-4 py-3 text-left">{{ $t('activityLog.details') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                                 <tr v-if="!logs.data.length">
                                     <td colspan="6" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
-                                        Aucune activité enregistrée.
+                                        {{ $t('activityLog.noActivity') }}
                                     </td>
                                 </tr>
 
@@ -170,7 +170,7 @@ function formatTs(ts) {
                                                 @click="toggle(log.id)"
                                                 class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                                             >
-                                                {{ expanded.has(log.id) ? 'Masquer' : 'Voir' }}
+                                                {{ expanded.has(log.id) ? $t('activityLog.hide') : $t('activityLog.view') }}
                                             </button>
                                             <span v-else class="text-gray-400 dark:text-gray-600">—</span>
                                         </td>
@@ -181,11 +181,11 @@ function formatTs(ts) {
                                         <td colspan="6" class="px-4 py-3">
                                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
                                                 <div v-if="log.properties.old">
-                                                    <p class="text-red-600 dark:text-red-400 font-semibold font-sans mb-1">Avant</p>
+                                                    <p class="text-red-600 dark:text-red-400 font-semibold font-sans mb-1">{{ $t('activityLog.before') }}</p>
                                                     <pre class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 overflow-auto text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ JSON.stringify(log.properties.old, null, 2) }}</pre>
                                                 </div>
                                                 <div v-if="log.properties.new">
-                                                    <p class="text-green-600 dark:text-green-400 font-semibold font-sans mb-1">Après</p>
+                                                    <p class="text-green-600 dark:text-green-400 font-semibold font-sans mb-1">{{ $t('activityLog.after') }}</p>
                                                     <pre class="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 overflow-auto text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ JSON.stringify(log.properties.new, null, 2) }}</pre>
                                                 </div>
                                                 <!-- Auth events have no old/new -->
