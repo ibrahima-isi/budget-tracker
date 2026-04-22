@@ -42,11 +42,10 @@ class AppServiceProvider extends ServiceProvider
             $model::observe(ModelActivityObserver::class);
         }
 
-        $listener = new LogAuthEvent();
-        Event::listen(Login::class,         fn ($e) => $listener->handleLogin($e));
-        Event::listen(Logout::class,        fn ($e) => $listener->handleLogout($e));
-        Event::listen(Registered::class,    fn ($e) => $listener->handleRegistered($e));
-        Event::listen(PasswordReset::class, fn ($e) => $listener->handlePasswordReset($e));
+        Event::listen(Login::class,         [LogAuthEvent::class, 'handleLogin']);
+        Event::listen(Logout::class,        [LogAuthEvent::class, 'handleLogout']);
+        Event::listen(Registered::class,    [LogAuthEvent::class, 'handleRegistered']);
+        Event::listen(PasswordReset::class, [LogAuthEvent::class, 'handlePasswordReset']);
 
         if ($this->app->environment('production')) {
             URL::forceScheme('https');

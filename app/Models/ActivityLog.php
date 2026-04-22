@@ -18,7 +18,7 @@ class ActivityLog extends Model
         'properties',
         'ip_address',
         'user_agent',
-        'created_at',
+        // created_at intentionally excluded: the DB default (useCurrent) owns it
     ];
 
     protected $casts = [

@@ -105,7 +105,7 @@ function formatTs(ts) {
                             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{{ $t('activityLog.resource') }}</label>
                             <select v-model="filterType" @change="applyFilters" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm shadow-sm">
                                 <option value="">{{ $t('activityLog.allTypes') }}</option>
-                                <option v-for="t in subjectOptions" :key="t" :value="t">{{ t }}</option>
+                                <option v-for="type in subjectOptions" :key="type" :value="type">{{ type }}</option>
                             </select>
                         </div>
 

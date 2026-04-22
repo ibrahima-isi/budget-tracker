@@ -112,7 +112,7 @@ function canEditOrDelete(c) {
                                     <p class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ c.nom }}</p>
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <p class="text-xs text-gray-400 dark:text-gray-500">
-                                            {{ c.depenses_count }} dépense{{ c.depenses_count !== 1 ? 's' : '' }}
+                                            {{ $t('categories.expenseCount', c.depenses_count) }}
                                         </p>
                                         <span
                                             v-if="c.user_id === null"
