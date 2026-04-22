@@ -32,7 +32,6 @@ class SettingsController extends Controller
         $settings = Setting::instance();
 
         if ($request->hasFile('logo')) {
-            // Remove old logo if present
             if ($settings->logo_path) {
                 Storage::disk('local')->delete($settings->logo_path);
             }

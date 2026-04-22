@@ -17,6 +17,12 @@ class DashboardController extends Controller
         $annee = now()->year;
 
         // ── Monthly ──────────────────────────────────────────────────────────
+        $budgetMensuel = Budget::where('user_id', $user->id)
+            ->where('type', 'mensuel')
+            ->where('mois', $mois)
+            ->where('annee', $annee)
+            ->first();
+
         $totalBudgetMensuel = Budget::where('user_id', $user->id)
             ->where('type', 'mensuel')
             ->where('mois', $mois)
@@ -85,12 +91,24 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $solde = (float) $totalRevenusMensuel - (float) $totalDepensesMensuel;
+
         return Inertia::render('Dashboard', [
+            // Flat props (tested contract)
+            'budgetMensuel'        => $budgetMensuel,
+            'totalDepenses'        => (float) $totalDepensesMensuel,
+            'totalRevenus'         => (float) $totalRevenusMensuel,
+            'solde'                => $solde,
+            'depensesParCategorie' => $depensesParCategorieMensuel,
+            'dernieresDepenses'    => $dernieresDepenses,
+            'mois'                 => $mois,
+            'annee'                => $annee,
+            // Nested props for the Vue dashboard (both periods)
             'mensuel' => [
                 'totalBudget'          => (float) $totalBudgetMensuel,
                 'totalDepenses'        => (float) $totalDepensesMensuel,
                 'totalRevenus'         => (float) $totalRevenusMensuel,
-                'solde'                => (float) $totalRevenusMensuel - (float) $totalDepensesMensuel,
+                'solde'                => $solde,
                 'depensesParCategorie' => $depensesParCategorieMensuel,
             ],
             'annuel' => [
@@ -102,9 +120,6 @@ class DashboardController extends Controller
                 'solde'                 => (float) $totalRevenusAnnuel - (float) $totalDepensesAnnuel,
                 'depensesParCategorie'  => $depensesParCategorieAnnuel,
             ],
-            'dernieresDepenses' => $dernieresDepenses,
-            'mois'              => $mois,
-            'annee'             => $annee,
         ]);
     }
 }

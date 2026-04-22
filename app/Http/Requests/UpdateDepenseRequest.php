@@ -13,7 +13,9 @@ class UpdateDepenseRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $depense = $this->route('depense');
+
+        return $depense && $depense->user_id === $this->user()->id;
     }
 
     /**

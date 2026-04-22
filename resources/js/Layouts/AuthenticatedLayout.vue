@@ -7,6 +7,7 @@ import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { useDarkMode } from '@/composables/useDarkMode';
 import { useLocale } from '@/composables/useLocale';
+import { useCurrency } from '@/composables/useCurrency';
 import { useFlash } from '@/composables/useFlash';
 
 const page       = usePage();
@@ -14,15 +15,22 @@ const appSettings = computed(() => page.props.appSettings);
 
 const { isDark, toggleDark } = useDarkMode();
 const { locale, setLocale, supported: supportedLocales } = useLocale();
+const { currencies, currentCode: currentCurrencyCode, setCurrency } = useCurrency();
 const { error: flashError } = useFlash();
 
 const showingNavigationDropdown = ref(false);
+const showingCurrencyDropdown   = ref(false);
 
 const langLabels = { fr: 'FR', en: 'EN', es: 'ES' };
 function nextLocale() {
     const idx = supportedLocales.indexOf(locale.value);
     const next = supportedLocales[(idx + 1) % supportedLocales.length];
     setLocale(next);
+}
+
+function chooseCurrency(code) {
+    setCurrency(code);
+    showingCurrencyDropdown.value = false;
 }
 </script>
 
@@ -85,6 +93,44 @@ function nextLocale() {
                         </div>
 
                         <div class="hidden lg:ms-6 lg:flex lg:items-center gap-3">
+                            <!-- Currency switcher -->
+                            <div v-if="currencies.length > 0" class="relative">
+                                <button
+                                    type="button"
+                                    @click="showingCurrencyDropdown = !showingCurrencyDropdown"
+                                    :title="$t('switchCurrency')"
+                                    class="rounded-full px-2.5 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition border border-gray-200 dark:border-gray-600 flex items-center gap-1"
+                                >
+                                    {{ currentCurrencyCode }}
+                                    <svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                                <!-- Dropdown panel -->
+                                <div
+                                    v-show="showingCurrencyDropdown"
+                                    class="absolute right-0 mt-1 w-44 rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 py-1 z-50"
+                                >
+                                    <button
+                                        v-for="c in currencies"
+                                        :key="c.code"
+                                        type="button"
+                                        @click="chooseCurrency(c.code)"
+                                        class="flex w-full items-center justify-between gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                                        :class="c.code === currentCurrencyCode ? 'font-semibold text-blue-600 dark:text-blue-400' : ''"
+                                    >
+                                        <span>{{ c.code }}</span>
+                                        <span class="text-gray-400 dark:text-gray-500">{{ c.symbol }}</span>
+                                    </button>
+                                </div>
+                                <!-- Click-outside overlay -->
+                                <div
+                                    v-if="showingCurrencyDropdown"
+                                    class="fixed inset-0 z-40"
+                                    @click="showingCurrencyDropdown = false"
+                                />
+                            </div>
+
                             <!-- Language switcher -->
                             <button
                                 type="button"
@@ -200,6 +246,24 @@ function nextLocale() {
                         </div>
 
                         <div class="mt-3 space-y-1">
+                            <!-- Currency switcher in mobile menu -->
+                            <template v-if="currencies.length > 0">
+                                <div class="px-4 py-1 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+                                    {{ $t('currency') }}
+                                </div>
+                                <button
+                                    v-for="c in currencies"
+                                    :key="c.code"
+                                    type="button"
+                                    @click="chooseCurrency(c.code)"
+                                    class="flex w-full items-center justify-between gap-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    :class="c.code === currentCurrencyCode ? 'font-semibold text-blue-600 dark:text-blue-400' : ''"
+                                >
+                                    <span>{{ c.name }}</span>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ c.code }} {{ c.symbol }}</span>
+                                </button>
+                            </template>
+
                             <!-- Language switcher in mobile menu -->
                             <button
                                 type="button"

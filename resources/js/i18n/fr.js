@@ -170,4 +170,6 @@ export default {
     },
     darkMode: 'Mode sombre',
     switchLanguage: 'Changer de langue',
+    switchCurrency: 'Changer de devise',
+    currency: 'Devise',
 };

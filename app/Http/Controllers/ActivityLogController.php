@@ -26,12 +26,13 @@ class ActivityLogController extends Controller
         }
 
         if ($request->filled('search')) {
-            // Escape LIKE wildcards to prevent wildcard injection
-            $term = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->input('search'));
+            // Escape LIKE wildcards to prevent wildcard injection.
+            // Use ESCAPE '\' syntax (supported by MySQL, PostgreSQL, and SQLite).
+            $term = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $request->input('search')) . '%';
             $query->where(function ($q) use ($term) {
-                $q->where('user_name',      'like', "%{$term}%")
-                  ->orWhere('subject_label', 'like', "%{$term}%")
-                  ->orWhere('ip_address',    'like', "%{$term}%");
+                $q->whereRaw("user_name LIKE ? ESCAPE '\\'",      [$term])
+                  ->orWhereRaw("subject_label LIKE ? ESCAPE '\\'", [$term])
+                  ->orWhereRaw("ip_address LIKE ? ESCAPE '\\'",    [$term]);
             });
         }
 

@@ -1,11 +1,10 @@
-const formatter = new Intl.NumberFormat('fr-FR', {
-    style:    'currency',
-    currency: 'XOF',
-    maximumFractionDigits: 0,
-});
+import { useCurrency } from './useCurrency';
 
+/**
+ * Thin wrapper kept for backward-compat with existing call sites.
+ * Delegates to useCurrency so formatting always uses the user's active currency.
+ */
 export function useFormatMoney() {
-    return {
-        format: (value) => formatter.format(Number(value) || 0),
-    };
+    const { format } = useCurrency();
+    return { format };
 }

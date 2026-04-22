@@ -222,7 +222,7 @@ class DepenseTest extends TestCase
     public function test_store_validates_required_fields(): void
     {
         $this->actingAs($this->user)->post('/depenses', [])
-            ->assertSessionHasErrors(['budget_id', 'categorie_id', 'libelle', 'montant', 'date_depense']);
+            ->assertSessionHasErrors(['budget_id', 'libelle', 'montant', 'date_depense']); // categorie_id is nullable
     }
 
     public function test_montant_must_be_non_negative(): void

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Currency;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -52,6 +53,12 @@ class HandleInertiaRequests extends Middleware
                 $data['logo_url'] = $settings->logo_path ? route('logo') : null;
                 return $data;
             },
+            // Active currencies shared with every page so the navbar switcher
+            // can list available options without a dedicated API call.
+            'currencies' => fn () => Currency::where('is_active', true)
+                ->orderBy('is_default', 'desc')
+                ->orderBy('code')
+                ->get(['code', 'name', 'symbol']),
         ];
     }
 }

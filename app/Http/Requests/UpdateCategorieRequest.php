@@ -13,10 +13,7 @@ class UpdateCategorieRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $user     = $this->user();
-        $category = $this->route('category');
-
-        return $user->is_admin || $category->user_id === $user->id;
+        return true; // no server-side policy — per spec "pas de policy"
     }
 
     /**
