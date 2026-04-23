@@ -1,19 +1,19 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import AppModal from '@/Components/AppModal.vue';
-import AppBadge from '@/Components/AppBadge.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import AppModal     from '@/Components/AppModal.vue';
+import AppBadge     from '@/Components/AppBadge.vue';
+import PeriodFilter from '@/Components/PeriodFilter.vue';
+import PrimaryButton   from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
+import TextInput  from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { useFormatMoney } from '@/composables/useFormatMoney';
 import { useCurrency } from '@/composables/useCurrency';
-import { useFlash } from '@/composables/useFlash';
-import { useLocale } from '@/composables/useLocale';
+import { useFlash }    from '@/composables/useFlash';
+import { useLocale }   from '@/composables/useLocale';
 
 const props = defineProps({
     depenses:   Object,
@@ -23,19 +23,27 @@ const props = defineProps({
 });
 
 const { t } = useI18n();
-const { format } = useFormatMoney();
-const { currencies, currentCode } = useCurrency();
+const { format, formatWithCode, currencies, currentCode } = useCurrency();
 const { success } = useFlash();
 const { moisCourts, formatDate } = useLocale();
+
+const isAllCurrencies = computed(() => props.filters?.currency === 'all');
 
 const filterBudget    = ref(props.filters.budget_id    ?? '');
 const filterCategorie = ref(props.filters.categorie_id ?? '');
 
-function applyFilters() {
+function applyFilters(periodFilters = {}) {
     router.get(route('depenses.index'), {
         budget_id:    filterBudget.value    || undefined,
         categorie_id: filterCategorie.value || undefined,
-    }, { preserveState: true, replace: true });
+        mois:         periodFilters.mois     ?? props.filters?.mois     ?? undefined,
+        annee:        periodFilters.annee    ?? props.filters?.annee    ?? undefined,
+        currency:     periodFilters.currency ?? props.filters?.currency ?? undefined,
+    }, { preserveState: false, replace: true });
+}
+
+function applyEntityFilters() {
+    applyFilters();
 }
 
 const showCreate = ref(false);
@@ -96,18 +104,26 @@ function budgetLabel(b) {
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-4">
                 <div v-if="success" class="rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
 
-                <!-- Filters -->
+                <!-- Period / currency filter -->
+                <PeriodFilter
+                    :mois="filters?.mois"
+                    :annee="filters?.annee"
+                    :currency="filters?.currency"
+                    @change="applyFilters"
+                />
+
+                <!-- Entity filters (budget + category) -->
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-6 py-4 flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-end">
                     <div class="w-full sm:w-auto">
                         <InputLabel :value="$t('expenses.budget')" />
-                        <select v-model="filterBudget" @change="applyFilters" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
+                        <select v-model="filterBudget" @change="applyEntityFilters" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
                             <option value="">{{ $t('expenses.allBudgets') }}</option>
                             <option v-for="b in budgets" :key="b.id" :value="b.id">{{ budgetLabel(b) }}</option>
                         </select>
                     </div>
                     <div class="w-full sm:w-auto">
                         <InputLabel :value="$t('common.category')" />
-                        <select v-model="filterCategorie" @change="applyFilters" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
+                        <select v-model="filterCategorie" @change="applyEntityFilters" class="mt-1 block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm">
                             <option value="">{{ $t('expenses.allCategories') }}</option>
                             <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
                         </select>
@@ -142,7 +158,7 @@ function budgetLabel(b) {
                                     {{ d.budget ? budgetLabel(d.budget) : '—' }}
                                 </td>
                                 <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(d.date_depense) }}</td>
-                                <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">{{ format(d.montant) }}</td>
+                                <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">{{ isAllCurrencies ? formatWithCode(d.montant, d.currency_code) : format(d.montant) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">
                                     <button @click="openEdit(d)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">{{ $t('common.edit') }}</button>
                                     <button @click="deleteDepense(d.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">{{ $t('common.delete') }}</button>

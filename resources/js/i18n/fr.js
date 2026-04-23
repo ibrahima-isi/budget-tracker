@@ -42,6 +42,11 @@ export default {
         note:     'Note (optionnel)',
         category: 'Catégorie',
         currency: 'Devise',
+        month:    'Mois',
+        year:     'Année',
+        allMonths:      'Tous les mois',
+        allYears:       'Toutes les années',
+        allCurrencies:  'Toutes les devises',
     },
     dashboard: {
         title:           'Dashboard',
@@ -56,8 +61,9 @@ export default {
         noExpensesMonth: 'Aucune dépense ce mois-ci.',
         recentExpenses:  'Dernières dépenses',
         seeAll:          'Voir tout',
-        noExpenses:      'Aucune dépense.',
-        category:        'Catégorie',
+        noExpenses:          'Aucune dépense.',
+        category:            'Catégorie',
+        mixedCurrencyNote:   'Les totaux cumulent plusieurs devises et peuvent ne pas être directement comparables.',
     },
     budgets: {
         title:          'Budgets',

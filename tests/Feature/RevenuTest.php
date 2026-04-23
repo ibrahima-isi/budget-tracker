@@ -230,4 +230,92 @@ class RevenuTest extends TestCase
     {
         $this->actingAs($this->user)->delete('/revenus/99999')->assertNotFound();
     }
+
+    // ── Period & currency filters ──────────────────────────────────────────────
+
+    public function test_filters_prop_is_returned_on_index(): void
+    {
+        $this->actingAs($this->user)->get('/revenus?mois=4&annee=2025')
+            ->assertInertia(fn ($page) => $page
+                ->has('filters')
+                ->where('filters.mois', 4)
+                ->where('filters.annee', 2025)
+            );
+    }
+
+    public function test_mois_filter_returns_only_matching_month(): void
+    {
+        // April 2025
+        Revenu::factory()->create([
+            'user_id'      => $this->user->id,
+            'mois'         => 4,
+            'annee'        => 2025,
+            'date_revenu'  => '2025-04-01',
+            'currency_code' => 'XOF',
+        ]);
+        // June 2025 — must be excluded
+        Revenu::factory()->create([
+            'user_id'      => $this->user->id,
+            'mois'         => 6,
+            'annee'        => 2025,
+            'date_revenu'  => '2025-06-01',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/revenus?mois=4&annee=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page->has('revenus.data', 1));
+    }
+
+    public function test_annee_filter_returns_only_matching_year(): void
+    {
+        Revenu::factory()->create([
+            'user_id'      => $this->user->id,
+            'mois'         => 4,
+            'annee'        => 2025,
+            'date_revenu'  => '2025-04-01',
+            'currency_code' => 'XOF',
+        ]);
+        // 2024 — must be excluded
+        Revenu::factory()->create([
+            'user_id'      => $this->user->id,
+            'mois'         => 4,
+            'annee'        => 2024,
+            'date_revenu'  => '2024-04-01',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/revenus?annee=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page->has('revenus.data', 1));
+    }
+
+    public function test_currency_all_shows_all_currencies(): void
+    {
+        Revenu::factory()->create([
+            'user_id' => $this->user->id, 'mois' => now()->month, 'annee' => now()->year,
+            'date_revenu' => now()->format('Y-m-01'), 'currency_code' => 'XOF',
+        ]);
+        Revenu::factory()->create([
+            'user_id' => $this->user->id, 'mois' => now()->month, 'annee' => now()->year,
+            'date_revenu' => now()->format('Y-m-01'), 'currency_code' => 'EUR',
+        ]);
+
+        $this->actingAs($this->user)->get('/revenus?currency=all')
+            ->assertInertia(fn ($page) => $page->has('revenus.data', 2));
+    }
+
+    public function test_default_currency_filter_excludes_other_currencies(): void
+    {
+        Revenu::factory()->create([
+            'user_id' => $this->user->id, 'mois' => now()->month, 'annee' => now()->year,
+            'date_revenu' => now()->format('Y-m-01'), 'currency_code' => 'XOF',
+        ]);
+        Revenu::factory()->create([
+            'user_id' => $this->user->id, 'mois' => now()->month, 'annee' => now()->year,
+            'date_revenu' => now()->format('Y-m-01'), 'currency_code' => 'EUR',
+        ]);
+
+        // No currency param → session default (XOF in tests)
+        $this->actingAs($this->user)->get('/revenus')
+            ->assertInertia(fn ($page) => $page->has('revenus.data', 1));
+    }
 }

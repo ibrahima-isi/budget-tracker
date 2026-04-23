@@ -47,5 +47,21 @@ export function useCurrency() {
         }).format(Number(amount) || 0);
     }
 
-    return { currencies, currentCode, currentCurrency, setCurrency, format };
+    /**
+     * Format an amount with an explicit currency code (for mixed-currency lists).
+     */
+    function formatWithCode(amount, code) {
+        const c = code || currentCode.value;
+        try {
+            return new Intl.NumberFormat('fr-FR', {
+                style:                'currency',
+                currency:             c,
+                maximumFractionDigits: 0,
+            }).format(Number(amount) || 0);
+        } catch {
+            return `${Number(amount) || 0} ${c}`;
+        }
+    }
+
+    return { currencies, currentCode, currentCurrency, setCurrency, format, formatWithCode };
 }

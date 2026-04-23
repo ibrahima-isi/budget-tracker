@@ -1,14 +1,16 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import StatCard from '@/Components/StatCard.vue';
+import StatCard       from '@/Components/StatCard.vue';
 import BudgetProgress from '@/Components/BudgetProgress.vue';
-import AppBadge from '@/Components/AppBadge.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import AppBadge       from '@/Components/AppBadge.vue';
+import PeriodFilter   from '@/Components/PeriodFilter.vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { Doughnut } from 'vue-chartjs';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { useFormatMoney } from '@/composables/useFormatMoney';
-import { useLocale } from '@/composables/useLocale';
+import { useCurrency }    from '@/composables/useCurrency';
+import { useLocale }      from '@/composables/useLocale';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -18,13 +20,17 @@ const props = defineProps({
     dernieresDepenses: Array,
     mois:              Number,
     annee:             Number,
+    filters:           Object,
 });
 
-const { format } = useFormatMoney();
-const { locale, formatDate } = useLocale();
+const { format, formatWithCode } = useCurrency();
+const { locale, formatDate }     = useLocale();
+
+// Show a note when all currencies are combined
+const isAllCurrencies = computed(() => props.filters?.currency === 'all');
 
 // Persist toggle selection across navigations
-const stored = localStorage.getItem('dashboard_periode');
+const stored  = localStorage.getItem('dashboard_periode');
 const periode = ref(stored === 'annuel' ? 'annuel' : 'mensuel');
 watch(periode, (val) => localStorage.setItem('dashboard_periode', val));
 
@@ -34,7 +40,6 @@ const periodeDepenses = ref(periode.value);
 const periodeRevenus  = ref(periode.value);
 const periodeSolde    = ref(periode.value);
 
-// Global toggle pushes to all cards
 watch(periode, v => {
     periodeBudget.value   = v;
     periodeDepenses.value = v;
@@ -61,11 +66,18 @@ const chartData = computed(() => ({
     }],
 }));
 
-// computed so dark-mode theming can be added here later
 const chartOptions = computed(() => ({
     responsive: true,
     plugins: { legend: { position: 'bottom' } },
 }));
+
+function applyFilters({ mois, annee, currency }) {
+    router.get(route('dashboard'), {
+        mois:     mois     ?? undefined,
+        annee:    annee    ?? undefined,
+        currency: currency ?? undefined,
+    }, { preserveState: false, replace: true });
+}
 </script>
 
 <template>
@@ -105,6 +117,20 @@ const chartOptions = computed(() => ({
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-6">
+
+                <!-- Period / currency filter -->
+                <PeriodFilter
+                    :mois="filters?.mois"
+                    :annee="filters?.annee"
+                    :currency="filters?.currency"
+                    :show-month="periode === 'mensuel'"
+                    @change="applyFilters"
+                />
+
+                <!-- Mixed-currency warning -->
+                <div v-if="isAllCurrencies" class="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 px-4 py-2 text-amber-700 dark:text-amber-400 text-sm">
+                    {{ $t('common.allCurrencies') }} — {{ $t('dashboard.mixedCurrencyNote') }}
+                </div>
 
                 <!-- Stat Cards -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -171,7 +197,6 @@ const chartOptions = computed(() => ({
                                     :class="current.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
                                 >{{ format(current.solde) }}</span>
                             </div>
-                            <!-- Annual breakdown: monthly-cumulated vs annual-type -->
                             <div v-if="periode === 'annuel'" class="text-xs text-gray-400 dark:text-gray-500 flex gap-3">
                                 <span>Mensuel cumulé : {{ format(annuel.totalBudgetMensualise) }}</span>
                                 <span>·</span>
@@ -216,7 +241,9 @@ const chartOptions = computed(() => ({
                                     <span v-else class="text-gray-400 dark:text-gray-500">—</span>
                                 </td>
                                 <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(d.date_depense) }}</td>
-                                <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">{{ format(d.montant) }}</td>
+                                <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">
+                                    {{ isAllCurrencies ? formatWithCode(d.montant, d.currency_code) : format(d.montant) }}
+                                </td>
                             </tr>
                         </tbody>
                     </table>

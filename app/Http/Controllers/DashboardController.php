@@ -5,49 +5,55 @@ namespace App\Http\Controllers;
 use App\Models\Budget;
 use App\Models\Depense;
 use App\Models\Revenu;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $user     = Auth::user();
-        $mois     = now()->month;
-        $annee    = now()->year;
-        $currency = $this->currentCurrency();
+        $user = Auth::user();
+
+        // Period: query params override, fall back to current month/year
+        $mois  = $request->query('mois')  ? (int) $request->query('mois')  : now()->month;
+        $annee = $request->query('annee') ? (int) $request->query('annee') : now()->year;
+
+        // Currency: 'all' = no filter, '' / null = session default
+        $currency = $request->query('currency', '');
+        if ($currency === '' || $currency === null) {
+            $currency = $this->currentCurrency();
+        }
+
+        // Closure to apply currency filter conditionally
+        $c = fn ($q) => $currency !== 'all' ? $q->where('currency_code', $currency) : $q;
 
         // ── Monthly ──────────────────────────────────────────────────────────
-        $budgetMensuel = Budget::where('user_id', $user->id)
-            ->where('currency_code', $currency)
+        $budgetMensuel = $c(Budget::where('user_id', $user->id)
             ->where('type', 'mensuel')
             ->where('mois', $mois)
-            ->where('annee', $annee)
+            ->where('annee', $annee))
             ->first();
 
-        $totalBudgetMensuel = Budget::where('user_id', $user->id)
-            ->where('currency_code', $currency)
+        $totalBudgetMensuel = $c(Budget::where('user_id', $user->id)
             ->where('type', 'mensuel')
             ->where('mois', $mois)
-            ->where('annee', $annee)
+            ->where('annee', $annee))
             ->sum('montant_prevu');
 
-        $totalDepensesMensuel = Depense::where('user_id', $user->id)
-            ->where('currency_code', $currency)
+        $totalDepensesMensuel = $c(Depense::where('user_id', $user->id)
             ->whereMonth('date_depense', $mois)
-            ->whereYear('date_depense', $annee)
+            ->whereYear('date_depense', $annee))
             ->sum('montant');
 
-        $totalRevenusMensuel = Revenu::where('user_id', $user->id)
-            ->where('currency_code', $currency)
+        $totalRevenusMensuel = $c(Revenu::where('user_id', $user->id)
             ->where('mois', $mois)
-            ->where('annee', $annee)
+            ->where('annee', $annee))
             ->sum('montant');
 
-        $depensesParCategorieMensuel = Depense::where('user_id', $user->id)
-            ->where('currency_code', $currency)
+        $depensesParCategorieMensuel = $c(Depense::where('user_id', $user->id)
             ->whereMonth('date_depense', $mois)
-            ->whereYear('date_depense', $annee)
+            ->whereYear('date_depense', $annee))
             ->selectRaw('categorie_id, SUM(montant) as total')
             ->groupBy('categorie_id')
             ->with('categorie:id,nom,couleur')
@@ -59,31 +65,26 @@ class DashboardController extends Controller
             ->values();
 
         // ── Annual ───────────────────────────────────────────────────────────
-        $totalBudgetMensualise = Budget::where('user_id', $user->id)
-            ->where('currency_code', $currency)
+        $totalBudgetMensualise = $c(Budget::where('user_id', $user->id)
             ->where('type', 'mensuel')
-            ->where('annee', $annee)
+            ->where('annee', $annee))
             ->sum('montant_prevu');
 
-        $totalBudgetAnnuelType = Budget::where('user_id', $user->id)
-            ->where('currency_code', $currency)
+        $totalBudgetAnnuelType = $c(Budget::where('user_id', $user->id)
             ->where('type', 'annuel')
-            ->where('annee', $annee)
+            ->where('annee', $annee))
             ->sum('montant_prevu');
 
-        $totalDepensesAnnuel = Depense::where('user_id', $user->id)
-            ->where('currency_code', $currency)
-            ->whereYear('date_depense', $annee)
+        $totalDepensesAnnuel = $c(Depense::where('user_id', $user->id)
+            ->whereYear('date_depense', $annee))
             ->sum('montant');
 
-        $totalRevenusAnnuel = Revenu::where('user_id', $user->id)
-            ->where('currency_code', $currency)
-            ->where('annee', $annee)
+        $totalRevenusAnnuel = $c(Revenu::where('user_id', $user->id)
+            ->where('annee', $annee))
             ->sum('montant');
 
-        $depensesParCategorieAnnuel = Depense::where('user_id', $user->id)
-            ->where('currency_code', $currency)
-            ->whereYear('date_depense', $annee)
+        $depensesParCategorieAnnuel = $c(Depense::where('user_id', $user->id)
+            ->whereYear('date_depense', $annee))
             ->selectRaw('categorie_id, SUM(montant) as total')
             ->groupBy('categorie_id')
             ->with('categorie:id,nom,couleur')
@@ -94,9 +95,8 @@ class DashboardController extends Controller
             ])
             ->values();
 
-        // ── Recent expenses (period-independent) ─────────────────────────────
-        $dernieresDepenses = Depense::where('user_id', $user->id)
-            ->where('currency_code', $currency)
+        // ── Recent expenses (filtered by period & currency) ──────────────────
+        $dernieresDepenses = $c(Depense::where('user_id', $user->id))
             ->with('categorie:id,nom,couleur')
             ->latest('date_depense')
             ->take(5)
@@ -130,6 +130,11 @@ class DashboardController extends Controller
                 'totalRevenus'          => (float) $totalRevenusAnnuel,
                 'solde'                 => (float) $totalRevenusAnnuel - (float) $totalDepensesAnnuel,
                 'depensesParCategorie'  => $depensesParCategorieAnnuel,
+            ],
+            'filters' => [
+                'mois'     => $mois,
+                'annee'    => $annee,
+                'currency' => $currency,
             ],
         ]);
     }

@@ -21,6 +21,7 @@ class BudgetFactory extends Factory
             'annee'         => $this->faker->numberBetween(2024, 2026),
             'montant_prevu' => $this->faker->randomFloat(2, 50000, 500000),
             'libelle'       => $this->faker->optional()->sentence(3),
+            'currency_code' => 'XOF',
         ];
     }
 

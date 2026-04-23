@@ -308,4 +308,72 @@ class BudgetTest extends TestCase
     {
         $this->actingAs($this->user)->delete('/budgets/99999')->assertNotFound();
     }
+
+    // ── Period & currency filters ──────────────────────────────────────────────
+
+    public function test_filters_prop_is_returned_on_index(): void
+    {
+        $this->actingAs($this->user)->get('/budgets?annee=2025')
+            ->assertInertia(fn ($page) => $page
+                ->has('filters')
+                ->where('filters.annee', 2025)
+            );
+    }
+
+    public function test_annee_filter_excludes_other_years(): void
+    {
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'annuel', 'annee' => 2025, 'currency_code' => 'XOF',
+        ]);
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'annuel', 'annee' => 2024, 'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/budgets?annee=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page->has('budgets.data', 1));
+    }
+
+    public function test_mois_filter_shows_matching_mensuel_and_all_annuel_for_year(): void
+    {
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'mensuel', 'mois' => 4, 'annee' => 2025, 'currency_code' => 'XOF',
+        ]);
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'mensuel', 'mois' => 6, 'annee' => 2025, 'currency_code' => 'XOF',
+        ]);
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'annuel', 'mois' => null, 'annee' => 2025, 'currency_code' => 'XOF',
+        ]);
+
+        // Month 4 + year 2025: April mensuel + annuel 2025 (not June mensuel)
+        $this->actingAs($this->user)->get('/budgets?mois=4&annee=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page->has('budgets.data', 2));
+    }
+
+    public function test_currency_all_shows_budgets_across_currencies(): void
+    {
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'annuel', 'annee' => now()->year, 'currency_code' => 'XOF',
+        ]);
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'annuel', 'annee' => now()->year, 'currency_code' => 'EUR',
+        ]);
+
+        $this->actingAs($this->user)->get('/budgets?currency=all')
+            ->assertInertia(fn ($page) => $page->has('budgets.data', 2));
+    }
+
+    public function test_default_currency_filter_excludes_other_currencies(): void
+    {
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'annuel', 'annee' => now()->year, 'currency_code' => 'XOF',
+        ]);
+        Budget::factory()->create([
+            'user_id' => $this->user->id, 'type' => 'annuel', 'annee' => now()->year, 'currency_code' => 'EUR',
+        ]);
+
+        // No currency param → session default (XOF in tests)
+        $this->actingAs($this->user)->get('/budgets')
+            ->assertInertia(fn ($page) => $page->has('budgets.data', 1));
+    }
 }

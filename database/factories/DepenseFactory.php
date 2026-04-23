@@ -21,7 +21,8 @@ class DepenseFactory extends Factory
             'libelle'      => $this->faker->sentence(3),
             'montant'      => $this->faker->randomFloat(2, 1000, 50000),
             'date_depense' => $this->faker->date('Y-m-d'),
-            'note'         => $this->faker->optional()->sentence(),
+            'note'          => $this->faker->optional()->sentence(),
+            'currency_code' => 'XOF',
         ];
     }
 }

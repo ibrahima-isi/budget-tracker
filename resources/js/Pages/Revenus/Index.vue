@@ -1,26 +1,35 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import AppModal from '@/Components/AppModal.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import AppModal     from '@/Components/AppModal.vue';
+import PeriodFilter from '@/Components/PeriodFilter.vue';
+import PrimaryButton   from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
+import TextInput  from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { useFormatMoney } from '@/composables/useFormatMoney';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { useCurrency } from '@/composables/useCurrency';
-import { useFlash } from '@/composables/useFlash';
-import { useLocale } from '@/composables/useLocale';
+import { useFlash }    from '@/composables/useFlash';
+import { useLocale }   from '@/composables/useLocale';
 
-const props = defineProps({ revenus: Object });
+const props = defineProps({ revenus: Object, filters: Object });
 
 const { t } = useI18n();
-const { format } = useFormatMoney();
-const { currencies, currentCode } = useCurrency();
+const { format, formatWithCode, currencies, currentCode } = useCurrency();
 const { success } = useFlash();
 const { moisCourts, formatDate } = useLocale();
+
+const isAllCurrencies = computed(() => props.filters?.currency === 'all');
+
+function applyFilters({ mois, annee, currency }) {
+    router.get(route('revenus.index'), {
+        mois:     mois     ?? undefined,
+        annee:    annee    ?? undefined,
+        currency: currency ?? undefined,
+    }, { preserveState: false, replace: true });
+}
 
 const showCreate = ref(false);
 const form = useForm({ source: '', montant: '', date_revenu: new Date().toISOString().slice(0, 10), note: '', currency_code: currentCode.value });
@@ -71,8 +80,16 @@ function deleteRevenu(id) {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div v-if="success" class="mb-4 rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
+            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-4">
+                <div v-if="success" class="rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
+
+                <!-- Period / currency filter -->
+                <PeriodFilter
+                    :mois="filters?.mois"
+                    :annee="filters?.annee"
+                    :currency="filters?.currency"
+                    @change="applyFilters"
+                />
 
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div class="overflow-x-auto">
@@ -94,7 +111,7 @@ function deleteRevenu(id) {
                                 <td class="px-6 py-3 text-gray-900 dark:text-gray-100 font-medium">{{ r.source }}</td>
                                 <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ moisCourts[r.mois] }} {{ r.annee }}</td>
                                 <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(r.date_revenu) }}</td>
-                                <td class="px-6 py-3 text-right font-medium text-green-600 dark:text-green-400">{{ format(r.montant) }}</td>
+                                <td class="px-6 py-3 text-right font-medium text-green-600 dark:text-green-400">{{ isAllCurrencies ? formatWithCode(r.montant, r.currency_code) : format(r.montant) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">
                                     <button @click="openEdit(r)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">{{ $t('common.edit') }}</button>
                                     <button @click="deleteRevenu(r.id)" class="text-red-600 dark:text-red-400 hover:underline text-xs">{{ $t('common.delete') }}</button>

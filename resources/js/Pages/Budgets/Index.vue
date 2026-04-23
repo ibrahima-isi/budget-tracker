@@ -1,26 +1,35 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import AppModal from '@/Components/AppModal.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import AppModal      from '@/Components/AppModal.vue';
+import PeriodFilter  from '@/Components/PeriodFilter.vue';
+import PrimaryButton   from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
+import TextInput  from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { useFormatMoney } from '@/composables/useFormatMoney';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { useCurrency } from '@/composables/useCurrency';
-import { useFlash } from '@/composables/useFlash';
-import { useLocale } from '@/composables/useLocale';
+import { useFlash }    from '@/composables/useFlash';
+import { useLocale }   from '@/composables/useLocale';
 
-const props = defineProps({ budgets: Object, categories: Array });
+const props = defineProps({ budgets: Object, categories: Array, filters: Object });
 
 const { t } = useI18n();
-const { format } = useFormatMoney();
-const { currencies, currentCode } = useCurrency();
+const { format, formatWithCode, currencies, currentCode } = useCurrency();
 const { success } = useFlash();
 const { moisCourts } = useLocale();
+
+const isAllCurrencies = computed(() => props.filters?.currency === 'all');
+
+function applyFilters({ mois, annee, currency }) {
+    router.get(route('budgets.index'), {
+        mois:     mois     ?? undefined,
+        annee:    annee    ?? undefined,
+        currency: currency ?? undefined,
+    }, { preserveState: false, replace: true });
+}
 
 // Create
 const showCreate = ref(false);
@@ -75,8 +84,16 @@ function deleteBudget(id) {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <div v-if="success" class="mb-4 rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
+            <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 space-y-4">
+                <div v-if="success" class="rounded-lg bg-green-50 dark:bg-green-900/30 px-4 py-3 text-green-700 dark:text-green-400 text-sm">{{ success }}</div>
+
+                <!-- Filters -->
+                <PeriodFilter
+                    :mois="filters?.mois"
+                    :annee="filters?.annee"
+                    :currency="filters?.currency"
+                    @change="applyFilters"
+                />
 
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div class="overflow-x-auto">
@@ -112,9 +129,9 @@ function deleteBudget(id) {
                                     >{{ b.categorie.nom }}</span>
                                     <span v-else class="text-gray-400 dark:text-gray-500">—</span>
                                 </td>
-                                <td class="px-6 py-3 text-right text-gray-800 dark:text-gray-200 font-medium">{{ format(b.montant_prevu) }}</td>
-                                <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">{{ format(b.montant_depense) }}</td>
-                                <td class="px-6 py-3 text-right font-semibold" :class="b.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ format(b.solde) }}</td>
+                                <td class="px-6 py-3 text-right text-gray-800 dark:text-gray-200 font-medium">{{ isAllCurrencies ? formatWithCode(b.montant_prevu, b.currency_code) : format(b.montant_prevu) }}</td>
+                                <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">{{ isAllCurrencies ? formatWithCode(b.montant_depense, b.currency_code) : format(b.montant_depense) }}</td>
+                                <td class="px-6 py-3 text-right font-semibold" :class="b.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ isAllCurrencies ? formatWithCode(b.solde, b.currency_code) : format(b.solde) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">
                                     <Link :href="route('budgets.show', b.id)" class="text-blue-600 dark:text-blue-400 hover:underline text-xs">{{ $t('common.detail') }}</Link>
                                     <button @click="openEdit(b)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">{{ $t('common.edit') }}</button>

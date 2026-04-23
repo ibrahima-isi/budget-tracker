@@ -40,6 +40,14 @@ export function useLocale() {
         )];
     });
 
+    // Locale-aware long month labels (index 0 = '', 1-12 = January-December)
+    const moisLongs = computed(() => {
+        const fmt = new Intl.DateTimeFormat(locale.value, { month: 'long' });
+        return ['', ...Array.from({ length: 12 }, (_, i) =>
+            fmt.format(new Date(2000, i, 1))
+        )];
+    });
+
     function formatDate(dateStr) {
         if (!dateStr) return '';
         // Append noon to avoid UTC-midnight → local-previous-day shift
@@ -47,5 +55,5 @@ export function useLocale() {
         return d.toLocaleDateString(locale.value);
     }
 
-    return { locale, moisCourts, formatDate, setLocale, supported: SUPPORTED };
+    return { locale, moisCourts, moisLongs, formatDate, setLocale, supported: SUPPORTED };
 }

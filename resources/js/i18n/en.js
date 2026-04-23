@@ -42,6 +42,11 @@ export default {
         note:     'Note (optional)',
         category: 'Category',
         currency: 'Currency',
+        month:    'Month',
+        year:     'Year',
+        allMonths:      'All months',
+        allYears:       'All years',
+        allCurrencies:  'All currencies',
     },
     dashboard: {
         title:           'Dashboard',
@@ -56,8 +61,9 @@ export default {
         noExpensesMonth: 'No expenses this month.',
         recentExpenses:  'Recent Expenses',
         seeAll:          'See all',
-        noExpenses:      'No expenses.',
-        category:        'Category',
+        noExpenses:          'No expenses.',
+        category:            'Category',
+        mixedCurrencyNote:   'Totals combine multiple currencies and may not be directly comparable.',
     },
     budgets: {
         title:          'Budgets',

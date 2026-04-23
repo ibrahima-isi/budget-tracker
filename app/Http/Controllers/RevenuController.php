@@ -14,15 +14,34 @@ class RevenuController extends Controller
 {
     public function index(Request $request)
     {
-        $currency = $this->currentCurrency();
+        $mois  = $request->query('mois')  ? (int) $request->query('mois')  : null;
+        $annee = $request->query('annee') ? (int) $request->query('annee') : null;
 
-        $revenus = Revenu::where('user_id', Auth::id())
-            ->where('currency_code', $currency)
-            ->latest('date_revenu')
-            ->paginate(20);
+        $currency = $request->query('currency', '');
+        if ($currency === '' || $currency === null) {
+            $currency = $this->currentCurrency();
+        }
+
+        $query = Revenu::where('user_id', Auth::id())
+            ->latest('date_revenu');
+
+        if ($currency !== 'all') {
+            $query->where('currency_code', $currency);
+        }
+
+        if ($mois) {
+            $query->where('mois', $mois);
+        }
+
+        if ($annee) {
+            $query->where('annee', $annee);
+        }
+
+        $revenus = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Revenus/Index', [
             'revenus' => $revenus,
+            'filters' => ['mois' => $mois, 'annee' => $annee, 'currency' => $currency],
         ]);
     }
 

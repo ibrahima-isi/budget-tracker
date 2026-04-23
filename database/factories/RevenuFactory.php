@@ -21,7 +21,8 @@ class RevenuFactory extends Factory
             'date_revenu' => $date,
             'mois'        => (int) date('n', strtotime($date)),
             'annee'       => (int) date('Y', strtotime($date)),
-            'note'        => $this->faker->optional()->sentence(),
+            'note'         => $this->faker->optional()->sentence(),
+            'currency_code' => 'XOF',
         ];
     }
 }

@@ -280,4 +280,138 @@ class DashboardTest extends TestCase
                 ->where('annee', now()->year)
             );
     }
+
+    // ── Period filter (mois / annee query params) ──────────────────────────────
+
+    public function test_filters_prop_is_returned(): void
+    {
+        $this->actingAs($this->user)->get('/dashboard?mois=4&annee=2025')
+            ->assertInertia(fn ($page) => $page
+                ->has('filters')
+                ->where('filters.mois', 4)
+                ->where('filters.annee', 2025)
+            );
+    }
+
+    public function test_mois_param_overrides_current_month(): void
+    {
+        $this->actingAs($this->user)->get('/dashboard?mois=4&annee=2025')
+            ->assertInertia(fn ($page) => $page
+                ->where('mois', 4)
+                ->where('annee', 2025)
+            );
+    }
+
+    public function test_expenses_filtered_by_requested_month(): void
+    {
+        $budget = Budget::factory()->create([
+            'user_id' => $this->user->id,
+            'type'    => 'mensuel',
+            'mois'    => 4,
+            'annee'   => 2025,
+        ]);
+        $cat = Categorie::factory()->create();
+
+        // April 2025 expense — should be counted
+        Depense::factory()->create([
+            'user_id'      => $this->user->id,
+            'budget_id'    => $budget->id,
+            'categorie_id' => $cat->id,
+            'montant'      => 50000,
+            'date_depense' => '2025-04-15',
+            'currency_code' => 'XOF',
+        ]);
+        // Current month expense — must NOT be counted
+        Depense::factory()->create([
+            'user_id'      => $this->user->id,
+            'budget_id'    => $budget->id,
+            'categorie_id' => $cat->id,
+            'montant'      => 999999,
+            'date_depense' => now()->format('Y-m-10'),
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/dashboard?mois=4&annee=2025')
+            ->assertInertia(fn ($page) => $page->where('totalDepenses', 50000));
+    }
+
+    public function test_revenues_filtered_by_requested_month(): void
+    {
+        // April 2025 revenue
+        Revenu::factory()->create([
+            'user_id'      => $this->user->id,
+            'montant'      => 300000,
+            'mois'         => 4,
+            'annee'        => 2025,
+            'date_revenu'  => '2025-04-01',
+            'currency_code' => 'XOF',
+        ]);
+        // Current month — must NOT be counted
+        Revenu::factory()->create([
+            'user_id'      => $this->user->id,
+            'montant'      => 999999,
+            'mois'         => now()->month,
+            'annee'        => now()->year,
+            'date_revenu'  => now()->format('Y-m-01'),
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/dashboard?mois=4&annee=2025')
+            ->assertInertia(fn ($page) => $page->where('totalRevenus', 300000));
+    }
+
+    // ── Currency filter ────────────────────────────────────────────────────────
+
+    public function test_currency_all_includes_all_currencies(): void
+    {
+        $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
+        $cat    = Categorie::factory()->create();
+
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $budget->id,
+            'categorie_id'  => $cat->id,
+            'montant'       => 10000,
+            'date_depense'  => now()->format('Y-m-10'),
+            'currency_code' => 'XOF',
+        ]);
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $budget->id,
+            'categorie_id'  => $cat->id,
+            'montant'       => 200,
+            'date_depense'  => now()->format('Y-m-11'),
+            'currency_code' => 'EUR',
+        ]);
+
+        $this->actingAs($this->user)->get('/dashboard?currency=all')
+            ->assertInertia(fn ($page) => $page->where('totalDepenses', 10200));
+    }
+
+    public function test_currency_filter_excludes_other_currencies(): void
+    {
+        $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'currency_code' => 'XOF']);
+        $cat    = Categorie::factory()->create();
+
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $budget->id,
+            'categorie_id'  => $cat->id,
+            'montant'       => 10000,
+            'date_depense'  => now()->format('Y-m-10'),
+            'currency_code' => 'XOF',
+        ]);
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $budget->id,
+            'categorie_id'  => $cat->id,
+            'montant'       => 999,
+            'date_depense'  => now()->format('Y-m-11'),
+            'currency_code' => 'EUR',
+        ]);
+
+        // Only XOF (the session default) should be counted
+        $this->actingAs($this->user)->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('totalDepenses', 10000));
+    }
 }

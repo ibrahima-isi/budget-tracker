@@ -42,6 +42,11 @@ export default {
         note:     'Nota (opcional)',
         category: 'Categoría',
         currency: 'Divisa',
+        month:    'Mes',
+        year:     'Año',
+        allMonths:      'Todos los meses',
+        allYears:       'Todos los años',
+        allCurrencies:  'Todas las divisas',
     },
     dashboard: {
         title:           'Panel',
@@ -56,8 +61,9 @@ export default {
         noExpensesMonth: 'Sin gastos este mes.',
         recentExpenses:  'Últimos gastos',
         seeAll:          'Ver todo',
-        noExpenses:      'Sin gastos.',
-        category:        'Categoría',
+        noExpenses:          'Sin gastos.',
+        category:            'Categoría',
+        mixedCurrencyNote:   'Los totales combinan varias divisas y pueden no ser directamente comparables.',
     },
     budgets: {
         title:          'Presupuestos',

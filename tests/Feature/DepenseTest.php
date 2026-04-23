@@ -298,4 +298,100 @@ class DepenseTest extends TestCase
     {
         $this->actingAs($this->user)->delete('/depenses/99999')->assertNotFound();
     }
+
+    // ── Period & currency filters ──────────────────────────────────────────────
+
+    public function test_filters_prop_contains_period_and_currency(): void
+    {
+        $this->actingAs($this->user)->get('/depenses?mois=4&annee=2025')
+            ->assertInertia(fn ($page) => $page
+                ->has('filters')
+                ->where('filters.mois', 4)
+                ->where('filters.annee', 2025)
+            );
+    }
+
+    public function test_mois_filter_returns_only_matching_month(): void
+    {
+        // April 2025
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $this->budget->id,
+            'categorie_id'  => $this->categorie->id,
+            'date_depense'  => '2025-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        // June 2025 — must be excluded
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $this->budget->id,
+            'categorie_id'  => $this->categorie->id,
+            'date_depense'  => '2025-06-10',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/depenses?mois=4&annee=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page->has('depenses.data', 1));
+    }
+
+    public function test_annee_filter_returns_only_matching_year(): void
+    {
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $this->budget->id,
+            'categorie_id'  => $this->categorie->id,
+            'date_depense'  => '2025-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        // 2024 — must be excluded
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $this->budget->id,
+            'categorie_id'  => $this->categorie->id,
+            'date_depense'  => '2024-04-10',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/depenses?annee=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page->has('depenses.data', 1));
+    }
+
+    public function test_currency_all_shows_all_currencies(): void
+    {
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $this->budget->id,
+            'categorie_id'  => $this->categorie->id,
+            'currency_code' => 'XOF',
+        ]);
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $this->budget->id,
+            'categorie_id'  => $this->categorie->id,
+            'currency_code' => 'EUR',
+        ]);
+
+        $this->actingAs($this->user)->get('/depenses?currency=all')
+            ->assertInertia(fn ($page) => $page->has('depenses.data', 2));
+    }
+
+    public function test_default_currency_filter_excludes_other_currencies(): void
+    {
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $this->budget->id,
+            'categorie_id'  => $this->categorie->id,
+            'currency_code' => 'XOF',
+        ]);
+        Depense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $this->budget->id,
+            'categorie_id'  => $this->categorie->id,
+            'currency_code' => 'EUR',
+        ]);
+
+        // No currency param → session default (XOF in tests)
+        $this->actingAs($this->user)->get('/depenses')
+            ->assertInertia(fn ($page) => $page->has('depenses.data', 1));
+    }
 }
