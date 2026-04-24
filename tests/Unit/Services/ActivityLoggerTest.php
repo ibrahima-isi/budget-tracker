@@ -4,7 +4,7 @@ namespace Tests\Unit\Services;
 
 use App\Models\ActivityLog;
 use App\Models\Budget;
-use App\Models\Categorie;
+use App\Models\Category;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,16 +17,16 @@ class ActivityLoggerTest extends TestCase
 
     // ── labelFor ──────────────────────────────────────────────────────────────
 
-    public function test_label_for_returns_libelle_first(): void
+    public function test_label_for_returns_label_first(): void
     {
-        $budget = new Budget(['libelle' => 'Mon Budget', 'source' => 'ignored']);
+        $budget = new Budget(['label' => 'My Budget', 'source' => 'ignored']);
 
-        $this->assertEquals('Mon Budget', ActivityLogger::labelFor($budget));
+        $this->assertEquals('My Budget', ActivityLogger::labelFor($budget));
     }
 
-    public function test_label_for_falls_back_to_nom(): void
+    public function test_label_for_falls_back_to_name(): void
     {
-        $cat = new Categorie(['nom' => 'Alimentation']);
+        $cat = new Category(['name' => 'Alimentation']);
 
         $this->assertEquals('Alimentation', ActivityLogger::labelFor($cat));
     }
@@ -70,12 +70,12 @@ class ActivityLoggerTest extends TestCase
 
     public function test_snapshot_returns_sanitized_attributes(): void
     {
-        $cat = Categorie::factory()->create(['nom' => 'Transport', 'couleur' => '#FF0000']);
+        $cat = Category::factory()->create(['name' => 'Transport', 'color' => '#FF0000']);
 
         $snap = ActivityLogger::snapshot($cat);
 
-        $this->assertArrayHasKey('nom', $snap);
-        $this->assertEquals('Transport', $snap['nom']);
+        $this->assertArrayHasKey('name', $snap);
+        $this->assertEquals('Transport', $snap['name']);
         $this->assertArrayNotHasKey('password', $snap);
     }
 
@@ -83,20 +83,20 @@ class ActivityLoggerTest extends TestCase
 
     public function test_diff_returns_old_and_new_for_changed_fields(): void
     {
-        $cat = Categorie::factory()->create(['nom' => 'Vieux']);
-        $cat->nom = 'Nouveau';
+        $cat = Category::factory()->create(['name' => 'Old Name']);
+        $cat->name = 'New Name';
 
         $diff = ActivityLogger::diff($cat);
 
         $this->assertArrayHasKey('old', $diff);
         $this->assertArrayHasKey('new', $diff);
-        $this->assertEquals('Vieux', $diff['old']['nom']);
-        $this->assertEquals('Nouveau', $diff['new']['nom']);
+        $this->assertEquals('Old Name', $diff['old']['name']);
+        $this->assertEquals('New Name', $diff['new']['name']);
     }
 
     public function test_diff_returns_empty_array_when_nothing_changed(): void
     {
-        $cat  = Categorie::factory()->create(['nom' => 'Same']);
+        $cat  = Category::factory()->create(['name' => 'Same']);
         $diff = ActivityLogger::diff($cat); // no dirty fields after fresh create+sync
 
         $this->assertEmpty($diff);
@@ -109,13 +109,13 @@ class ActivityLoggerTest extends TestCase
         $user = User::factory()->create();
         Auth::login($user);
 
-        $cat = Categorie::factory()->create(['nom' => 'Courses']);
+        $cat = Category::factory()->create(['name' => 'Courses']);
 
-        ActivityLogger::log('created', $cat, ['new' => ['nom' => 'Courses']]);
+        ActivityLogger::log('created', $cat, ['new' => ['name' => 'Courses']]);
 
         $this->assertDatabaseHas('activity_logs', [
             'event'         => 'created',
-            'subject_type'  => 'Categorie',
+            'subject_type'  => 'Category',
             'subject_label' => 'Courses',
             'user_id'       => $user->id,
         ]);
@@ -136,7 +136,7 @@ class ActivityLoggerTest extends TestCase
 
     public function test_log_works_without_authenticated_user(): void
     {
-        $cat = Categorie::factory()->create();
+        $cat = Category::factory()->create();
 
         ActivityLogger::log('created', $cat);
 

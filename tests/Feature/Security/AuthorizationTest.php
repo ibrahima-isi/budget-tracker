@@ -3,9 +3,9 @@
 namespace Tests\Feature\Security;
 
 use App\Models\Budget;
-use App\Models\Categorie;
-use App\Models\Depense;
-use App\Models\Revenu;
+use App\Models\Category;
+use App\Models\Expense;
+use App\Models\Revenue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,14 +20,14 @@ class AuthorizationTest extends TestCase
 
     private User $attacker;
     private User $victim;
-    private Categorie $categorie;
+    private Category $category;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->attacker  = User::factory()->create(['email_verified_at' => now()]);
-        $this->victim    = User::factory()->create(['email_verified_at' => now()]);
-        $this->categorie = Categorie::factory()->create();
+        $this->attacker = User::factory()->create(['email_verified_at' => now()]);
+        $this->victim   = User::factory()->create(['email_verified_at' => now()]);
+        $this->category = Category::factory()->create();
     }
 
     // ── Budget ─────────────────────────────────────────────────────────────────
@@ -47,13 +47,13 @@ class AuthorizationTest extends TestCase
 
         $this->actingAs($this->attacker)
             ->patch("/budgets/{$budget->id}", [
-                'type'          => 'annuel',
-                'annee'         => $budget->annee,
-                'montant_prevu' => 999999,
+                'type'           => 'annuel',
+                'year'           => $budget->year,
+                'planned_amount' => 999999,
             ])
             ->assertForbidden();
 
-        $this->assertNotEquals(999999, $budget->fresh()->montant_prevu);
+        $this->assertNotEquals(999999, $budget->fresh()->planned_amount);
     }
 
     public function test_cannot_delete_another_users_budget(): void
@@ -67,64 +67,64 @@ class AuthorizationTest extends TestCase
         $this->assertDatabaseHas('budgets', ['id' => $budget->id]);
     }
 
-    // ── Depense ────────────────────────────────────────────────────────────────
+    // ── Expense ────────────────────────────────────────────────────────────────
 
-    public function test_cannot_update_another_users_depense(): void
+    public function test_cannot_update_another_users_expense(): void
     {
         $budget  = Budget::factory()->create(['user_id' => $this->victim->id]);
-        $depense = Depense::factory()->create([
+        $expense = Expense::factory()->create([
             'user_id' => $this->victim->id, 'budget_id' => $budget->id,
-            'categorie_id' => $this->categorie->id, 'montant' => 5000,
+            'category_id' => $this->category->id, 'amount' => 5000,
         ]);
 
         $this->actingAs($this->attacker)
-            ->patch("/depenses/{$depense->id}", [
-                'budget_id' => $budget->id, 'categorie_id' => $this->categorie->id,
-                'libelle' => 'Hacked', 'montant' => 1, 'date_depense' => '2026-01-01',
+            ->patch("/expenses/{$expense->id}", [
+                'budget_id' => $budget->id, 'category_id' => $this->category->id,
+                'label' => 'Hacked', 'amount' => 1, 'expense_date' => '2026-01-01',
             ])
             ->assertForbidden();
 
-        $this->assertEquals(5000, $depense->fresh()->montant);
+        $this->assertEquals(5000, $expense->fresh()->amount);
     }
 
-    public function test_cannot_delete_another_users_depense(): void
+    public function test_cannot_delete_another_users_expense(): void
     {
         $budget  = Budget::factory()->create(['user_id' => $this->victim->id]);
-        $depense = Depense::factory()->create([
-            'user_id' => $this->victim->id, 'budget_id' => $budget->id, 'categorie_id' => $this->categorie->id,
+        $expense = Expense::factory()->create([
+            'user_id' => $this->victim->id, 'budget_id' => $budget->id, 'category_id' => $this->category->id,
         ]);
 
         $this->actingAs($this->attacker)
-            ->delete("/depenses/{$depense->id}")
+            ->delete("/expenses/{$expense->id}")
             ->assertForbidden();
 
-        $this->assertDatabaseHas('depenses', ['id' => $depense->id]);
+        $this->assertDatabaseHas('expenses', ['id' => $expense->id]);
     }
 
-    // ── Revenu ─────────────────────────────────────────────────────────────────
+    // ── Revenue ────────────────────────────────────────────────────────────────
 
-    public function test_cannot_update_another_users_revenu(): void
+    public function test_cannot_update_another_users_revenue(): void
     {
-        $revenu = Revenu::factory()->create(['user_id' => $this->victim->id, 'montant' => 100000]);
+        $revenue = Revenue::factory()->create(['user_id' => $this->victim->id, 'amount' => 100000]);
 
         $this->actingAs($this->attacker)
-            ->patch("/revenus/{$revenu->id}", [
-                'source' => 'Hacked', 'montant' => 1, 'date_revenu' => '2026-01-01',
+            ->patch("/revenues/{$revenue->id}", [
+                'source' => 'Hacked', 'amount' => 1, 'revenue_date' => '2026-01-01',
             ])
             ->assertForbidden();
 
-        $this->assertEquals(100000, $revenu->fresh()->montant);
+        $this->assertEquals(100000, $revenue->fresh()->amount);
     }
 
-    public function test_cannot_delete_another_users_revenu(): void
+    public function test_cannot_delete_another_users_revenue(): void
     {
-        $revenu = Revenu::factory()->create(['user_id' => $this->victim->id]);
+        $revenue = Revenue::factory()->create(['user_id' => $this->victim->id]);
 
         $this->actingAs($this->attacker)
-            ->delete("/revenus/{$revenu->id}")
+            ->delete("/revenues/{$revenue->id}")
             ->assertForbidden();
 
-        $this->assertDatabaseHas('revenus', ['id' => $revenu->id]);
+        $this->assertDatabaseHas('revenues', ['id' => $revenue->id]);
     }
 
     // ── Mass-assignment / user_id forging ─────────────────────────────────────
@@ -132,10 +132,10 @@ class AuthorizationTest extends TestCase
     public function test_cannot_forge_user_id_in_budget_creation(): void
     {
         $this->actingAs($this->attacker)->post('/budgets', [
-            'user_id'       => $this->victim->id,
-            'type'          => 'annuel',
-            'annee'         => 2026,
-            'montant_prevu' => 50000,
+            'user_id'        => $this->victim->id,
+            'type'           => 'annuel',
+            'year'           => 2026,
+            'planned_amount' => 50000,
         ]);
 
         $budget = Budget::where('user_id', $this->attacker->id)->latest()->first();
@@ -143,36 +143,36 @@ class AuthorizationTest extends TestCase
         $this->assertEquals($this->attacker->id, $budget->user_id);
     }
 
-    public function test_cannot_forge_user_id_in_depense_creation(): void
+    public function test_cannot_forge_user_id_in_expense_creation(): void
     {
         $attackerBudget = Budget::factory()->create(['user_id' => $this->attacker->id]);
 
-        $this->actingAs($this->attacker)->post('/depenses', [
+        $this->actingAs($this->attacker)->post('/expenses', [
             'user_id'      => $this->victim->id,
             'budget_id'    => $attackerBudget->id,
-            'categorie_id' => $this->categorie->id,
-            'libelle'      => 'Forge test',
-            'montant'      => 1000,
-            'date_depense' => '2026-04-01',
+            'category_id'  => $this->category->id,
+            'label'        => 'Forge test',
+            'amount'       => 1000,
+            'expense_date' => '2026-04-01',
         ]);
 
-        $depense = Depense::where('libelle', 'Forge test')->first();
-        $this->assertNotNull($depense);
-        $this->assertEquals($this->attacker->id, $depense->user_id);
+        $expense = Expense::where('label', 'Forge test')->first();
+        $this->assertNotNull($expense);
+        $this->assertEquals($this->attacker->id, $expense->user_id);
     }
 
-    public function test_cannot_forge_user_id_in_revenu_creation(): void
+    public function test_cannot_forge_user_id_in_revenue_creation(): void
     {
-        $this->actingAs($this->attacker)->post('/revenus', [
-            'user_id'     => $this->victim->id,
-            'source'      => 'Forge test',
-            'montant'     => 1000,
-            'date_revenu' => '2026-04-01',
+        $this->actingAs($this->attacker)->post('/revenues', [
+            'user_id'      => $this->victim->id,
+            'source'       => 'Forge test',
+            'amount'       => 1000,
+            'revenue_date' => '2026-04-01',
         ]);
 
-        $revenu = Revenu::where('source', 'Forge test')->first();
-        $this->assertNotNull($revenu);
-        $this->assertEquals($this->attacker->id, $revenu->user_id);
+        $revenue = Revenue::where('source', 'Forge test')->first();
+        $this->assertNotNull($revenue);
+        $this->assertEquals($this->attacker->id, $revenue->user_id);
     }
 
     // ── Index isolation ────────────────────────────────────────────────────────
@@ -186,28 +186,28 @@ class AuthorizationTest extends TestCase
             ->assertInertia(fn ($page) => $page->has('budgets.data', 2));
     }
 
-    public function test_depense_index_only_shows_own_depenses(): void
+    public function test_expense_index_only_shows_own_expenses(): void
     {
         $victimBudget   = Budget::factory()->create(['user_id' => $this->victim->id]);
         $attackerBudget = Budget::factory()->create(['user_id' => $this->attacker->id]);
 
-        Depense::factory()->count(3)->create([
-            'user_id' => $this->victim->id, 'budget_id' => $victimBudget->id, 'categorie_id' => $this->categorie->id,
+        Expense::factory()->count(3)->create([
+            'user_id' => $this->victim->id, 'budget_id' => $victimBudget->id, 'category_id' => $this->category->id,
         ]);
-        Depense::factory()->count(1)->create([
-            'user_id' => $this->attacker->id, 'budget_id' => $attackerBudget->id, 'categorie_id' => $this->categorie->id,
+        Expense::factory()->count(1)->create([
+            'user_id' => $this->attacker->id, 'budget_id' => $attackerBudget->id, 'category_id' => $this->category->id,
         ]);
 
-        $this->actingAs($this->attacker)->get('/depenses')
-            ->assertInertia(fn ($page) => $page->has('depenses.data', 1));
+        $this->actingAs($this->attacker)->get('/expenses')
+            ->assertInertia(fn ($page) => $page->has('expenses.data', 1));
     }
 
-    public function test_revenu_index_only_shows_own_revenus(): void
+    public function test_revenue_index_only_shows_own_revenues(): void
     {
-        Revenu::factory()->count(3)->create(['user_id' => $this->victim->id]);
-        Revenu::factory()->count(2)->create(['user_id' => $this->attacker->id]);
+        Revenue::factory()->count(3)->create(['user_id' => $this->victim->id]);
+        Revenue::factory()->count(2)->create(['user_id' => $this->attacker->id]);
 
-        $this->actingAs($this->attacker)->get('/revenus')
-            ->assertInertia(fn ($page) => $page->has('revenus.data', 2));
+        $this->actingAs($this->attacker)->get('/revenues')
+            ->assertInertia(fn ($page) => $page->has('revenues.data', 2));
     }
 }

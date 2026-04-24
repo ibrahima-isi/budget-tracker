@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Categorie;
+use App\Models\Category;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -36,147 +36,147 @@ class CategorieTest extends TestCase
 
     public function test_user_can_list_categories(): void
     {
-        Categorie::factory()->count(4)->create();
+        Category::factory()->count(4)->create();
 
         $this->actingAs($this->user)->get('/categories')
             ->assertOk()
             ->assertInertia(fn ($page) => $page->component('Categories/Index'));
     }
 
-    public function test_index_includes_depenses_count(): void
+    public function test_index_includes_expenses_count(): void
     {
-        Categorie::factory()->count(2)->create();
+        Category::factory()->count(2)->create();
 
         $this->actingAs($this->user)->get('/categories')
-            ->assertInertia(fn ($page) => $page->has('categories.0.depenses_count'));
+            ->assertInertia(fn ($page) => $page->has('categories.0.expenses_count'));
     }
 
     // ── Store ──────────────────────────────────────────────────────────────────
 
-    public function test_user_can_create_categorie(): void
+    public function test_user_can_create_category(): void
     {
         $this->actingAs($this->user)->post('/categories', [
-            'nom'     => 'Alimentation',
-            'couleur' => '#FF5733',
-            'icone'   => 'shopping-cart',
+            'name'  => 'Alimentation',
+            'color' => '#FF5733',
+            'icon'  => 'shopping-cart',
         ])->assertRedirect('/categories');
 
-        $this->assertDatabaseHas('categories', ['nom' => 'Alimentation']);
+        $this->assertDatabaseHas('categories', ['name' => 'Alimentation']);
     }
 
     public function test_store_validates_required_fields(): void
     {
         $this->actingAs($this->user)->post('/categories', [])
-            ->assertSessionHasErrors(['nom', 'couleur', 'icone']);
+            ->assertSessionHasErrors(['name', 'color', 'icon']);
     }
 
-    public function test_store_rejects_duplicate_nom(): void
+    public function test_store_rejects_duplicate_name(): void
     {
-        Categorie::factory()->create(['nom' => 'Transport']);
+        Category::factory()->create(['name' => 'Transport']);
 
         $this->actingAs($this->user)->post('/categories', [
-            'nom'     => 'Transport',
-            'couleur' => '#000000',
-            'icone'   => 'car',
-        ])->assertSessionHasErrors(['nom']);
+            'name'  => 'Transport',
+            'color' => '#000000',
+            'icon'  => 'car',
+        ])->assertSessionHasErrors(['name']);
     }
 
     public function test_store_rejects_invalid_hex_color(): void
     {
         $this->actingAs($this->user)->post('/categories', [
-            'nom'     => 'Test',
-            'couleur' => 'red',        // not a hex color
-            'icone'   => 'home',
-        ])->assertSessionHasErrors(['couleur']);
+            'name'  => 'Test',
+            'color' => 'red',        // not a hex color
+            'icon'  => 'home',
+        ])->assertSessionHasErrors(['color']);
     }
 
     public function test_store_rejects_short_hex_color(): void
     {
         $this->actingAs($this->user)->post('/categories', [
-            'nom'     => 'Test',
-            'couleur' => '#FFF',       // 3-digit hex, not accepted
-            'icone'   => 'home',
-        ])->assertSessionHasErrors(['couleur']);
+            'name'  => 'Test',
+            'color' => '#FFF',       // 3-digit hex, not accepted
+            'icon'  => 'home',
+        ])->assertSessionHasErrors(['color']);
     }
 
     public function test_store_accepts_valid_hex_colors(): void
     {
         foreach (['#000000', '#FFFFFF', '#1a2b3c', '#ABC123'] as $i => $color) {
             $this->actingAs($this->user)->post('/categories', [
-                'nom'     => "Cat $i",
-                'couleur' => $color,
-                'icone'   => 'home',
+                'name'  => "Cat $i",
+                'color' => $color,
+                'icon'  => 'home',
             ])->assertRedirect('/categories');
         }
     }
 
     // ── Update ─────────────────────────────────────────────────────────────────
 
-    public function test_user_can_update_categorie(): void
+    public function test_user_can_update_category(): void
     {
-        $categorie = Categorie::factory()->create(['nom' => 'Vieux Nom']);
+        $category = Category::factory()->create(['name' => 'Old Name']);
 
-        $this->actingAs($this->user)->patch("/categories/{$categorie->id}", [
-            'nom'     => 'Nouveau Nom',
-            'couleur' => $categorie->couleur,
-            'icone'   => $categorie->icone,
+        $this->actingAs($this->user)->patch("/categories/{$category->id}", [
+            'name'  => 'New Name',
+            'color' => $category->color,
+            'icon'  => $category->icon,
         ])->assertRedirect('/categories');
 
-        $this->assertEquals('Nouveau Nom', $categorie->fresh()->nom);
+        $this->assertEquals('New Name', $category->fresh()->name);
     }
 
-    public function test_update_allows_same_nom_for_the_same_categorie(): void
+    public function test_update_allows_same_name_for_the_same_category(): void
     {
-        $categorie = Categorie::factory()->create(['nom' => 'Transport']);
+        $category = Category::factory()->create(['name' => 'Transport']);
 
         // Updating with the same name should pass uniqueness check (exclude self)
-        $this->actingAs($this->user)->patch("/categories/{$categorie->id}", [
-            'nom'     => 'Transport',
-            'couleur' => '#123456',
-            'icone'   => 'car',
+        $this->actingAs($this->user)->patch("/categories/{$category->id}", [
+            'name'  => 'Transport',
+            'color' => '#123456',
+            'icon'  => 'car',
         ])->assertRedirect('/categories');
     }
 
-    public function test_update_rejects_nom_already_taken_by_another_categorie(): void
+    public function test_update_rejects_name_already_taken_by_another_category(): void
     {
-        $cat1 = Categorie::factory()->create(['nom' => 'Alimentation']);
-        $cat2 = Categorie::factory()->create(['nom' => 'Transport']);
+        $cat1 = Category::factory()->create(['name' => 'Alimentation']);
+        $cat2 = Category::factory()->create(['name' => 'Transport']);
 
         $this->actingAs($this->user)->patch("/categories/{$cat2->id}", [
-            'nom'     => 'Alimentation',  // taken by $cat1
-            'couleur' => '#000000',
-            'icone'   => 'home',
-        ])->assertSessionHasErrors(['nom']);
+            'name'  => 'Alimentation',  // taken by $cat1
+            'color' => '#000000',
+            'icon'  => 'home',
+        ])->assertSessionHasErrors(['name']);
     }
 
     public function test_update_validates_required_fields(): void
     {
-        $categorie = Categorie::factory()->create();
+        $category = Category::factory()->create();
 
-        $this->actingAs($this->user)->patch("/categories/{$categorie->id}", [])
-            ->assertSessionHasErrors(['nom', 'couleur', 'icone']);
+        $this->actingAs($this->user)->patch("/categories/{$category->id}", [])
+            ->assertSessionHasErrors(['name', 'color', 'icon']);
     }
 
-    public function test_update_returns_404_for_nonexistent_categorie(): void
+    public function test_update_returns_404_for_nonexistent_category(): void
     {
         $this->actingAs($this->user)->patch('/categories/99999', [
-            'nom' => 'Test', 'couleur' => '#000000', 'icone' => 'home',
+            'name' => 'Test', 'color' => '#000000', 'icon' => 'home',
         ])->assertNotFound();
     }
 
     // ── Destroy ────────────────────────────────────────────────────────────────
 
-    public function test_user_can_delete_categorie(): void
+    public function test_user_can_delete_category(): void
     {
-        $categorie = Categorie::factory()->create();
+        $category = Category::factory()->create();
 
-        $this->actingAs($this->user)->delete("/categories/{$categorie->id}")
+        $this->actingAs($this->user)->delete("/categories/{$category->id}")
             ->assertRedirect('/categories');
 
-        $this->assertDatabaseMissing('categories', ['id' => $categorie->id]);
+        $this->assertDatabaseMissing('categories', ['id' => $category->id]);
     }
 
-    public function test_delete_returns_404_for_nonexistent_categorie(): void
+    public function test_delete_returns_404_for_nonexistent_category(): void
     {
         $this->actingAs($this->user)->delete('/categories/99999')->assertNotFound();
     }

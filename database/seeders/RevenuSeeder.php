@@ -2,29 +2,25 @@
 
 namespace Database\Seeders;
 
-use App\Models\Revenu;
+use App\Models\Revenue;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class RevenuSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $user  = User::first();
-        $annee = now()->year;
+        $user = User::first();
+        $year = now()->year;
 
-        for ($mois = 1; $mois <= now()->month; $mois++) {
-            Revenu::create([
-                'user_id'     => $user->id,
-                'source'      => 'Salaire',
-                'montant'     => 450000,
-                'date_revenu' => "$annee-$mois-01",
-                'mois'        => $mois,
-                'annee'       => $annee,
+        for ($month = 1; $month <= now()->month; $month++) {
+            Revenue::create([
+                'user_id'      => $user->id,
+                'source'       => 'Salaire',
+                'amount'       => 450000,
+                'revenue_date' => "$year-$month-01",
+                'month'        => $month,
+                'year'         => $year,
             ]);
         }
     }

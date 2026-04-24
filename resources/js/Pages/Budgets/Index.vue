@@ -25,15 +25,15 @@ const isAllCurrencies = computed(() => props.filters?.currency === 'all');
 
 function applyFilters({ mois, annee, currency }) {
     router.get(route('budgets.index'), {
-        mois:     mois     ?? undefined,
-        annee:    annee    ?? undefined,
+        month:    mois     ?? undefined,
+        year:     annee    ?? undefined,
         currency: currency ?? undefined,
     }, { preserveState: false, replace: true });
 }
 
 // Create
 const showCreate = ref(false);
-const form = useForm({ type: 'mensuel', mois: new Date().getMonth() + 1, annee: new Date().getFullYear(), montant_prevu: '', libelle: '', categorie_id: null, currency_code: currentCode.value });
+const form = useForm({ type: 'mensuel', month: new Date().getMonth() + 1, year: new Date().getFullYear(), planned_amount: '', label: '', category_id: null, currency_code: currentCode.value });
 
 function submitCreate() {
     form.post(route('budgets.store'), {
@@ -43,18 +43,18 @@ function submitCreate() {
 
 // Edit
 const showEdit = ref(false);
-const editForm = useForm({ type: 'mensuel', mois: null, annee: new Date().getFullYear(), montant_prevu: '', libelle: '', categorie_id: null, currency_code: currentCode.value });
+const editForm = useForm({ type: 'mensuel', month: null, year: new Date().getFullYear(), planned_amount: '', label: '', category_id: null, currency_code: currentCode.value });
 let editId = null;
 
 function openEdit(budget) {
-    editId                    = budget.id;
-    editForm.type             = budget.type;
-    editForm.mois             = budget.mois;
-    editForm.annee            = budget.annee;
-    editForm.montant_prevu    = budget.montant_prevu;
-    editForm.libelle          = budget.libelle ?? '';
-    editForm.categorie_id     = budget.categorie_id ?? null;
-    editForm.currency_code    = budget.currency_code ?? currentCode.value;
+    editId                   = budget.id;
+    editForm.type            = budget.type;
+    editForm.month           = budget.month;
+    editForm.year            = budget.year;
+    editForm.planned_amount  = budget.planned_amount;
+    editForm.label           = budget.label ?? '';
+    editForm.category_id     = budget.category_id ?? null;
+    editForm.currency_code   = budget.currency_code ?? currentCode.value;
     showEdit.value = true;
 }
 
@@ -89,8 +89,8 @@ function deleteBudget(id) {
 
                 <!-- Filters -->
                 <PeriodFilter
-                    :mois="filters?.mois"
-                    :annee="filters?.annee"
+                    :mois="filters?.month"
+                    :annee="filters?.year"
                     :currency="filters?.currency"
                     @change="applyFilters"
                 />
@@ -117,21 +117,21 @@ function deleteBudget(id) {
                                 <td class="px-6 py-3">
                                     <span class="font-medium text-gray-900 dark:text-gray-100 capitalize">{{ b.type }}</span>
                                     <span class="ml-2 text-gray-500 dark:text-gray-400">
-                                        {{ b.type === 'mensuel' ? moisCourts[b.mois] + ' ' : '' }}{{ b.annee }}
+                                        {{ b.type === 'mensuel' ? moisCourts[b.month] + ' ' : '' }}{{ b.year }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-3 text-gray-600 dark:text-gray-300">{{ b.libelle ?? '—' }}</td>
+                                <td class="px-6 py-3 text-gray-600 dark:text-gray-300">{{ b.label ?? '—' }}</td>
                                 <td class="px-6 py-3">
                                     <span
-                                        v-if="b.categorie"
+                                        v-if="b.category"
                                         class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
-                                        :style="{ backgroundColor: b.categorie.couleur }"
-                                    >{{ b.categorie.nom }}</span>
+                                        :style="{ backgroundColor: b.category.color }"
+                                    >{{ b.category.name }}</span>
                                     <span v-else class="text-gray-400 dark:text-gray-500">—</span>
                                 </td>
-                                <td class="px-6 py-3 text-right text-gray-800 dark:text-gray-200 font-medium">{{ isAllCurrencies ? formatWithCode(b.montant_prevu, b.currency_code) : format(b.montant_prevu) }}</td>
-                                <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">{{ isAllCurrencies ? formatWithCode(b.montant_depense, b.currency_code) : format(b.montant_depense) }}</td>
-                                <td class="px-6 py-3 text-right font-semibold" :class="b.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ isAllCurrencies ? formatWithCode(b.solde, b.currency_code) : format(b.solde) }}</td>
+                                <td class="px-6 py-3 text-right text-gray-800 dark:text-gray-200 font-medium">{{ isAllCurrencies ? formatWithCode(b.planned_amount, b.currency_code) : format(b.planned_amount) }}</td>
+                                <td class="px-6 py-3 text-right text-red-600 dark:text-red-400">{{ isAllCurrencies ? formatWithCode(b.expense_amount, b.currency_code) : format(b.expense_amount) }}</td>
+                                <td class="px-6 py-3 text-right font-semibold" :class="b.balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ isAllCurrencies ? formatWithCode(b.balance, b.currency_code) : format(b.balance) }}</td>
                                 <td class="px-6 py-3 text-right space-x-2">
                                     <Link :href="route('budgets.show', b.id)" class="text-blue-600 dark:text-blue-400 hover:underline text-xs">{{ $t('common.detail') }}</Link>
                                     <button @click="openEdit(b)" class="text-yellow-600 dark:text-yellow-400 hover:underline text-xs">{{ $t('common.edit') }}</button>
@@ -182,32 +182,32 @@ function deleteBudget(id) {
             </div>
             <div v-if="form.type === 'mensuel'">
                 <InputLabel :value="$t('budgets.month')" />
-                <select v-model="form.mois" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="form.month" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option v-for="(m, i) in moisCourts.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
                 </select>
-                <InputError :message="form.errors.mois" />
+                <InputError :message="form.errors.month" />
             </div>
             <div>
                 <InputLabel :value="$t('budgets.year')" />
-                <TextInput v-model="form.annee" type="number" class="mt-1 block w-full" />
-                <InputError :message="form.errors.annee" />
+                <TextInput v-model="form.year" type="number" class="mt-1 block w-full" />
+                <InputError :message="form.errors.year" />
             </div>
             <div>
                 <InputLabel :value="$t('budgets.plannedAmount')" />
-                <TextInput v-model="form.montant_prevu" type="number" step="1" class="mt-1 block w-full" />
-                <InputError :message="form.errors.montant_prevu" />
+                <TextInput v-model="form.planned_amount" type="number" step="1" class="mt-1 block w-full" />
+                <InputError :message="form.errors.planned_amount" />
             </div>
             <div>
                 <InputLabel :value="$t('budgets.labelOptional')" />
-                <TextInput v-model="form.libelle" class="mt-1 block w-full" />
+                <TextInput v-model="form.label" class="mt-1 block w-full" />
             </div>
             <div>
                 <InputLabel :value="$t('common.category')" />
-                <select v-model="form.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="form.category_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option :value="null" disabled>{{ $t('common.select') }}</option>
-                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
+                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
-                <InputError :message="form.errors.categorie_id" />
+                <InputError :message="form.errors.category_id" />
             </div>
             <div v-if="form.errors.periode" class="rounded-md bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                 {{ form.errors.periode }}
@@ -238,30 +238,30 @@ function deleteBudget(id) {
             </div>
             <div v-if="editForm.type === 'mensuel'">
                 <InputLabel :value="$t('budgets.month')" />
-                <select v-model="editForm.mois" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="editForm.month" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option v-for="(m, i) in moisCourts.slice(1)" :key="i+1" :value="i+1">{{ m }}</option>
                 </select>
             </div>
             <div>
                 <InputLabel :value="$t('budgets.year')" />
-                <TextInput v-model="editForm.annee" type="number" class="mt-1 block w-full" />
+                <TextInput v-model="editForm.year" type="number" class="mt-1 block w-full" />
             </div>
             <div>
                 <InputLabel :value="$t('budgets.plannedAmount')" />
-                <TextInput v-model="editForm.montant_prevu" type="number" step="1" class="mt-1 block w-full" />
-                <InputError :message="editForm.errors.montant_prevu" />
+                <TextInput v-model="editForm.planned_amount" type="number" step="1" class="mt-1 block w-full" />
+                <InputError :message="editForm.errors.planned_amount" />
             </div>
             <div>
                 <InputLabel :value="$t('budgets.labelOptional')" />
-                <TextInput v-model="editForm.libelle" class="mt-1 block w-full" />
+                <TextInput v-model="editForm.label" class="mt-1 block w-full" />
             </div>
             <div>
                 <InputLabel :value="$t('common.category')" />
-                <select v-model="editForm.categorie_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                <select v-model="editForm.category_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                     <option :value="null" disabled>{{ $t('common.select') }}</option>
-                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
+                    <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
-                <InputError :message="editForm.errors.categorie_id" />
+                <InputError :message="editForm.errors.category_id" />
             </div>
             <div v-if="editForm.errors.periode" class="rounded-md bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-700 dark:text-red-400">
                 {{ editForm.errors.periode }}

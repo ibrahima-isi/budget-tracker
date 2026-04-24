@@ -34,8 +34,8 @@ class RouteProtectionTest extends TestCase
         return [
             'dashboard'  => ['/dashboard'],
             'budgets'    => ['/budgets'],
-            'depenses'   => ['/depenses'],
-            'revenus'    => ['/revenus'],
+            'expenses'   => ['/expenses'],
+            'revenues'   => ['/revenues'],
             'categories' => ['/categories'],
             'settings'   => ['/settings'],
         ];
@@ -51,8 +51,8 @@ class RouteProtectionTest extends TestCase
     {
         return [
             'budgets'    => ['/budgets'],
-            'depenses'   => ['/depenses'],
-            'revenus'    => ['/revenus'],
+            'expenses'   => ['/expenses'],
+            'revenues'   => ['/revenues'],
             'categories' => ['/categories'],
             'settings'   => ['/settings'],
             'currencies' => ['/settings/currencies'],
@@ -74,24 +74,24 @@ class RouteProtectionTest extends TestCase
         $this->get('/budgets/1')->assertRedirect('/login');
     }
 
-    public function test_guest_cannot_patch_depense(): void
+    public function test_guest_cannot_patch_expense(): void
     {
-        $this->patch('/depenses/1')->assertRedirect('/login');
+        $this->patch('/expenses/1')->assertRedirect('/login');
     }
 
-    public function test_guest_cannot_delete_depense(): void
+    public function test_guest_cannot_delete_expense(): void
     {
-        $this->delete('/depenses/1')->assertRedirect('/login');
+        $this->delete('/expenses/1')->assertRedirect('/login');
     }
 
-    public function test_guest_cannot_patch_revenu(): void
+    public function test_guest_cannot_patch_revenue(): void
     {
-        $this->patch('/revenus/1')->assertRedirect('/login');
+        $this->patch('/revenues/1')->assertRedirect('/login');
     }
 
-    public function test_guest_cannot_delete_revenu(): void
+    public function test_guest_cannot_delete_revenue(): void
     {
-        $this->delete('/revenus/1')->assertRedirect('/login');
+        $this->delete('/revenues/1')->assertRedirect('/login');
     }
 
     public function test_guest_cannot_patch_category(): void
@@ -137,8 +137,8 @@ class RouteProtectionTest extends TestCase
         return [
             'dashboard'  => ['/dashboard'],
             'budgets'    => ['/budgets'],
-            'depenses'   => ['/depenses'],
-            'revenus'    => ['/revenus'],
+            'expenses'   => ['/expenses'],
+            'revenues'   => ['/revenues'],
             'categories' => ['/categories'],
             'settings'   => ['/settings'],
         ];
@@ -154,8 +154,8 @@ class RouteProtectionTest extends TestCase
     {
         return [
             'budgets'    => ['/budgets'],
-            'depenses'   => ['/depenses'],
-            'revenus'    => ['/revenus'],
+            'expenses'   => ['/expenses'],
+            'revenues'   => ['/revenues'],
             'categories' => ['/categories'],
             'settings'   => ['/settings'],
         ];
@@ -167,20 +167,20 @@ class RouteProtectionTest extends TestCase
         $this->actingAs($this->unverified)->delete("/budgets/{$budget->id}")->assertRedirect('/verify-email');
     }
 
-    public function test_unverified_user_cannot_delete_revenu(): void
+    public function test_unverified_user_cannot_delete_revenue(): void
     {
-        $revenu = \App\Models\Revenu::factory()->create(['user_id' => $this->unverified->id]);
-        $this->actingAs($this->unverified)->delete("/revenus/{$revenu->id}")->assertRedirect('/verify-email');
+        $revenue = \App\Models\Revenue::factory()->create(['user_id' => $this->unverified->id]);
+        $this->actingAs($this->unverified)->delete("/revenues/{$revenue->id}")->assertRedirect('/verify-email');
     }
 
-    public function test_unverified_user_cannot_delete_depense(): void
+    public function test_unverified_user_cannot_delete_expense(): void
     {
-        $cat     = \App\Models\Categorie::factory()->create();
+        $cat     = \App\Models\Category::factory()->create();
         $budget  = \App\Models\Budget::factory()->create(['user_id' => $this->unverified->id]);
-        $depense = \App\Models\Depense::factory()->create([
-            'user_id' => $this->unverified->id, 'budget_id' => $budget->id, 'categorie_id' => $cat->id,
+        $expense = \App\Models\Expense::factory()->create([
+            'user_id' => $this->unverified->id, 'budget_id' => $budget->id, 'category_id' => $cat->id,
         ]);
-        $this->actingAs($this->unverified)->delete("/depenses/{$depense->id}")->assertRedirect('/verify-email');
+        $this->actingAs($this->unverified)->delete("/expenses/{$expense->id}")->assertRedirect('/verify-email');
     }
 
     // ── Non-admin verified user blocked from settings (403) ──────────────────

@@ -2,14 +2,14 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CurrencyController;
-use App\Http\Controllers\LogoController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DepenseController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\LogoController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RevenuController;
+use App\Http\Controllers\RevenueController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -37,11 +37,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return back();
     })->name('user.currency');
 
-    Route::resource('budgets',    BudgetController::class)->except(['create', 'edit']);
-    Route::resource('depenses',   DepenseController::class)->except(['create', 'edit', 'show']);
-    Route::resource('revenus',    RevenuController::class)->except(['create', 'edit', 'show']);
-    Route::resource('categories', CategorieController::class)->except(['create', 'edit', 'show']);
-    Route::post('categories/{category}/toggle-enabled', [CategorieController::class, 'toggleEnabled'])->name('categories.toggleEnabled');
+    Route::resource('budgets',   BudgetController::class)->except(['create', 'edit']);
+    Route::resource('expenses',  ExpenseController::class)->except(['create', 'edit', 'show']);
+    Route::resource('revenues',  RevenueController::class)->except(['create', 'edit', 'show']);
+    Route::resource('categories', CategoryController::class)->except(['create', 'edit', 'show']);
+    Route::post('categories/{category}/toggle-enabled', [CategoryController::class, 'toggleEnabled'])->name('categories.toggleEnabled');
 
     // Settings, Currencies & Activity Logs — admin only
     Route::middleware('admin')->group(function () {

@@ -9,12 +9,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('budgets', function (Blueprint $table) {
-            $table->string('currency_code', 10)->nullable()->after('montant_prevu');
-        });
+        DB::transaction(function () {
+            Schema::table('budgets', function (Blueprint $table) {
+                $table->string('currency_code', 10)->default('XOF')->after('montant_prevu');
+            });
 
-        $default = DB::table('settings')->value('default_currency') ?? 'XOF';
-        DB::table('budgets')->whereNull('currency_code')->update(['currency_code' => $default]);
+            $default = DB::table('settings')->value('default_currency') ?? 'XOF';
+            DB::table('budgets')->whereNull('currency_code')->update(['currency_code' => $default]);
+        });
     }
 
     public function down(): void

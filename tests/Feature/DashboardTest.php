@@ -3,9 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Budget;
-use App\Models\Categorie;
-use App\Models\Depense;
-use App\Models\Revenu;
+use App\Models\Category;
+use App\Models\Expense;
+use App\Models\Revenue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -52,253 +52,251 @@ class DashboardTest extends TestCase
     {
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->has('budgetMensuel')
-                ->has('totalDepenses')
-                ->has('totalRevenus')
-                ->has('solde')
-                ->has('depensesParCategorie')
-                ->has('dernieresDepenses')
-                ->has('mois')
-                ->has('annee')
+                ->has('monthly')
+                ->has('annual')
+                ->has('recentExpenses')
+                ->has('month')
+                ->has('year')
+                ->has('filters')
             );
     }
 
     // ── Empty state ────────────────────────────────────────────────────────────
 
-    public function test_budget_mensuel_is_null_when_no_budget_for_current_month(): void
+    public function test_monthly_total_budget_is_zero_when_no_budget_for_current_month(): void
     {
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('budgetMensuel', null));
+            ->assertInertia(fn ($page) => $page->where('monthly.totalBudget', 0));
     }
 
     public function test_totals_are_zero_when_user_has_no_data(): void
     {
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->where('totalDepenses', 0)
-                ->where('totalRevenus', 0)
-                ->where('solde', 0)
+                ->where('monthly.totalExpenses', 0)
+                ->where('monthly.totalRevenues', 0)
+                ->where('monthly.balance', 0)
             );
     }
 
-    public function test_dernières_depenses_is_empty_when_user_has_no_data(): void
+    public function test_recent_expenses_is_empty_when_user_has_no_data(): void
     {
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->has('dernieresDepenses', 0));
+            ->assertInertia(fn ($page) => $page->has('recentExpenses', 0));
     }
 
     // ── Budget mensuel lookup ──────────────────────────────────────────────────
 
-    public function test_budget_mensuel_is_found_for_current_month(): void
+    public function test_monthly_total_budget_reflects_created_budget(): void
     {
-        $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
+        Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'planned_amount' => 100000]);
 
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->where('budgetMensuel.id', $budget->id)
+                ->where('monthly.totalBudget', 100000)
             );
     }
 
-    public function test_budget_mensuel_is_null_for_annuel_budget(): void
+    public function test_monthly_total_budget_excludes_annual_budget(): void
     {
-        Budget::factory()->annuel()->create(['user_id' => $this->user->id]);
+        Budget::factory()->annuel()->create(['user_id' => $this->user->id, 'planned_amount' => 200000]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('budgetMensuel', null));
+            ->assertInertia(fn ($page) => $page->where('monthly.totalBudget', 0));
     }
 
-    public function test_budget_mensuel_not_shown_for_other_users_budget(): void
+    public function test_monthly_total_budget_excludes_other_users_budget(): void
     {
         $other = User::factory()->create(['email_verified_at' => now()]);
         Budget::factory()->mensuel()->create(['user_id' => $other->id]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('budgetMensuel', null));
+            ->assertInertia(fn ($page) => $page->where('monthly.totalBudget', 0));
     }
 
     // ── Totals calculations ────────────────────────────────────────────────────
 
-    public function test_total_depenses_sums_current_month_only(): void
+    public function test_total_expenses_sums_current_month_only(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat    = Categorie::factory()->create();
+        $cat    = Category::factory()->create();
 
         // Current month
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id'      => $this->user->id,
             'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
-            'montant'      => 20000,
-            'date_depense' => now()->format('Y-m-15'),
+            'category_id'  => $cat->id,
+            'amount'       => 20000,
+            'expense_date' => now()->format('Y-m-15'),
         ]);
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id'      => $this->user->id,
             'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
-            'montant'      => 30000,
-            'date_depense' => now()->format('Y-m-10'),
+            'category_id'  => $cat->id,
+            'amount'       => 30000,
+            'expense_date' => now()->format('Y-m-10'),
         ]);
 
         // Previous month — must NOT be included
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id'      => $this->user->id,
             'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
-            'montant'      => 999999,
-            'date_depense' => now()->subMonth()->format('Y-m-01'),
+            'category_id'  => $cat->id,
+            'amount'       => 999999,
+            'expense_date' => now()->subMonth()->format('Y-m-01'),
         ]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('totalDepenses', 50000));
+            ->assertInertia(fn ($page) => $page->where('monthly.totalExpenses', 50000));
     }
 
-    public function test_total_revenus_sums_current_month_only(): void
+    public function test_total_revenues_sums_current_month_only(): void
     {
-        Revenu::factory()->create([
-            'user_id'     => $this->user->id,
-            'montant'     => 300000,
-            'mois'        => now()->month,
-            'annee'       => now()->year,
-            'date_revenu' => now()->format('Y-m-01'),
+        Revenue::factory()->create([
+            'user_id'      => $this->user->id,
+            'amount'       => 300000,
+            'month'        => now()->month,
+            'year'         => now()->year,
+            'revenue_date' => now()->format('Y-m-01'),
         ]);
 
         // Previous month — must NOT be included
-        Revenu::factory()->create([
-            'user_id'     => $this->user->id,
-            'montant'     => 999999,
-            'mois'        => now()->subMonth()->month,
-            'annee'       => now()->subMonth()->year,
-            'date_revenu' => now()->subMonth()->format('Y-m-01'),
+        Revenue::factory()->create([
+            'user_id'      => $this->user->id,
+            'amount'       => 999999,
+            'month'        => now()->subMonth()->month,
+            'year'         => now()->subMonth()->year,
+            'revenue_date' => now()->subMonth()->format('Y-m-01'),
         ]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('totalRevenus', 300000));
+            ->assertInertia(fn ($page) => $page->where('monthly.totalRevenues', 300000));
     }
 
-    public function test_solde_equals_revenus_minus_depenses(): void
+    public function test_balance_equals_revenues_minus_expenses(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat    = Categorie::factory()->create();
+        $cat    = Category::factory()->create();
 
-        Revenu::factory()->create([
-            'user_id'     => $this->user->id,
-            'montant'     => 500000,
-            'mois'        => now()->month,
-            'annee'       => now()->year,
-            'date_revenu' => now()->format('Y-m-01'),
+        Revenue::factory()->create([
+            'user_id'      => $this->user->id,
+            'amount'       => 500000,
+            'month'        => now()->month,
+            'year'         => now()->year,
+            'revenue_date' => now()->format('Y-m-01'),
         ]);
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id'      => $this->user->id,
             'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
-            'montant'      => 150000,
-            'date_depense' => now()->format('Y-m-05'),
+            'category_id'  => $cat->id,
+            'amount'       => 150000,
+            'expense_date' => now()->format('Y-m-05'),
         ]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('solde', 350000));
+            ->assertInertia(fn ($page) => $page->where('monthly.balance', 350000));
     }
 
-    public function test_depenses_par_categorie_groups_correctly(): void
+    public function test_expenses_by_category_groups_correctly(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat1   = Categorie::factory()->create();
-        $cat2   = Categorie::factory()->create();
+        $cat1   = Category::factory()->create();
+        $cat2   = Category::factory()->create();
 
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id' => $this->user->id, 'budget_id' => $budget->id,
-            'categorie_id' => $cat1->id, 'montant' => 10000,
-            'date_depense' => now()->format('Y-m-01'),
+            'category_id' => $cat1->id, 'amount' => 10000,
+            'expense_date' => now()->format('Y-m-01'),
         ]);
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id' => $this->user->id, 'budget_id' => $budget->id,
-            'categorie_id' => $cat1->id, 'montant' => 5000,
-            'date_depense' => now()->format('Y-m-02'),
+            'category_id' => $cat1->id, 'amount' => 5000,
+            'expense_date' => now()->format('Y-m-02'),
         ]);
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id' => $this->user->id, 'budget_id' => $budget->id,
-            'categorie_id' => $cat2->id, 'montant' => 8000,
-            'date_depense' => now()->format('Y-m-03'),
+            'category_id' => $cat2->id, 'amount' => 8000,
+            'expense_date' => now()->format('Y-m-03'),
         ]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->has('depensesParCategorie', 2));
+            ->assertInertia(fn ($page) => $page->has('monthly.expensesByCategory', 2));
     }
 
-    public function test_depenses_par_categorie_excludes_other_users_data(): void
+    public function test_expenses_by_category_excludes_other_users_data(): void
     {
         $other       = User::factory()->create();
         $otherBudget = Budget::factory()->mensuel()->create(['user_id' => $other->id]);
-        $cat         = Categorie::factory()->create();
+        $cat         = Category::factory()->create();
 
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id' => $other->id, 'budget_id' => $otherBudget->id,
-            'categorie_id' => $cat->id, 'montant' => 50000,
-            'date_depense' => now()->format('Y-m-01'),
+            'category_id' => $cat->id, 'amount' => 50000,
+            'expense_date' => now()->format('Y-m-01'),
         ]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->has('depensesParCategorie', 0));
+            ->assertInertia(fn ($page) => $page->has('monthly.expensesByCategory', 0));
     }
 
-    // ── Dernières dépenses ─────────────────────────────────────────────────────
+    // ── Recent expenses ────────────────────────────────────────────────────────
 
-    public function test_dernières_depenses_returns_at_most_5(): void
+    public function test_recent_expenses_returns_at_most_5(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat    = Categorie::factory()->create();
+        $cat    = Category::factory()->create();
 
-        Depense::factory()->count(8)->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
+        Expense::factory()->count(8)->create([
+            'user_id'     => $this->user->id,
+            'budget_id'   => $budget->id,
+            'category_id' => $cat->id,
         ]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->has('dernieresDepenses', 5));
+            ->assertInertia(fn ($page) => $page->has('recentExpenses', 5));
     }
 
-    public function test_dernières_depenses_only_shows_current_user_data(): void
+    public function test_recent_expenses_only_shows_current_user_data(): void
     {
         $other       = User::factory()->create();
         $otherBudget = Budget::factory()->create(['user_id' => $other->id]);
-        $cat         = Categorie::factory()->create();
+        $cat         = Category::factory()->create();
 
-        Depense::factory()->count(3)->create([
-            'user_id' => $other->id, 'budget_id' => $otherBudget->id, 'categorie_id' => $cat->id,
+        Expense::factory()->count(3)->create([
+            'user_id' => $other->id, 'budget_id' => $otherBudget->id, 'category_id' => $cat->id,
         ]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->has('dernieresDepenses', 0));
+            ->assertInertia(fn ($page) => $page->has('recentExpenses', 0));
     }
 
-    public function test_mois_and_annee_are_current_date(): void
+    public function test_month_and_year_are_current_date(): void
     {
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->where('mois', now()->month)
-                ->where('annee', now()->year)
+                ->where('month', now()->month)
+                ->where('year', now()->year)
             );
     }
 
-    // ── Period filter (mois / annee query params) ──────────────────────────────
+    // ── Period filter (month / year query params) ──────────────────────────────
 
     public function test_filters_prop_is_returned(): void
     {
-        $this->actingAs($this->user)->get('/dashboard?mois=4&annee=2025')
+        $this->actingAs($this->user)->get('/dashboard?month=4&year=2025')
             ->assertInertia(fn ($page) => $page
                 ->has('filters')
-                ->where('filters.mois', 4)
-                ->where('filters.annee', 2025)
+                ->where('filters.month', 4)
+                ->where('filters.year', 2025)
             );
     }
 
-    public function test_mois_param_overrides_current_month(): void
+    public function test_month_param_overrides_current_month(): void
     {
-        $this->actingAs($this->user)->get('/dashboard?mois=4&annee=2025')
+        $this->actingAs($this->user)->get('/dashboard?month=4&year=2025')
             ->assertInertia(fn ($page) => $page
-                ->where('mois', 4)
-                ->where('annee', 2025)
+                ->where('month', 4)
+                ->where('year', 2025)
             );
     }
 
@@ -307,57 +305,57 @@ class DashboardTest extends TestCase
         $budget = Budget::factory()->create([
             'user_id' => $this->user->id,
             'type'    => 'mensuel',
-            'mois'    => 4,
-            'annee'   => 2025,
+            'month'   => 4,
+            'year'    => 2025,
         ]);
-        $cat = Categorie::factory()->create();
+        $cat = Category::factory()->create();
 
         // April 2025 expense — should be counted
-        Depense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
-            'montant'      => 50000,
-            'date_depense' => '2025-04-15',
+        Expense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $budget->id,
+            'category_id'   => $cat->id,
+            'amount'        => 50000,
+            'expense_date'  => '2025-04-15',
             'currency_code' => 'XOF',
         ]);
         // Current month expense — must NOT be counted
-        Depense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
-            'montant'      => 999999,
-            'date_depense' => now()->format('Y-m-10'),
+        Expense::factory()->create([
+            'user_id'       => $this->user->id,
+            'budget_id'     => $budget->id,
+            'category_id'   => $cat->id,
+            'amount'        => 999999,
+            'expense_date'  => now()->format('Y-m-10'),
             'currency_code' => 'XOF',
         ]);
 
-        $this->actingAs($this->user)->get('/dashboard?mois=4&annee=2025')
-            ->assertInertia(fn ($page) => $page->where('totalDepenses', 50000));
+        $this->actingAs($this->user)->get('/dashboard?month=4&year=2025')
+            ->assertInertia(fn ($page) => $page->where('monthly.totalExpenses', 50000));
     }
 
     public function test_revenues_filtered_by_requested_month(): void
     {
         // April 2025 revenue
-        Revenu::factory()->create([
-            'user_id'      => $this->user->id,
-            'montant'      => 300000,
-            'mois'         => 4,
-            'annee'        => 2025,
-            'date_revenu'  => '2025-04-01',
+        Revenue::factory()->create([
+            'user_id'       => $this->user->id,
+            'amount'        => 300000,
+            'month'         => 4,
+            'year'          => 2025,
+            'revenue_date'  => '2025-04-01',
             'currency_code' => 'XOF',
         ]);
         // Current month — must NOT be counted
-        Revenu::factory()->create([
-            'user_id'      => $this->user->id,
-            'montant'      => 999999,
-            'mois'         => now()->month,
-            'annee'        => now()->year,
-            'date_revenu'  => now()->format('Y-m-01'),
+        Revenue::factory()->create([
+            'user_id'       => $this->user->id,
+            'amount'        => 999999,
+            'month'         => now()->month,
+            'year'          => now()->year,
+            'revenue_date'  => now()->format('Y-m-01'),
             'currency_code' => 'XOF',
         ]);
 
-        $this->actingAs($this->user)->get('/dashboard?mois=4&annee=2025')
-            ->assertInertia(fn ($page) => $page->where('totalRevenus', 300000));
+        $this->actingAs($this->user)->get('/dashboard?month=4&year=2025')
+            ->assertInertia(fn ($page) => $page->where('monthly.totalRevenues', 300000));
     }
 
     // ── Currency filter ────────────────────────────────────────────────────────
@@ -365,53 +363,53 @@ class DashboardTest extends TestCase
     public function test_currency_all_includes_all_currencies(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat    = Categorie::factory()->create();
+        $cat    = Category::factory()->create();
 
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id'       => $this->user->id,
             'budget_id'     => $budget->id,
-            'categorie_id'  => $cat->id,
-            'montant'       => 10000,
-            'date_depense'  => now()->format('Y-m-10'),
+            'category_id'   => $cat->id,
+            'amount'        => 10000,
+            'expense_date'  => now()->format('Y-m-10'),
             'currency_code' => 'XOF',
         ]);
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id'       => $this->user->id,
             'budget_id'     => $budget->id,
-            'categorie_id'  => $cat->id,
-            'montant'       => 200,
-            'date_depense'  => now()->format('Y-m-11'),
+            'category_id'   => $cat->id,
+            'amount'        => 200,
+            'expense_date'  => now()->format('Y-m-11'),
             'currency_code' => 'EUR',
         ]);
 
         $this->actingAs($this->user)->get('/dashboard?currency=all')
-            ->assertInertia(fn ($page) => $page->where('totalDepenses', 10200));
+            ->assertInertia(fn ($page) => $page->where('monthly.totalExpenses', 10200));
     }
 
     public function test_currency_filter_excludes_other_currencies(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'currency_code' => 'XOF']);
-        $cat    = Categorie::factory()->create();
+        $cat    = Category::factory()->create();
 
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id'       => $this->user->id,
             'budget_id'     => $budget->id,
-            'categorie_id'  => $cat->id,
-            'montant'       => 10000,
-            'date_depense'  => now()->format('Y-m-10'),
+            'category_id'   => $cat->id,
+            'amount'        => 10000,
+            'expense_date'  => now()->format('Y-m-10'),
             'currency_code' => 'XOF',
         ]);
-        Depense::factory()->create([
+        Expense::factory()->create([
             'user_id'       => $this->user->id,
             'budget_id'     => $budget->id,
-            'categorie_id'  => $cat->id,
-            'montant'       => 999,
-            'date_depense'  => now()->format('Y-m-11'),
+            'category_id'   => $cat->id,
+            'amount'        => 999,
+            'expense_date'  => now()->format('Y-m-11'),
             'currency_code' => 'EUR',
         ]);
 
         // Only XOF (the session default) should be counted
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('totalDepenses', 10000));
+            ->assertInertia(fn ($page) => $page->where('monthly.totalExpenses', 10000));
     }
 }

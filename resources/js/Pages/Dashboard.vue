@@ -15,12 +15,12 @@ import { useLocale }      from '@/composables/useLocale';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const props = defineProps({
-    mensuel:           Object,
-    annuel:            Object,
-    dernieresDepenses: Array,
-    mois:              Number,
-    annee:             Number,
-    filters:           Object,
+    monthly:        Object,
+    annual:         Object,
+    recentExpenses: Array,
+    month:          Number,
+    year:           Number,
+    filters:        Object,
 });
 
 const { format, formatWithCode } = useCurrency();
@@ -47,21 +47,21 @@ watch(periode, v => {
     periodeSolde.value    = v;
 });
 
-const current = computed(() => periode.value === 'mensuel' ? props.mensuel : props.annuel);
+const current = computed(() => periode.value === 'mensuel' ? props.monthly : props.annual);
 
 const periodeLabel = computed(() => {
     if (periode.value === 'mensuel') {
-        return new Date(props.annee, props.mois - 1)
+        return new Date(props.year, props.month - 1)
             .toLocaleString(locale.value, { month: 'long', year: 'numeric' });
     }
-    return String(props.annee);
+    return String(props.year);
 });
 
 const chartData = computed(() => ({
-    labels: current.value.depensesParCategorie.map(d => d.categorie?.nom ?? 'Sans catégorie'),
+    labels: current.value.expensesByCategory.map(d => d.category?.name ?? 'Sans catégorie'),
     datasets: [{
-        data:            current.value.depensesParCategorie.map(d => d.total),
-        backgroundColor: current.value.depensesParCategorie.map(d => d.categorie?.couleur ?? '#6b7280'),
+        data:            current.value.expensesByCategory.map(d => d.total),
+        backgroundColor: current.value.expensesByCategory.map(d => d.category?.color ?? '#6b7280'),
         borderWidth: 2,
     }],
 }));
@@ -73,8 +73,8 @@ const chartOptions = computed(() => ({
 
 function applyFilters({ mois, annee, currency }) {
     router.get(route('dashboard'), {
-        mois:     mois     ?? undefined,
-        annee:    annee    ?? undefined,
+        month:    mois     ?? undefined,
+        year:     annee    ?? undefined,
         currency: currency ?? undefined,
     }, { preserveState: false, replace: true });
 }
@@ -120,8 +120,8 @@ function applyFilters({ mois, annee, currency }) {
 
                 <!-- Period / currency filter -->
                 <PeriodFilter
-                    :mois="filters?.mois"
-                    :annee="filters?.annee"
+                    :mois="filters?.month"
+                    :annee="filters?.year"
                     :currency="filters?.currency"
                     :show-month="periode === 'mensuel'"
                     @change="applyFilters"
@@ -137,8 +137,8 @@ function applyFilters({ mois, annee, currency }) {
                     <StatCard
                         label="Budget du mois"
                         labelAnnuel="Budgets planifiés"
-                        :valueMensuel="mensuel.totalBudget > 0 ? format(mensuel.totalBudget) : '—'"
-                        :valueAnnuel="annuel.totalBudget > 0 ? format(annuel.totalBudget) : '—'"
+                        :valueMensuel="monthly.totalBudget > 0 ? format(monthly.totalBudget) : '—'"
+                        :valueAnnuel="annual.totalBudget > 0 ? format(annual.totalBudget) : '—'"
                         color="blue"
                         :periode="periodeBudget"
                         :href="route('budgets.index')"
@@ -147,29 +147,29 @@ function applyFilters({ mois, annee, currency }) {
                     <StatCard
                         label="Dépenses du mois"
                         labelAnnuel="Dépenses annuelles"
-                        :valueMensuel="format(mensuel.totalDepenses)"
-                        :valueAnnuel="format(annuel.totalDepenses)"
+                        :valueMensuel="format(monthly.totalExpenses)"
+                        :valueAnnuel="format(annual.totalExpenses)"
                         color="red"
                         :periode="periodeDepenses"
-                        :href="route('depenses.index')"
+                        :href="route('expenses.index')"
                         @update:periode="v => periodeDepenses = v"
                     />
                     <StatCard
                         label="Revenus du mois"
                         labelAnnuel="Revenus annuels"
-                        :valueMensuel="format(mensuel.totalRevenus)"
-                        :valueAnnuel="format(annuel.totalRevenus)"
+                        :valueMensuel="format(monthly.totalRevenues)"
+                        :valueAnnuel="format(annual.totalRevenues)"
                         color="green"
                         :periode="periodeRevenus"
-                        :href="route('revenus.index')"
+                        :href="route('revenues.index')"
                         @update:periode="v => periodeRevenus = v"
                     />
                     <StatCard
                         label="Solde"
-                        :valueMensuel="format(mensuel.solde)"
-                        :valueAnnuel="format(annuel.solde)"
-                        :color="mensuel.solde >= 0 ? 'green' : 'red'"
-                        :colorAnnuel="annuel.solde >= 0 ? 'green' : 'red'"
+                        :valueMensuel="format(monthly.balance)"
+                        :valueAnnuel="format(annual.balance)"
+                        :color="monthly.balance >= 0 ? 'green' : 'red'"
+                        :colorAnnuel="annual.balance >= 0 ? 'green' : 'red'"
                         :periode="periodeSolde"
                         @update:periode="v => periodeSolde = v"
                     />
@@ -184,7 +184,7 @@ function applyFilters({ mois, annee, currency }) {
                         <BudgetProgress
                             v-if="current.totalBudget > 0"
                             :prevu="current.totalBudget"
-                            :depense="current.totalDepenses"
+                            :depense="current.totalExpenses"
                         />
                         <p v-else class="text-sm text-gray-400 dark:text-gray-500">
                             Aucun budget {{ periode === 'mensuel' ? 'pour ce mois' : 'pour cette année' }}.
@@ -194,20 +194,20 @@ function applyFilters({ mois, annee, currency }) {
                                 Solde :
                                 <span
                                     class="font-semibold"
-                                    :class="current.solde >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
-                                >{{ format(current.solde) }}</span>
+                                    :class="current.balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
+                                >{{ format(current.balance) }}</span>
                             </div>
                             <div v-if="periode === 'annuel'" class="text-xs text-gray-400 dark:text-gray-500 flex gap-3">
-                                <span>Mensuel cumulé : {{ format(annuel.totalBudgetMensualise) }}</span>
+                                <span>Mensuel cumulé : {{ format(annual.totalMonthlyBudget) }}</span>
                                 <span>·</span>
-                                <span>Annuel : {{ format(annuel.totalBudgetAnnuelType) }}</span>
+                                <span>Annuel : {{ format(annual.totalAnnualBudget) }}</span>
                             </div>
                         </div>
                     </Link>
 
-                    <Link :href="route('depenses.index')" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-shadow block">
+                    <Link :href="route('expenses.index')" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 transition-shadow block">
                         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Dépenses par catégorie</h3>
-                        <div v-if="current.depensesParCategorie.length" class="max-w-xs mx-auto">
+                        <div v-if="current.expensesByCategory.length" class="max-w-xs mx-auto">
                             <Doughnut :data="chartData" :options="chartOptions" />
                         </div>
                         <p v-else class="text-sm text-gray-400 dark:text-gray-500">Aucune dépense sur cette période.</p>
@@ -218,7 +218,7 @@ function applyFilters({ mois, annee, currency }) {
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div class="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
                         <h3 class="text-base font-semibold text-gray-800 dark:text-gray-100">Dernières dépenses</h3>
-                        <Link :href="route('depenses.index')" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Voir tout</Link>
+                        <Link :href="route('expenses.index')" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Voir tout</Link>
                     </div>
                     <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -231,18 +231,18 @@ function applyFilters({ mois, annee, currency }) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                            <tr v-if="!dernieresDepenses.length">
+                            <tr v-if="!recentExpenses.length">
                                 <td colspan="4" class="px-6 py-4 text-center text-gray-400 dark:text-gray-500">Aucune dépense.</td>
                             </tr>
-                            <tr v-for="d in dernieresDepenses" :key="d.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td class="px-6 py-3 text-gray-900 dark:text-gray-100">{{ d.libelle }}</td>
+                            <tr v-for="d in recentExpenses" :key="d.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td class="px-6 py-3 text-gray-900 dark:text-gray-100">{{ d.label }}</td>
                                 <td class="px-6 py-3">
-                                    <AppBadge v-if="d.categorie" :label="d.categorie.nom" :couleur="d.categorie.couleur" />
+                                    <AppBadge v-if="d.category" :label="d.category.name" :couleur="d.category.color" />
                                     <span v-else class="text-gray-400 dark:text-gray-500">—</span>
                                 </td>
-                                <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(d.date_depense) }}</td>
+                                <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ formatDate(d.expense_date) }}</td>
                                 <td class="px-6 py-3 text-right font-medium text-red-600 dark:text-red-400">
-                                    {{ isAllCurrencies ? formatWithCode(d.montant, d.currency_code) : format(d.montant) }}
+                                    {{ isAllCurrencies ? formatWithCode(d.amount, d.currency_code) : format(d.amount) }}
                                 </td>
                             </tr>
                         </tbody>

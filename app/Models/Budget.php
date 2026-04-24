@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Categorie;
 
 class Budget extends Model
 {
@@ -12,38 +11,37 @@ class Budget extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'type', 'mois', 'annee', 'montant_prevu', 'libelle', 'categorie_id', 'currency_code'
+        'user_id', 'type', 'month', 'year', 'planned_amount', 'label', 'category_id', 'currency_code',
     ];
 
-    protected $appends = ['montant_depense', 'solde'];
+    protected $appends = ['expense_amount', 'balance'];
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function categorie()
+    public function category()
     {
-        return $this->belongsTo(Categorie::class);
+        return $this->belongsTo(Category::class);
     }
 
-    public function depenses()
+    public function expenses()
     {
-        return $this->hasMany(Depense::class);
+        return $this->hasMany(Expense::class);
     }
 
-    public function getMontantDepenseAttribute(): float
+    public function getExpenseAmountAttribute(): float
     {
-        // Use the in-memory collection when depenses are eager-loaded (avoids N+1)
-        if ($this->relationLoaded('depenses')) {
-            return (float) $this->depenses->sum('montant');
+        if ($this->relationLoaded('expenses')) {
+            return (float) $this->expenses->sum('amount');
         }
 
-        return (float) $this->depenses()->sum('montant');
+        return (float) $this->expenses()->sum('amount');
     }
 
-    public function getSoldeAttribute(): float
+    public function getBalanceAttribute(): float
     {
-        return (float) $this->montant_prevu - $this->montant_depense;
+        return (float) $this->planned_amount - $this->expense_amount;
     }
 }

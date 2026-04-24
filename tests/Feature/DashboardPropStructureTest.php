@@ -3,16 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\Budget;
-use App\Models\Categorie;
-use App\Models\Depense;
-use App\Models\Revenu;
+use App\Models\Category;
+use App\Models\Expense;
+use App\Models\Revenue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Tests the nested mensuel/annuel prop structure used by the Vue dashboard
- * (in addition to the flat props tested in DashboardTest).
+ * Tests the nested monthly/annual prop structure used by the Vue dashboard.
  */
 class DashboardPropStructureTest extends TestCase
 {
@@ -26,78 +25,78 @@ class DashboardPropStructureTest extends TestCase
         $this->user = User::factory()->create(['email_verified_at' => now()]);
     }
 
-    public function test_mensuel_prop_contains_required_keys(): void
+    public function test_monthly_prop_contains_required_keys(): void
     {
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->has('mensuel.totalBudget')
-                ->has('mensuel.totalDepenses')
-                ->has('mensuel.totalRevenus')
-                ->has('mensuel.solde')
-                ->has('mensuel.depensesParCategorie')
+                ->has('monthly.totalBudget')
+                ->has('monthly.totalExpenses')
+                ->has('monthly.totalRevenues')
+                ->has('monthly.balance')
+                ->has('monthly.expensesByCategory')
             );
     }
 
-    public function test_annuel_prop_contains_required_keys(): void
+    public function test_annual_prop_contains_required_keys(): void
     {
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->has('annuel.totalBudget')
-                ->has('annuel.totalDepenses')
-                ->has('annuel.totalRevenus')
-                ->has('annuel.solde')
-                ->has('annuel.depensesParCategorie')
+                ->has('annual.totalBudget')
+                ->has('annual.totalExpenses')
+                ->has('annual.totalRevenues')
+                ->has('annual.balance')
+                ->has('annual.expensesByCategory')
             );
     }
 
-    public function test_mensuel_total_budget_sums_monthly_budgets(): void
+    public function test_monthly_total_budget_sums_monthly_budgets(): void
     {
-        Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'montant_prevu' => 100000]);
-        Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'montant_prevu' => 50000]);
+        Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'planned_amount' => 100000]);
+        Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'planned_amount' => 50000]);
 
         $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('mensuel.totalBudget', 150000));
+            ->assertInertia(fn ($page) => $page->where('monthly.totalBudget', 150000));
     }
 
-    public function test_annuel_solde_equals_revenus_minus_depenses(): void
+    public function test_annual_balance_equals_revenues_minus_expenses(): void
     {
         $budget = Budget::factory()->create(['user_id' => $this->user->id]);
-        $cat    = Categorie::factory()->create();
+        $cat    = Category::factory()->create();
 
-        Revenu::factory()->create([
+        Revenue::factory()->create([
+            'user_id'      => $this->user->id,
+            'amount'       => 1200000,
+            'month'        => now()->month,
+            'year'         => now()->year,
+            'revenue_date' => now()->format('Y-m-01'),
+        ]);
+        Expense::factory()->create([
+            'user_id'      => $this->user->id,
+            'budget_id'    => $budget->id,
+            'category_id'  => $cat->id,
+            'amount'       => 300000,
+            'expense_date' => now()->format('Y-m-10'),
+        ]);
+
+        $this->actingAs($this->user)->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('annual.balance', 900000));
+    }
+
+    public function test_recent_expenses_includes_category_relation(): void
+    {
+        $budget = Budget::factory()->create(['user_id' => $this->user->id]);
+        $cat    = Category::factory()->create(['name' => 'Alimentation']);
+
+        Expense::factory()->create([
             'user_id'     => $this->user->id,
-            'montant'     => 1200000,
-            'mois'        => now()->month,
-            'annee'       => now()->year,
-            'date_revenu' => now()->format('Y-m-01'),
-        ]);
-        Depense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
-            'montant'      => 300000,
-            'date_depense' => now()->format('Y-m-10'),
-        ]);
-
-        $this->actingAs($this->user)->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('annuel.solde', 900000));
-    }
-
-    public function test_dernières_depenses_includes_categorie_relation(): void
-    {
-        $budget = Budget::factory()->create(['user_id' => $this->user->id]);
-        $cat    = Categorie::factory()->create(['nom' => 'Alimentation']);
-
-        Depense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'categorie_id' => $cat->id,
+            'budget_id'   => $budget->id,
+            'category_id' => $cat->id,
         ]);
 
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->has('dernieresDepenses', 1)
-                ->where('dernieresDepenses.0.categorie.nom', 'Alimentation')
+                ->has('recentExpenses', 1)
+                ->where('recentExpenses.0.category.name', 'Alimentation')
             );
     }
 }

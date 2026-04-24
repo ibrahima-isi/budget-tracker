@@ -13,21 +13,17 @@ class UpdateBudgetRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, ValidationRule|array<mixed>|string> */
     public function rules(): array
     {
         return [
-            'type'          => ['required', Rule::in(['mensuel', 'annuel'])],
-            'mois'          => ['nullable', 'integer', 'min:1', 'max:12', 'required_if:type,mensuel'],
-            'annee'         => ['required', 'integer', 'min:2000', 'max:2100'],
-            'montant_prevu' => ['required', 'numeric', 'min:0'],
-            'libelle'       => ['nullable', 'string', 'max:150'],
-            'currency_code' => ['nullable', 'string', 'max:10', Rule::exists('currencies', 'code')],
-            'categorie_id'  => ['nullable', Rule::exists('categories', 'id')->where(function ($q) {
+            'type'           => ['required', Rule::in(['mensuel', 'annuel'])],
+            'month'          => ['nullable', 'integer', 'min:1', 'max:12', 'required_if:type,mensuel'],
+            'year'           => ['required', 'integer', 'min:2000', 'max:2100'],
+            'planned_amount' => ['required', 'numeric', 'min:0'],
+            'label'          => ['nullable', 'string', 'max:150'],
+            'currency_code'  => ['nullable', 'string', 'max:10', Rule::exists('currencies', 'code')],
+            'category_id'    => ['nullable', Rule::exists('categories', 'id')->where(function ($q) {
                 $q->where(function ($inner) {
                     $inner->whereNull('user_id')->orWhere('user_id', $this->user()->id);
                 });

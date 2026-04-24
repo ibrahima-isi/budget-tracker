@@ -66,10 +66,10 @@ function chooseCurrency(code) {
                                 <NavLink :href="route('budgets.index')" :active="route().current('budgets.*')">
                                     {{ $t('nav.budgets') }}
                                 </NavLink>
-                                <NavLink :href="route('depenses.index')" :active="route().current('depenses.*')">
+                                <NavLink :href="route('expenses.index')" :active="route().current('expenses.*')">
                                     {{ $t('nav.expenses') }}
                                 </NavLink>
-                                <NavLink :href="route('revenus.index')" :active="route().current('revenus.*')">
+                                <NavLink :href="route('revenues.index')" :active="route().current('revenues.*')">
                                     {{ $t('nav.revenues') }}
                                 </NavLink>
                                 <NavLink :href="route('categories.index')" :active="route().current('categories.*')">
@@ -209,10 +209,10 @@ function chooseCurrency(code) {
                         <ResponsiveNavLink :href="route('budgets.index')" :active="route().current('budgets.*')">
                             {{ $t('nav.budgets') }}
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('depenses.index')" :active="route().current('depenses.*')">
+                        <ResponsiveNavLink :href="route('expenses.index')" :active="route().current('expenses.*')">
                             {{ $t('nav.expenses') }}
                         </ResponsiveNavLink>
-                        <ResponsiveNavLink :href="route('revenus.index')" :active="route().current('revenus.*')">
+                        <ResponsiveNavLink :href="route('revenues.index')" :active="route().current('revenues.*')">
                             {{ $t('nav.revenues') }}
                         </ResponsiveNavLink>
                         <ResponsiveNavLink :href="route('categories.index')" :active="route().current('categories.*')">

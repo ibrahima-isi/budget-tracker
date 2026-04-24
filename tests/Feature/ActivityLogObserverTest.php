@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\ActivityLog;
 use App\Models\Budget;
-use App\Models\Categorie;
-use App\Models\Depense;
-use App\Models\Revenu;
+use App\Models\Category;
+use App\Models\Expense;
+use App\Models\Revenue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,44 +27,44 @@ class ActivityLogObserverTest extends TestCase
         $this->user = User::factory()->create(['email_verified_at' => now()]);
     }
 
-    // ── Categorie ─────────────────────────────────────────────────────────────
+    // ── Category ──────────────────────────────────────────────────────────────
 
-    public function test_creating_categorie_logs_created_event(): void
+    public function test_creating_category_logs_created_event(): void
     {
         $this->actingAs($this->user)->post('/categories', [
-            'nom' => 'Loisirs', 'couleur' => '#3b82f6', 'icone' => 'star',
+            'name' => 'Loisirs', 'color' => '#3b82f6', 'icon' => 'star',
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
             'event'        => 'created',
-            'subject_type' => 'Categorie',
+            'subject_type' => 'Category',
         ]);
     }
 
-    public function test_updating_categorie_logs_updated_event(): void
+    public function test_updating_category_logs_updated_event(): void
     {
-        $cat = Categorie::factory()->create(['nom' => 'Vieux']);
+        $cat = Category::factory()->create(['name' => 'Old Name']);
 
         $this->actingAs($this->user)->patch("/categories/{$cat->id}", [
-            'nom' => 'Nouveau', 'couleur' => '#000000', 'icone' => 'home',
+            'name' => 'New Name', 'color' => '#000000', 'icon' => 'home',
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
             'event'        => 'updated',
-            'subject_type' => 'Categorie',
+            'subject_type' => 'Category',
             'subject_id'   => $cat->id,
         ]);
     }
 
-    public function test_deleting_categorie_logs_deleted_event(): void
+    public function test_deleting_category_logs_deleted_event(): void
     {
-        $cat = Categorie::factory()->create();
+        $cat = Category::factory()->create();
 
         $this->actingAs($this->user)->delete("/categories/{$cat->id}");
 
         $this->assertDatabaseHas('activity_logs', [
             'event'        => 'deleted',
-            'subject_type' => 'Categorie',
+            'subject_type' => 'Category',
             'subject_id'   => $cat->id,
         ]);
     }
@@ -74,7 +74,7 @@ class ActivityLogObserverTest extends TestCase
     public function test_creating_budget_logs_created_event(): void
     {
         $this->actingAs($this->user)->post('/budgets', [
-            'type' => 'mensuel', 'mois' => 4, 'annee' => 2026, 'montant_prevu' => 100000,
+            'type' => 'mensuel', 'month' => 4, 'year' => 2026, 'planned_amount' => 100000,
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
@@ -97,17 +97,17 @@ class ActivityLogObserverTest extends TestCase
         ]);
     }
 
-    // ── Revenu ────────────────────────────────────────────────────────────────
+    // ── Revenue ───────────────────────────────────────────────────────────────
 
-    public function test_creating_revenu_logs_created_event(): void
+    public function test_creating_revenue_logs_created_event(): void
     {
-        $this->actingAs($this->user)->post('/revenus', [
-            'source' => 'Salaire', 'montant' => 500000, 'date_revenu' => '2026-04-01',
+        $this->actingAs($this->user)->post('/revenues', [
+            'source' => 'Salaire', 'amount' => 500000, 'revenue_date' => '2026-04-01',
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
             'event'        => 'created',
-            'subject_type' => 'Revenu',
+            'subject_type' => 'Revenue',
         ]);
     }
 
@@ -115,33 +115,33 @@ class ActivityLogObserverTest extends TestCase
 
     public function test_update_log_contains_old_and_new_values(): void
     {
-        $cat = Categorie::factory()->create(['nom' => 'OldName']);
+        $cat = Category::factory()->create(['name' => 'OldName']);
 
         $this->actingAs($this->user)->patch("/categories/{$cat->id}", [
-            'nom' => 'NewName', 'couleur' => '#123456', 'icone' => 'car',
+            'name' => 'NewName', 'color' => '#123456', 'icon' => 'car',
         ]);
 
         $log = ActivityLog::where('event', 'updated')
-            ->where('subject_type', 'Categorie')
+            ->where('subject_type', 'Category')
             ->where('subject_id', $cat->id)
             ->first();
 
         $this->assertNotNull($log);
         $this->assertArrayHasKey('old', $log->properties);
         $this->assertArrayHasKey('new', $log->properties);
-        $this->assertEquals('OldName', $log->properties['old']['nom']);
-        $this->assertEquals('NewName', $log->properties['new']['nom']);
+        $this->assertEquals('OldName', $log->properties['old']['name']);
+        $this->assertEquals('NewName', $log->properties['new']['name']);
     }
 
     public function test_update_with_no_changes_does_not_log(): void
     {
-        $cat = Categorie::factory()->create(['nom' => 'Same', 'couleur' => '#123456', 'icone' => 'car']);
+        $cat = Category::factory()->create(['name' => 'Same', 'color' => '#123456', 'icon' => 'car']);
 
         $initialCount = ActivityLog::count();
 
         // Patch with identical data
         $this->actingAs($this->user)->patch("/categories/{$cat->id}", [
-            'nom' => 'Same', 'couleur' => '#123456', 'icone' => 'car',
+            'name' => 'Same', 'color' => '#123456', 'icon' => 'car',
         ]);
 
         $this->assertEquals($initialCount, ActivityLog::count());
@@ -152,7 +152,7 @@ class ActivityLogObserverTest extends TestCase
     public function test_password_is_never_logged_in_activity_properties(): void
     {
         $this->actingAs($this->user)->post('/categories', [
-            'nom' => 'Test', 'couleur' => '#ff0000', 'icone' => 'tag',
+            'name' => 'Test', 'color' => '#ff0000', 'icon' => 'tag',
         ]);
 
         $logs = ActivityLog::all();

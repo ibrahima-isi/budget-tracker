@@ -4,9 +4,9 @@ namespace App\Providers;
 
 use App\Listeners\LogAuthEvent;
 use App\Models\Budget;
-use App\Models\Categorie;
-use App\Models\Depense;
-use App\Models\Revenu;
+use App\Models\Category;
+use App\Models\Expense;
+use App\Models\Revenue;
 use App\Observers\ModelActivityObserver;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -38,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         // ── Activity logging ───────────────────────────────────────────────────
-        foreach ([Budget::class, Depense::class, Revenu::class, Categorie::class] as $model) {
+        foreach ([Budget::class, Expense::class, Revenue::class, Category::class] as $model) {
             $model::observe(ModelActivityObserver::class);
         }
 

@@ -19,7 +19,7 @@ const authUser = usePage().props.auth.user;
 
 // ── Create ────────────────────────────────────────────────────────────────────
 const showCreate = ref(false);
-const form = useForm({ nom: '', couleur: '#3b82f6', icone: 'shopping-cart' });
+const form = useForm({ name: '', color: '#3b82f6', icon: 'shopping-cart' });
 
 function submitCreate() {
     form.post(route('categories.store'), {
@@ -29,15 +29,15 @@ function submitCreate() {
 
 // ── Edit ──────────────────────────────────────────────────────────────────────
 const showEdit = ref(false);
-const editForm = useForm({ nom: '', couleur: '#3b82f6', icone: '' });
+const editForm = useForm({ name: '', color: '#3b82f6', icon: '' });
 let editId = null;
 
 function openEdit(c) {
-    editId           = c.id;
-    editForm.nom     = c.nom;
-    editForm.couleur = c.couleur;
-    editForm.icone   = c.icone;
-    showEdit.value   = true;
+    editId          = c.id;
+    editForm.name   = c.name;
+    editForm.color  = c.color;
+    editForm.icon   = c.icon;
+    showEdit.value  = true;
 }
 
 function submitEdit() {
@@ -48,7 +48,7 @@ function submitEdit() {
 
 // ── Delete ────────────────────────────────────────────────────────────────────
 const deleteForm = useForm({});
-function deleteCategorie(id) {
+function deleteCategory(id) {
     if (confirm(t('categories.confirmDelete'))) {
         deleteForm.delete(route('categories.destroy', id));
     }
@@ -104,15 +104,15 @@ function canEditOrDelete(c) {
                             <div class="flex items-center gap-3 min-w-0">
                                 <span
                                     class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                                    :style="{ backgroundColor: c.couleur }"
+                                    :style="{ backgroundColor: c.color }"
                                 >
-                                    {{ c.nom.charAt(0).toUpperCase() }}
+                                    {{ c.name.charAt(0).toUpperCase() }}
                                 </span>
                                 <div class="min-w-0">
-                                    <p class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ c.nom }}</p>
+                                    <p class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ c.name }}</p>
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <p class="text-xs text-gray-400 dark:text-gray-500">
-                                            {{ $t('categories.expenseCount', c.depenses_count) }}
+                                            {{ $t('categories.expenseCount', c.expenses_count) }}
                                         </p>
                                         <span
                                             v-if="c.user_id === null"
@@ -148,7 +148,7 @@ function canEditOrDelete(c) {
                                 <!-- Edit / Delete — admin or owner only -->
                                 <template v-if="canEditOrDelete(c)">
                                     <button @click="openEdit(c)" class="text-xs text-yellow-600 dark:text-yellow-400 hover:underline">{{ $t('common.edit') }}</button>
-                                    <button @click="deleteCategorie(c.id)" class="text-xs text-red-600 dark:text-red-400 hover:underline">{{ $t('common.delete') }}</button>
+                                    <button @click="deleteCategory(c.id)" class="text-xs text-red-600 dark:text-red-400 hover:underline">{{ $t('common.delete') }}</button>
                                 </template>
                             </div>
                         </div>
@@ -167,21 +167,21 @@ function canEditOrDelete(c) {
         <form @submit.prevent="submitCreate" class="space-y-4">
             <div>
                 <InputLabel :value="$t('categories.name')" />
-                <TextInput v-model="form.nom" class="mt-1 block w-full" />
-                <InputError :message="form.errors.nom" />
+                <TextInput v-model="form.name" class="mt-1 block w-full" />
+                <InputError :message="form.errors.name" />
             </div>
             <div>
                 <InputLabel :value="$t('categories.color')" />
                 <div class="mt-1 flex items-center gap-3">
-                    <input v-model="form.couleur" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-700" />
-                    <TextInput v-model="form.couleur" placeholder="#3b82f6" class="block w-full" />
+                    <input v-model="form.color" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-700" />
+                    <TextInput v-model="form.color" placeholder="#3b82f6" class="block w-full" />
                 </div>
-                <InputError :message="form.errors.couleur" />
+                <InputError :message="form.errors.color" />
             </div>
             <div>
                 <InputLabel :value="$t('categories.icon')" />
-                <TextInput v-model="form.icone" :placeholder="$t('categories.iconPlaceholder')" class="mt-1 block w-full" />
-                <InputError :message="form.errors.icone" />
+                <TextInput v-model="form.icon" :placeholder="$t('categories.iconPlaceholder')" class="mt-1 block w-full" />
+                <InputError :message="form.errors.icon" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
                 <SecondaryButton type="button" @click="showCreate = false">{{ $t('common.cancel') }}</SecondaryButton>
@@ -195,21 +195,21 @@ function canEditOrDelete(c) {
         <form @submit.prevent="submitEdit" class="space-y-4">
             <div>
                 <InputLabel :value="$t('categories.name')" />
-                <TextInput v-model="editForm.nom" class="mt-1 block w-full" />
-                <InputError :message="editForm.errors.nom" />
+                <TextInput v-model="editForm.name" class="mt-1 block w-full" />
+                <InputError :message="editForm.errors.name" />
             </div>
             <div>
                 <InputLabel :value="$t('categories.color')" />
                 <div class="mt-1 flex items-center gap-3">
-                    <input v-model="editForm.couleur" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-700" />
-                    <TextInput v-model="editForm.couleur" class="block w-full" />
+                    <input v-model="editForm.color" type="color" class="h-10 w-16 rounded border border-gray-300 dark:border-gray-600 cursor-pointer bg-white dark:bg-gray-700" />
+                    <TextInput v-model="editForm.color" class="block w-full" />
                 </div>
-                <InputError :message="editForm.errors.couleur" />
+                <InputError :message="editForm.errors.color" />
             </div>
             <div>
                 <InputLabel :value="$t('categories.icon')" />
-                <TextInput v-model="editForm.icone" class="mt-1 block w-full" />
-                <InputError :message="editForm.errors.icone" />
+                <TextInput v-model="editForm.icon" class="mt-1 block w-full" />
+                <InputError :message="editForm.errors.icon" />
             </div>
             <div class="flex justify-end gap-3 mt-2">
                 <SecondaryButton type="button" @click="showEdit = false">{{ $t('common.cancel') }}</SecondaryButton>

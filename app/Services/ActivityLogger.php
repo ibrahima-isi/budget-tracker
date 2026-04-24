@@ -64,7 +64,7 @@ class ActivityLogger
      */
     public static function labelFor(Model $model): string
     {
-        foreach (['libelle', 'source', 'nom', 'name', 'title', 'code'] as $attr) {
+        foreach (['label', 'source', 'name', 'title', 'code'] as $attr) {
             if (! empty($model->{$attr})) {
                 return (string) $model->{$attr};
             }

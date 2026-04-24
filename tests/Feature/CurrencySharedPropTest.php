@@ -92,19 +92,19 @@ class CurrencySharedPropTest extends TestCase
             ->assertInertia(fn ($page) => $page->has('currencies'));
     }
 
-    public function test_currencies_shared_on_depenses_page(): void
+    public function test_currencies_shared_on_expenses_page(): void
     {
         Currency::factory()->create(['is_active' => true]);
 
-        $this->actingAs($this->user)->get('/depenses')
+        $this->actingAs($this->user)->get('/expenses')
             ->assertInertia(fn ($page) => $page->has('currencies'));
     }
 
-    public function test_currencies_shared_on_revenus_page(): void
+    public function test_currencies_shared_on_revenues_page(): void
     {
         Currency::factory()->create(['is_active' => true]);
 
-        $this->actingAs($this->user)->get('/revenus')
+        $this->actingAs($this->user)->get('/revenues')
             ->assertInertia(fn ($page) => $page->has('currencies'));
     }
 
