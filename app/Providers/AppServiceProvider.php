@@ -2,16 +2,20 @@
 
 namespace App\Providers;
 
+use App\Auth\EncryptedUserProvider;
 use App\Listeners\LogAuthEvent;
 use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Expense;
 use App\Models\Revenue;
+use App\Models\User;
 use App\Observers\ModelActivityObserver;
+use App\Services\EncryptionService;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -27,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(EncryptionService::class);
     }
 
     /**
@@ -36,6 +40,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // ── Encrypted user provider (replaces default Eloquent provider) ───────
+        Auth::provider('encrypted', function ($app, array $config) {
+            return new EncryptedUserProvider(
+                $app['hash'],
+                $config['model'] ?? User::class,
+                $app->make(EncryptionService::class),
+            );
+        });
 
         // ── Activity logging ───────────────────────────────────────────────────
         foreach ([Budget::class, Expense::class, Revenue::class, Category::class] as $model) {

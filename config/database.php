@@ -97,6 +97,14 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Neon uses PgBouncer in transaction-pooling mode, which does not
+            // support server-side prepared statements.  PGSQL_ATTR_DISABLE_PREPARES
+            // (PHP 7.4+) tells pdo_pgsql to send queries inline (PQexecParams)
+            // instead of using PQprepare/PQexecPrepared, avoiding the
+            // "cached plan must not change result type" error.
+            'options' => [
+                PDO::PGSQL_ATTR_DISABLE_PREPARES => true,
+            ],
         ],
 
         'sqlsrv' => [
