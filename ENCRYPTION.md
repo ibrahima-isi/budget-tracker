@@ -78,12 +78,29 @@ La commande est **idempotente** : les lignes déjà chiffrées sont ignorées.
 ## Rotation de clé
 
 La rotation consiste à déchiffrer toutes les lignes avec l'ancienne clé
-puis les rechiffrer avec la nouvelle. **Fenêtre de maintenance recommandée.**
+et les re-chiffrer avec la nouvelle — **entièrement côté PostgreSQL**, sans
+que les données en clair ne transitent par PHP.
 
-### Procédure
+> **La commande artisan dédiée ne tourne JAMAIS automatiquement.**
+> Elle doit être invoquée explicitement. Voir section suivante.
+
+---
+
+### Étape 0 — Quand tourner les clés ?
+
+| Déclencheur | Urgence |
+|---|---|
+| Clé privée potentiellement compromise | Immédiate |
+| Départ d'un membre de l'équipe avec accès Railway | Dans les 24h |
+| Bonne pratique annuelle | Planifiée |
+
+---
+
+### Étape 1 — Générer la nouvelle paire
 
 ```bash
-# 1. Générer la nouvelle paire
+export PATH="/opt/homebrew/bin:$PATH"
+
 gpg --batch --passphrase '' --gen-key <<EOF
 Key-Type: RSA
 Key-Length: 4096
@@ -93,23 +110,148 @@ Expire-Date: 0
 %commit
 EOF
 
-gpg --armor --export encryption-v2@budgettrack.local              > storage/keys/public_new.pgp
+gpg --armor --export encryption-v2@budgettrack.local \
+    > storage/keys/public_v2.pgp
+
 gpg --batch --passphrase '' --armor --export-secret-keys \
-    encryption-v2@budgettrack.local                               > storage/keys/private_new.pgp
+    encryption-v2@budgettrack.local \
+    > storage/keys/private_v2.pgp
 
-# 2. Ajouter les nouvelles variables d'env
-APP_PUBLIC_KEY_NEW=<base64 de public_new.pgp>
-APP_PRIVATE_KEY_NEW=<base64 de private_new.pgp>
+# Encoder pour les variables d'env
+base64 -w0 storage/keys/public_v2.pgp   # → NEW APP_PUBLIC_KEY
+base64 -w0 storage/keys/private_v2.pgp  # → NEW APP_PRIVATE_KEY
+```
 
-# 3. Lancer la commande de rotation (à créer selon le même modèle
-#    que EncryptExistingUsers, en passant ancienne clé privée + nouvelle
-#    clé publique à chaque ligne)
+---
 
-# 4. Basculer APP_PUBLIC_KEY et APP_PRIVATE_KEY vers les nouvelles valeurs
+### Étape 2 — Préparer la commande artisan
 
-# 5. Supprimer les anciennes clés de l'environnement et de la keychain GPG
-gpg --delete-secret-keys encryption@budgettrack.local
-gpg --delete-keys         encryption@budgettrack.local
+La commande se trouve dans :
+`app/Console/Commands/RotateUserEncryptionKeys.php`
+
+Elle contient deux constantes **placeholder** à remplacer avant de lancer :
+
+```php
+// Récupérer l'ancienne clé privée depuis 1Password :
+// op item get xrs5dsanxdd3jqcemdewh2dtny --reveal --fields "Private Key (armored)"
+private const OLD_PRIVATE_KEY = <<<'PGP'
+-----BEGIN PGP PRIVATE KEY BLOCK-----
+<coller ici l'ancienne clé privée>
+-----END PGP PRIVATE KEY BLOCK-----
+PGP;
+
+// Coller ici le contenu de storage/keys/public_v2.pgp
+private const NEW_PUBLIC_KEY = <<<'PGP'
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+<coller ici la nouvelle clé publique>
+-----END PGP PUBLIC KEY BLOCK-----
+PGP;
+```
+
+> **Ne jamais committer ce fichier avec de vraies clés.**
+> Remplacer les clés, lancer la commande, puis remettre les placeholders.
+
+---
+
+### Étape 3 — Dry-run (obligatoire)
+
+```bash
+# Local (dev branch Neon)
+php artisan users:rotate-keys --dry-run
+
+# Production
+railway run php artisan users:rotate-keys --dry-run
+```
+
+Vérifie que le nombre de lignes affiché correspond à `SELECT COUNT(*) FROM users`.
+
+---
+
+### Étape 4 — Lancer la rotation (fenêtre de maintenance)
+
+```bash
+railway run php artisan users:rotate-keys --force
+```
+
+La commande traite les lignes par batch de 50 (configurable avec `--chunk=N`).
+En cas d'erreur partielle, les lignes déjà traitées utilisent la **nouvelle clé**,
+les restantes l'**ancienne**. Garder les deux clés disponibles jusqu'à succès complet.
+
+---
+
+### Étape 5 — Basculer les variables d'env
+
+```bash
+NEW_PUB_B64=$(base64 -w0 storage/keys/public_v2.pgp | tr -d '\n')
+NEW_PRIV_B64=$(base64 -w0 storage/keys/private_v2.pgp | tr -d '\n')
+
+railway variables set \
+  APP_PUBLIC_KEY="$NEW_PUB_B64" \
+  APP_PRIVATE_KEY="$NEW_PRIV_B64"
+
+php artisan config:clear
+```
+
+---
+
+### Étape 6 — Sauvegarder dans 1Password et révoquer l'ancienne clé
+
+```bash
+# Créer un nouvel item 1Password avec les nouvelles clés
+op item create \
+  --vault Development \
+  --category "Secure Note" \
+  --title "BudgetTrack — PGP Encryption Keys v2 (pgcrypto RSA-4096)" \
+  "Private Key (armored)[password]=$(cat storage/keys/private_v2.pgp)" \
+  "Public Key (armored)[text]=$(cat storage/keys/public_v2.pgp)"
+
+# Marquer l'ancien item comme révoqué (ne pas le supprimer avant vérification)
+op item edit xrs5dsanxdd3jqcemdewh2dtny --title "BudgetTrack — PGP Keys v1 (RÉVOQUÉ $(date +%Y-%m-%d))"
+
+# Supprimer les fichiers de clé locale
+rm storage/keys/private.pgp storage/keys/public.pgp
+mv storage/keys/private_v2.pgp storage/keys/private.pgp
+mv storage/keys/public_v2.pgp  storage/keys/public.pgp
+
+# Supprimer l'ancienne clé du trousseau GPG local
+gpg --delete-secret-and-public-key encryption@budgettrack.local
+```
+
+---
+
+### Template SQL brut (secours — si la commande artisan n'est pas disponible)
+
+En cas d'urgence où Laravel ne tourne pas, tu peux lancer directement
+depuis le client Neon ou psql :
+
+```sql
+-- Remplacer OLD_PRIV_KEY et NEW_PUB_KEY par les clés armored réelles.
+-- Exécuter par batch via la clause WHERE id IN (...) pour éviter de locker la table.
+
+UPDATE users
+SET
+    name = pgp_pub_encrypt(
+               pgp_pub_decrypt(name,  dearmor('OLD_PRIV_KEY')),
+               dearmor('NEW_PUB_KEY')
+           ),
+    email = pgp_pub_encrypt(
+                pgp_pub_decrypt(email, dearmor('OLD_PRIV_KEY')),
+                dearmor('NEW_PUB_KEY')
+            ),
+    email_hash = encode(
+                     digest(
+                         lower(pgp_pub_decrypt(email, dearmor('OLD_PRIV_KEY'))),
+                         'sha256'
+                     ),
+                     'hex'
+                 ),
+    updated_at = NOW()
+WHERE id BETWEEN 1 AND 100;  -- ajuster la plage selon le batch souhaité
+
+-- Vérifier qu'une ligne déchiffre correctement avec la nouvelle clé :
+SELECT pgp_pub_decrypt(name, dearmor('NEW_PRIV_KEY'))::TEXT
+FROM users
+LIMIT 1;
 ```
 
 ---
