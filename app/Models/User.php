@@ -164,6 +164,39 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     // ------------------------------------------------------------------
+    // Accessors
+    // ------------------------------------------------------------------
+
+    /**
+     * Return the decrypted name string.
+     *
+     * When the User is fetched via standard Eloquent (not findDecrypted),
+     * the BYTEA column comes back as a PHP resource stream. We detect that
+     * and return a safe placeholder so callers (ActivityLogger, logs, etc.)
+     * never receive binary garbage or a PHP resource.
+     */
+    public function getNameAttribute(mixed $value): string
+    {
+        if (is_resource($value)) {
+            return '[encrypted]';
+        }
+
+        return (string) ($value ?? '');
+    }
+
+    /**
+     * Same guard for the email column.
+     */
+    public function getEmailAttribute(mixed $value): string
+    {
+        if (is_resource($value)) {
+            return '[encrypted]';
+        }
+
+        return (string) ($value ?? '');
+    }
+
+    // ------------------------------------------------------------------
     // Internal helpers
     // ------------------------------------------------------------------
 
