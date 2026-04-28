@@ -33,11 +33,13 @@ class RevenueController extends Controller
             $query->where('year', $year);
         }
 
+        $totalAmount = (clone $query)->sum('montant');
         $revenues = $query->paginate(self::PER_PAGE)->withQueryString();
 
         return Inertia::render('Revenues/Index', [
-            'revenues' => $revenues,
-            'filters'  => ['month' => $month, 'year' => $year, 'currency' => $currency],
+            'revenues'    => $revenues,
+            'totalAmount' => $totalAmount,
+            'filters'     => ['month' => $month, 'year' => $year, 'currency' => $currency],
         ]);
     }
 

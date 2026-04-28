@@ -14,7 +14,7 @@ import { useCurrency } from '@/composables/useCurrency';
 import { useFlash }    from '@/composables/useFlash';
 import { useLocale }   from '@/composables/useLocale';
 
-const props = defineProps({ revenus: Object, filters: Object });
+const props = defineProps({ revenus: Object, totalAmount: Number, filters: Object });
 
 const { t } = useI18n();
 const { format, formatWithCode, currencies, currentCode } = useCurrency();
@@ -74,7 +74,13 @@ function deleteRevenu(id) {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('revenues.title') }}</h2>
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('revenues.title') }}</h2>
+                    <div class="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
+                    <div class="text-lg font-bold text-green-600 dark:text-green-400">
+                        {{ isAllCurrencies ? formatWithCode(totalAmount, filters.currency) : format(totalAmount) }}
+                    </div>
+                </div>
                 <PrimaryButton @click="showCreate = true">{{ $t('revenues.new') }}</PrimaryButton>
             </div>
         </template>

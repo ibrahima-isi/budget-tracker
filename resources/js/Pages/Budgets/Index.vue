@@ -14,7 +14,7 @@ import { useCurrency } from '@/composables/useCurrency';
 import { useFlash }    from '@/composables/useFlash';
 import { useLocale }   from '@/composables/useLocale';
 
-const props = defineProps({ budgets: Object, categories: Array, filters: Object });
+const props = defineProps({ budgets: Object, totals: Object, categories: Array, filters: Object });
 
 const { t } = useI18n();
 const { format, formatWithCode, currencies, currentCode } = useCurrency();
@@ -78,7 +78,26 @@ function deleteBudget(id) {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('budgets.title') }}</h2>
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('budgets.title') }}</h2>
+                    <div class="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
+                    <div class="flex items-center gap-3 text-sm">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase text-gray-500 leading-none">{{ $t('budgets.planned') }}</span>
+                            <span class="font-bold text-gray-700 dark:text-gray-300">{{ isAllCurrencies ? formatWithCode(totals.planned, filters.currency) : format(totals.planned) }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase text-gray-500 leading-none">{{ $t('budgets.spent') }}</span>
+                            <span class="font-bold text-red-600 dark:text-red-400">{{ isAllCurrencies ? formatWithCode(totals.spent, filters.currency) : format(totals.spent) }}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase text-gray-500 leading-none">{{ $t('budgets.balance') }}</span>
+                            <span class="font-bold" :class="totals.balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                                {{ isAllCurrencies ? formatWithCode(totals.balance, filters.currency) : format(totals.balance) }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
                 <PrimaryButton @click="showCreate = true">{{ $t('budgets.new') }}</PrimaryButton>
             </div>
         </template>

@@ -16,10 +16,11 @@ import { useFlash }    from '@/composables/useFlash';
 import { useLocale }   from '@/composables/useLocale';
 
 const props = defineProps({
-    expenses:   Object,
-    budgets:    Array,
-    categories: Array,
-    filters:    Object,
+    expenses:    Object,
+    totalAmount: Number,
+    budgets:     Array,
+    categories:  Array,
+    filters:     Object,
 });
 
 const { t } = useI18n();
@@ -95,7 +96,13 @@ function budgetLabel(b) {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('expenses.title') }}</h2>
+                <div class="flex items-center gap-4">
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ $t('expenses.title') }}</h2>
+                    <div class="hidden sm:block h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
+                    <div class="text-lg font-bold text-red-600 dark:text-red-400">
+                        {{ isAllCurrencies ? formatWithCode(totalAmount, filters.currency) : format(totalAmount) }}
+                    </div>
+                </div>
                 <PrimaryButton @click="showCreate = true">{{ $t('expenses.new') }}</PrimaryButton>
             </div>
         </template>

@@ -43,7 +43,7 @@ watch([localMois, localAnnee, localCurrency], () => {
                 v-model="localMois"
                 class="block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm"
             >
-                <option value="">{{ $t('common.allMonths') }}</option>
+                <option :value="0">{{ $t('common.allMonths') }}</option>
                 <option v-for="(name, i) in moisLongs.slice(1)" :key="i + 1" :value="i + 1">
                     {{ name }}
                 </option>
@@ -57,7 +57,7 @@ watch([localMois, localAnnee, localCurrency], () => {
                 v-model="localAnnee"
                 class="block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm"
             >
-                <option value="">{{ $t('common.allYears') }}</option>
+                <option :value="0">{{ $t('common.allYears') }}</option>
                 <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
             </select>
         </div>

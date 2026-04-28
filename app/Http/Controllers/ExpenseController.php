@@ -43,6 +43,7 @@ class ExpenseController extends Controller
             $query->whereYear('expense_date', $year);
         }
 
+        $totalAmount = (clone $query)->sum('montant');
         $expenses = $query->paginate(self::PER_PAGE)->withQueryString();
 
         $budgets = Budget::where('user_id', Auth::id())
@@ -53,10 +54,11 @@ class ExpenseController extends Controller
         $categories = Category::enabledFor(Auth::user())->orderBy('name')->get(['id', 'name', 'color']);
 
         return Inertia::render('Expenses/Index', [
-            'expenses'   => $expenses,
-            'budgets'    => $budgets,
-            'categories' => $categories,
-            'filters'    => array_merge(
+            'expenses'    => $expenses,
+            'totalAmount' => $totalAmount,
+            'budgets'     => $budgets,
+            'categories'  => $categories,
+            'filters'     => array_merge(
                 $request->only('budget_id', 'category_id'),
                 ['month' => $month, 'year' => $year, 'currency' => $currency]
             ),

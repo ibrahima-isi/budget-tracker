@@ -25,8 +25,20 @@ abstract class Controller
      */
     protected function resolvePeriodFilters(Request $request): array
     {
-        $month  = $request->query('month')  ? (int) $request->query('month')  : null;
-        $year   = $request->query('year')   ? (int) $request->query('year')   : null;
+        // If the parameter is missing, we default to current month/year.
+        // If it's explicitly 'all' (passed as empty string in some cases or we can use 0), we use null.
+        
+        $month = now()->month;
+        if ($request->has('month')) {
+            $val = $request->query('month');
+            $month = ($val === 'all' || $val === '' || $val === '0') ? null : (int) $val;
+        }
+
+        $year = now()->year;
+        if ($request->has('year')) {
+            $val = $request->query('year');
+            $year = ($val === 'all' || $val === '' || $val === '0') ? null : (int) $val;
+        }
 
         $currency = $request->query('currency', '');
         if ($currency === '' || $currency === null) {

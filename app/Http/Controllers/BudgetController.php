@@ -40,10 +40,17 @@ class BudgetController extends Controller
             });
         }
 
+        $totals = [
+            'planned' => (clone $query)->sum('planned_amount'),
+            'spent'   => (clone $query)->withSum('expenses as total_spent', 'amount')->get()->sum('total_spent'),
+        ];
+        $totals['balance'] = $totals['planned'] - $totals['spent'];
+
         $budgets = $query->paginate(self::PER_PAGE)->withQueryString();
 
         return Inertia::render('Budgets/Index', [
             'budgets'    => $budgets,
+            'totals'     => $totals,
             'categories' => Category::enabledFor(Auth::user())->orderBy('name')->get(['id', 'name', 'color']),
             'filters'    => ['month' => $month, 'year' => $year, 'currency' => $currency],
         ]);
