@@ -36,7 +36,7 @@ class RevenuTest extends TestCase
 
     public function test_user_can_list_own_revenues(): void
     {
-        Revenue::factory()->count(3)->create(['user_id' => $this->user->id]);
+        Revenue::factory()->currentPeriod()->count(3)->create(['user_id' => $this->user->id]);
 
         $this->actingAs($this->user)->get('/revenues')
             ->assertOk()
@@ -49,7 +49,7 @@ class RevenuTest extends TestCase
     public function test_index_does_not_show_other_users_revenues(): void
     {
         $other = User::factory()->create();
-        Revenue::factory()->count(2)->create(['user_id' => $other->id]);
+        Revenue::factory()->currentPeriod()->count(2)->create(['user_id' => $other->id]);
 
         $this->actingAs($this->user)->get('/revenues')
             ->assertInertia(fn ($page) => $page->has('revenues.data', 0));
@@ -59,7 +59,7 @@ class RevenuTest extends TestCase
     {
         Revenue::factory()->count(25)->create(['user_id' => $this->user->id]);
 
-        $this->actingAs($this->user)->get('/revenues')
+        $this->actingAs($this->user)->get('/revenues?month=all&year=all')
             ->assertInertia(fn ($page) => $page
                 ->has('revenues.data', 20)
                 ->where('revenues.total', 25)
@@ -71,44 +71,44 @@ class RevenuTest extends TestCase
     public function test_user_can_create_revenue(): void
     {
         $this->actingAs($this->user)->post('/revenues', [
-            'source'       => 'Salaire',
-            'amount'       => 500000,
+            'source' => 'Salaire',
+            'amount' => 500000,
             'revenue_date' => '2026-04-01',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('revenues', [
             'user_id' => $this->user->id,
-            'source'  => 'Salaire',
+            'source' => 'Salaire',
         ]);
     }
 
     public function test_month_and_year_are_derived_from_revenue_date_on_store(): void
     {
         $this->actingAs($this->user)->post('/revenues', [
-            'source'       => 'Freelance',
-            'amount'       => 100000,
+            'source' => 'Freelance',
+            'amount' => 100000,
             'revenue_date' => '2025-07-15',
         ]);
 
         $this->assertDatabaseHas('revenues', [
             'user_id' => $this->user->id,
-            'month'   => 7,
-            'year'    => 2025,
+            'month' => 7,
+            'year' => 2025,
         ]);
     }
 
     public function test_month_and_year_are_derived_correctly_for_december(): void
     {
         $this->actingAs($this->user)->post('/revenues', [
-            'source'       => 'Loyer',
-            'amount'       => 50000,
+            'source' => 'Loyer',
+            'amount' => 50000,
             'revenue_date' => '2025-12-31',
         ]);
 
         $this->assertDatabaseHas('revenues', [
             'user_id' => $this->user->id,
-            'month'   => 12,
-            'year'    => 2025,
+            'month' => 12,
+            'year' => 2025,
         ]);
     }
 
@@ -117,9 +117,9 @@ class RevenuTest extends TestCase
         $other = User::factory()->create();
 
         $this->actingAs($this->user)->post('/revenues', [
-            'user_id'      => $other->id,
-            'source'       => 'Salaire',
-            'amount'       => 100000,
+            'user_id' => $other->id,
+            'source' => 'Salaire',
+            'amount' => 100000,
             'revenue_date' => '2026-04-01',
         ]);
 
@@ -130,8 +130,8 @@ class RevenuTest extends TestCase
     public function test_note_is_optional_on_store(): void
     {
         $this->actingAs($this->user)->post('/revenues', [
-            'source'       => 'Salaire',
-            'amount'       => 100000,
+            'source' => 'Salaire',
+            'amount' => 100000,
             'revenue_date' => '2026-04-01',
         ])->assertRedirect();
     }
@@ -145,8 +145,8 @@ class RevenuTest extends TestCase
     public function test_amount_must_be_non_negative(): void
     {
         $this->actingAs($this->user)->post('/revenues', [
-            'source'       => 'Salaire',
-            'amount'       => -1,
+            'source' => 'Salaire',
+            'amount' => -1,
             'revenue_date' => '2026-04-01',
         ])->assertSessionHasErrors(['amount']);
     }
@@ -154,8 +154,8 @@ class RevenuTest extends TestCase
     public function test_revenue_date_must_be_a_valid_date(): void
     {
         $this->actingAs($this->user)->post('/revenues', [
-            'source'       => 'Salaire',
-            'amount'       => 100000,
+            'source' => 'Salaire',
+            'amount' => 100000,
             'revenue_date' => 'not-a-date',
         ])->assertSessionHasErrors(['revenue_date']);
     }
@@ -167,8 +167,8 @@ class RevenuTest extends TestCase
         $revenue = Revenue::factory()->create(['user_id' => $this->user->id, 'amount' => 100000]);
 
         $this->actingAs($this->user)->patch("/revenues/{$revenue->id}", [
-            'source'       => $revenue->source,
-            'amount'       => 200000,
+            'source' => $revenue->source,
+            'amount' => 200000,
             'revenue_date' => $revenue->revenue_date->format('Y-m-d'),
         ])->assertRedirect();
 
@@ -178,15 +178,15 @@ class RevenuTest extends TestCase
     public function test_update_recalculates_month_and_year_from_new_date(): void
     {
         $revenue = Revenue::factory()->create([
-            'user_id'      => $this->user->id,
+            'user_id' => $this->user->id,
             'revenue_date' => '2025-01-15',
-            'month'        => 1,
-            'year'         => 2025,
+            'month' => 1,
+            'year' => 2025,
         ]);
 
         $this->actingAs($this->user)->patch("/revenues/{$revenue->id}", [
-            'source'       => $revenue->source,
-            'amount'       => $revenue->amount,
+            'source' => $revenue->source,
+            'amount' => $revenue->amount,
             'revenue_date' => '2026-09-20',
         ]);
 
@@ -197,12 +197,12 @@ class RevenuTest extends TestCase
 
     public function test_user_cannot_update_other_users_revenue(): void
     {
-        $other   = User::factory()->create();
+        $other = User::factory()->create();
         $revenue = Revenue::factory()->create(['user_id' => $other->id]);
 
         $this->actingAs($this->user)->patch("/revenues/{$revenue->id}", [
-            'source'       => 'Hacked',
-            'amount'       => 1,
+            'source' => 'Hacked',
+            'amount' => 1,
             'revenue_date' => '2026-01-01',
         ])->assertForbidden();
     }
@@ -219,7 +219,7 @@ class RevenuTest extends TestCase
 
     public function test_user_cannot_delete_other_users_revenue(): void
     {
-        $other   = User::factory()->create();
+        $other = User::factory()->create();
         $revenue = Revenue::factory()->create(['user_id' => $other->id]);
 
         $this->actingAs($this->user)->delete("/revenues/{$revenue->id}")->assertForbidden();
@@ -247,18 +247,18 @@ class RevenuTest extends TestCase
     {
         // April 2025
         Revenue::factory()->create([
-            'user_id'       => $this->user->id,
-            'month'         => 4,
-            'year'          => 2025,
-            'revenue_date'  => '2025-04-01',
+            'user_id' => $this->user->id,
+            'month' => 4,
+            'year' => 2025,
+            'revenue_date' => '2025-04-01',
             'currency_code' => 'XOF',
         ]);
         // June 2025 — must be excluded
         Revenue::factory()->create([
-            'user_id'       => $this->user->id,
-            'month'         => 6,
-            'year'          => 2025,
-            'revenue_date'  => '2025-06-01',
+            'user_id' => $this->user->id,
+            'month' => 6,
+            'year' => 2025,
+            'revenue_date' => '2025-06-01',
             'currency_code' => 'XOF',
         ]);
 
@@ -269,18 +269,18 @@ class RevenuTest extends TestCase
     public function test_year_filter_returns_only_matching_year(): void
     {
         Revenue::factory()->create([
-            'user_id'       => $this->user->id,
-            'month'         => 4,
-            'year'          => 2025,
-            'revenue_date'  => '2025-04-01',
+            'user_id' => $this->user->id,
+            'month' => 4,
+            'year' => 2025,
+            'revenue_date' => '2025-04-01',
             'currency_code' => 'XOF',
         ]);
         // 2024 — must be excluded
         Revenue::factory()->create([
-            'user_id'       => $this->user->id,
-            'month'         => 4,
-            'year'          => 2024,
-            'revenue_date'  => '2024-04-01',
+            'user_id' => $this->user->id,
+            'month' => 4,
+            'year' => 2024,
+            'revenue_date' => '2024-04-01',
             'currency_code' => 'XOF',
         ]);
 

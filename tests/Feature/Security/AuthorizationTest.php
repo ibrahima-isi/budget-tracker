@@ -19,14 +19,16 @@ class AuthorizationTest extends TestCase
     use RefreshDatabase;
 
     private User $attacker;
+
     private User $victim;
+
     private Category $category;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->attacker = User::factory()->create(['email_verified_at' => now()]);
-        $this->victim   = User::factory()->create(['email_verified_at' => now()]);
+        $this->victim = User::factory()->create(['email_verified_at' => now()]);
         $this->category = Category::factory()->create();
     }
 
@@ -47,8 +49,8 @@ class AuthorizationTest extends TestCase
 
         $this->actingAs($this->attacker)
             ->patch("/budgets/{$budget->id}", [
-                'type'           => 'annuel',
-                'year'           => $budget->year,
+                'type' => 'annuel',
+                'year' => $budget->year,
                 'planned_amount' => 999999,
             ])
             ->assertForbidden();
@@ -71,7 +73,7 @@ class AuthorizationTest extends TestCase
 
     public function test_cannot_update_another_users_expense(): void
     {
-        $budget  = Budget::factory()->create(['user_id' => $this->victim->id]);
+        $budget = Budget::factory()->create(['user_id' => $this->victim->id]);
         $expense = Expense::factory()->create([
             'user_id' => $this->victim->id, 'budget_id' => $budget->id,
             'category_id' => $this->category->id, 'amount' => 5000,
@@ -89,7 +91,7 @@ class AuthorizationTest extends TestCase
 
     public function test_cannot_delete_another_users_expense(): void
     {
-        $budget  = Budget::factory()->create(['user_id' => $this->victim->id]);
+        $budget = Budget::factory()->create(['user_id' => $this->victim->id]);
         $expense = Expense::factory()->create([
             'user_id' => $this->victim->id, 'budget_id' => $budget->id, 'category_id' => $this->category->id,
         ]);
@@ -132,9 +134,9 @@ class AuthorizationTest extends TestCase
     public function test_cannot_forge_user_id_in_budget_creation(): void
     {
         $this->actingAs($this->attacker)->post('/budgets', [
-            'user_id'        => $this->victim->id,
-            'type'           => 'annuel',
-            'year'           => 2026,
+            'user_id' => $this->victim->id,
+            'type' => 'annuel',
+            'year' => 2026,
             'planned_amount' => 50000,
         ]);
 
@@ -148,11 +150,11 @@ class AuthorizationTest extends TestCase
         $attackerBudget = Budget::factory()->create(['user_id' => $this->attacker->id]);
 
         $this->actingAs($this->attacker)->post('/expenses', [
-            'user_id'      => $this->victim->id,
-            'budget_id'    => $attackerBudget->id,
-            'category_id'  => $this->category->id,
-            'label'        => 'Forge test',
-            'amount'       => 1000,
+            'user_id' => $this->victim->id,
+            'budget_id' => $attackerBudget->id,
+            'category_id' => $this->category->id,
+            'label' => 'Forge test',
+            'amount' => 1000,
             'expense_date' => '2026-04-01',
         ]);
 
@@ -164,9 +166,9 @@ class AuthorizationTest extends TestCase
     public function test_cannot_forge_user_id_in_revenue_creation(): void
     {
         $this->actingAs($this->attacker)->post('/revenues', [
-            'user_id'      => $this->victim->id,
-            'source'       => 'Forge test',
-            'amount'       => 1000,
+            'user_id' => $this->victim->id,
+            'source' => 'Forge test',
+            'amount' => 1000,
             'revenue_date' => '2026-04-01',
         ]);
 
@@ -179,8 +181,8 @@ class AuthorizationTest extends TestCase
 
     public function test_budget_index_only_shows_own_budgets(): void
     {
-        Budget::factory()->count(3)->create(['user_id' => $this->victim->id]);
-        Budget::factory()->count(2)->create(['user_id' => $this->attacker->id]);
+        Budget::factory()->mensuel()->count(3)->create(['user_id' => $this->victim->id]);
+        Budget::factory()->mensuel()->count(2)->create(['user_id' => $this->attacker->id]);
 
         $this->actingAs($this->attacker)->get('/budgets')
             ->assertInertia(fn ($page) => $page->has('budgets.data', 2));
@@ -188,13 +190,13 @@ class AuthorizationTest extends TestCase
 
     public function test_expense_index_only_shows_own_expenses(): void
     {
-        $victimBudget   = Budget::factory()->create(['user_id' => $this->victim->id]);
+        $victimBudget = Budget::factory()->create(['user_id' => $this->victim->id]);
         $attackerBudget = Budget::factory()->create(['user_id' => $this->attacker->id]);
 
-        Expense::factory()->count(3)->create([
+        Expense::factory()->currentPeriod()->count(3)->create([
             'user_id' => $this->victim->id, 'budget_id' => $victimBudget->id, 'category_id' => $this->category->id,
         ]);
-        Expense::factory()->count(1)->create([
+        Expense::factory()->currentPeriod()->count(1)->create([
             'user_id' => $this->attacker->id, 'budget_id' => $attackerBudget->id, 'category_id' => $this->category->id,
         ]);
 
@@ -204,8 +206,8 @@ class AuthorizationTest extends TestCase
 
     public function test_revenue_index_only_shows_own_revenues(): void
     {
-        Revenue::factory()->count(3)->create(['user_id' => $this->victim->id]);
-        Revenue::factory()->count(2)->create(['user_id' => $this->attacker->id]);
+        Revenue::factory()->currentPeriod()->count(3)->create(['user_id' => $this->victim->id]);
+        Revenue::factory()->currentPeriod()->count(2)->create(['user_id' => $this->attacker->id]);
 
         $this->actingAs($this->attacker)->get('/revenues')
             ->assertInertia(fn ($page) => $page->has('revenues.data', 2));

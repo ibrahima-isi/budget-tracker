@@ -15,14 +15,21 @@ class ExpenseFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id'      => User::factory(),
-            'budget_id'    => Budget::factory(),
-            'category_id'  => Category::factory(),
-            'label'        => $this->faker->sentence(3),
-            'amount'       => $this->faker->randomFloat(2, 1000, 50000),
+            'user_id' => User::factory(),
+            'budget_id' => Budget::factory(),
+            'category_id' => Category::factory(),
+            'label' => $this->faker->sentence(3),
+            'amount' => $this->faker->randomFloat(2, 1000, 50000),
             'expense_date' => $this->faker->date('Y-m-d'),
-            'note'         => $this->faker->optional()->sentence(),
+            'note' => $this->faker->optional()->sentence(),
             'currency_code' => 'XOF',
         ];
+    }
+
+    public function currentPeriod(): static
+    {
+        return $this->state(fn () => [
+            'expense_date' => now()->format('Y-m-d'),
+        ]);
     }
 }

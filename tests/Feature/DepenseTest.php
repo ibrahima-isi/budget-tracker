@@ -14,14 +14,16 @@ class DepenseTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Budget $budget;
+
     private Category $category;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user     = User::factory()->create(['email_verified_at' => now()]);
-        $this->budget   = Budget::factory()->create(['user_id' => $this->user->id]);
+        $this->user = User::factory()->create(['email_verified_at' => now()]);
+        $this->budget = Budget::factory()->create(['user_id' => $this->user->id]);
         $this->category = Category::factory()->create();
     }
 
@@ -42,7 +44,7 @@ class DepenseTest extends TestCase
 
     public function test_user_can_list_own_expenses(): void
     {
-        Expense::factory()->count(3)->create([
+        Expense::factory()->currentPeriod()->count(3)->create([
             'user_id' => $this->user->id, 'budget_id' => $this->budget->id, 'category_id' => $this->category->id,
         ]);
 
@@ -56,9 +58,9 @@ class DepenseTest extends TestCase
 
     public function test_index_does_not_show_other_users_expenses(): void
     {
-        $other       = User::factory()->create();
+        $other = User::factory()->create();
         $otherBudget = Budget::factory()->create(['user_id' => $other->id]);
-        Expense::factory()->count(2)->create([
+        Expense::factory()->currentPeriod()->count(2)->create([
             'user_id' => $other->id, 'budget_id' => $otherBudget->id, 'category_id' => $this->category->id,
         ]);
 
@@ -72,7 +74,7 @@ class DepenseTest extends TestCase
             'user_id' => $this->user->id, 'budget_id' => $this->budget->id, 'category_id' => $this->category->id,
         ]);
 
-        $this->actingAs($this->user)->get('/expenses')
+        $this->actingAs($this->user)->get('/expenses?month=all&year=all')
             ->assertInertia(fn ($page) => $page
                 ->has('expenses.data', 20)
                 ->where('expenses.total', 25)
@@ -94,12 +96,12 @@ class DepenseTest extends TestCase
     public function test_index_filters_by_budget_id(): void
     {
         $otherBudget = Budget::factory()->create(['user_id' => $this->user->id]);
-        $cat         = Category::factory()->create();
+        $cat = Category::factory()->create();
 
-        Expense::factory()->count(2)->create([
+        Expense::factory()->currentPeriod()->count(2)->create([
             'user_id' => $this->user->id, 'budget_id' => $this->budget->id, 'category_id' => $cat->id,
         ]);
-        Expense::factory()->create([
+        Expense::factory()->currentPeriod()->create([
             'user_id' => $this->user->id, 'budget_id' => $otherBudget->id, 'category_id' => $cat->id,
         ]);
 
@@ -111,10 +113,10 @@ class DepenseTest extends TestCase
     {
         $otherCat = Category::factory()->create();
 
-        Expense::factory()->count(3)->create([
+        Expense::factory()->currentPeriod()->count(3)->create([
             'user_id' => $this->user->id, 'budget_id' => $this->budget->id, 'category_id' => $this->category->id,
         ]);
-        Expense::factory()->create([
+        Expense::factory()->currentPeriod()->create([
             'user_id' => $this->user->id, 'budget_id' => $this->budget->id, 'category_id' => $otherCat->id,
         ]);
 
@@ -125,15 +127,15 @@ class DepenseTest extends TestCase
     public function test_index_filters_by_budget_and_category_combined(): void
     {
         $budget2 = Budget::factory()->create(['user_id' => $this->user->id]);
-        $cat2    = Category::factory()->create();
+        $cat2 = Category::factory()->create();
 
-        Expense::factory()->create([
+        Expense::factory()->currentPeriod()->create([
             'user_id' => $this->user->id, 'budget_id' => $this->budget->id, 'category_id' => $this->category->id,
         ]);
-        Expense::factory()->create([
+        Expense::factory()->currentPeriod()->create([
             'user_id' => $this->user->id, 'budget_id' => $budget2->id, 'category_id' => $this->category->id,
         ]);
-        Expense::factory()->create([
+        Expense::factory()->currentPeriod()->create([
             'user_id' => $this->user->id, 'budget_id' => $this->budget->id, 'category_id' => $cat2->id,
         ]);
 
@@ -156,26 +158,26 @@ class DepenseTest extends TestCase
     public function test_user_can_create_expense(): void
     {
         $this->actingAs($this->user)->post('/expenses', [
-            'budget_id'    => $this->budget->id,
-            'category_id'  => $this->category->id,
-            'label'        => 'Courses alimentaires',
-            'amount'       => 15000,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'label' => 'Courses alimentaires',
+            'amount' => 15000,
             'expense_date' => '2026-04-10',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('expenses', [
             'user_id' => $this->user->id,
-            'label'   => 'Courses alimentaires',
+            'label' => 'Courses alimentaires',
         ]);
     }
 
     public function test_note_is_optional_on_store(): void
     {
         $this->actingAs($this->user)->post('/expenses', [
-            'budget_id'    => $this->budget->id,
-            'category_id'  => $this->category->id,
-            'label'        => 'Test',
-            'amount'       => 1000,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'label' => 'Test',
+            'amount' => 1000,
             'expense_date' => '2026-04-01',
         ])->assertRedirect();
     }
@@ -185,11 +187,11 @@ class DepenseTest extends TestCase
         $other = User::factory()->create();
 
         $this->actingAs($this->user)->post('/expenses', [
-            'user_id'      => $other->id,
-            'budget_id'    => $this->budget->id,
-            'category_id'  => $this->category->id,
-            'label'        => 'Forge test',
-            'amount'       => 1000,
+            'user_id' => $other->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'label' => 'Forge test',
+            'amount' => 1000,
             'expense_date' => '2026-04-01',
         ]);
 
@@ -200,10 +202,10 @@ class DepenseTest extends TestCase
     public function test_store_rejects_nonexistent_budget_id(): void
     {
         $this->actingAs($this->user)->post('/expenses', [
-            'budget_id'    => 99999,
-            'category_id'  => $this->category->id,
-            'label'        => 'Test',
-            'amount'       => 1000,
+            'budget_id' => 99999,
+            'category_id' => $this->category->id,
+            'label' => 'Test',
+            'amount' => 1000,
             'expense_date' => '2026-04-01',
         ])->assertSessionHasErrors(['budget_id']);
     }
@@ -211,10 +213,10 @@ class DepenseTest extends TestCase
     public function test_store_rejects_nonexistent_category_id(): void
     {
         $this->actingAs($this->user)->post('/expenses', [
-            'budget_id'    => $this->budget->id,
-            'category_id'  => 99999,
-            'label'        => 'Test',
-            'amount'       => 1000,
+            'budget_id' => $this->budget->id,
+            'category_id' => 99999,
+            'label' => 'Test',
+            'amount' => 1000,
             'expense_date' => '2026-04-01',
         ])->assertSessionHasErrors(['category_id']);
     }
@@ -228,10 +230,10 @@ class DepenseTest extends TestCase
     public function test_amount_must_be_non_negative(): void
     {
         $this->actingAs($this->user)->post('/expenses', [
-            'budget_id'    => $this->budget->id,
-            'category_id'  => $this->category->id,
-            'label'        => 'Test',
-            'amount'       => -100,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'label' => 'Test',
+            'amount' => -100,
             'expense_date' => '2026-04-01',
         ])->assertSessionHasErrors(['amount']);
     }
@@ -246,10 +248,10 @@ class DepenseTest extends TestCase
         ]);
 
         $this->actingAs($this->user)->patch("/expenses/{$expense->id}", [
-            'budget_id'    => $this->budget->id,
-            'category_id'  => $this->category->id,
-            'label'        => $expense->label,
-            'amount'       => 20000,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'label' => $expense->label,
+            'amount' => 20000,
             'expense_date' => $expense->expense_date->format('Y-m-d'),
         ])->assertRedirect();
 
@@ -258,8 +260,8 @@ class DepenseTest extends TestCase
 
     public function test_user_cannot_update_other_users_expense(): void
     {
-        $other   = User::factory()->create();
-        $budget  = Budget::factory()->create(['user_id' => $other->id]);
+        $other = User::factory()->create();
+        $budget = Budget::factory()->create(['user_id' => $other->id]);
         $expense = Expense::factory()->create([
             'user_id' => $other->id, 'budget_id' => $budget->id, 'category_id' => $this->category->id,
         ]);
@@ -284,8 +286,8 @@ class DepenseTest extends TestCase
 
     public function test_user_cannot_delete_other_users_expense(): void
     {
-        $other   = User::factory()->create();
-        $budget  = Budget::factory()->create(['user_id' => $other->id]);
+        $other = User::factory()->create();
+        $budget = Budget::factory()->create(['user_id' => $other->id]);
         $expense = Expense::factory()->create([
             'user_id' => $other->id, 'budget_id' => $budget->id, 'category_id' => $this->category->id,
         ]);
@@ -315,18 +317,18 @@ class DepenseTest extends TestCase
     {
         // April 2025
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $this->budget->id,
-            'category_id'   => $this->category->id,
-            'expense_date'  => '2025-04-10',
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'expense_date' => '2025-04-10',
             'currency_code' => 'XOF',
         ]);
         // June 2025 — must be excluded
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $this->budget->id,
-            'category_id'   => $this->category->id,
-            'expense_date'  => '2025-06-10',
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'expense_date' => '2025-06-10',
             'currency_code' => 'XOF',
         ]);
 
@@ -337,18 +339,18 @@ class DepenseTest extends TestCase
     public function test_year_filter_returns_only_matching_year(): void
     {
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $this->budget->id,
-            'category_id'   => $this->category->id,
-            'expense_date'  => '2025-04-10',
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'expense_date' => '2025-04-10',
             'currency_code' => 'XOF',
         ]);
         // 2024 — must be excluded
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $this->budget->id,
-            'category_id'   => $this->category->id,
-            'expense_date'  => '2024-04-10',
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'expense_date' => '2024-04-10',
             'currency_code' => 'XOF',
         ]);
 
@@ -358,16 +360,16 @@ class DepenseTest extends TestCase
 
     public function test_currency_all_shows_all_currencies(): void
     {
-        Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $this->budget->id,
-            'category_id'   => $this->category->id,
+        Expense::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
             'currency_code' => 'XOF',
         ]);
-        Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $this->budget->id,
-            'category_id'   => $this->category->id,
+        Expense::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
             'currency_code' => 'EUR',
         ]);
 
@@ -377,16 +379,16 @@ class DepenseTest extends TestCase
 
     public function test_default_currency_filter_excludes_other_currencies(): void
     {
-        Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $this->budget->id,
-            'category_id'   => $this->category->id,
+        Expense::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
             'currency_code' => 'XOF',
         ]);
-        Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $this->budget->id,
-            'category_id'   => $this->category->id,
+        Expense::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
             'currency_code' => 'EUR',
         ]);
 

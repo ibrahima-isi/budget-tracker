@@ -39,7 +39,7 @@ class BudgetTest extends TestCase
 
     public function test_user_can_list_own_budgets(): void
     {
-        Budget::factory()->count(3)->create(['user_id' => $this->user->id]);
+        Budget::factory()->mensuel()->count(3)->create(['user_id' => $this->user->id]);
 
         $this->actingAs($this->user)->get('/budgets')
             ->assertOk()
@@ -52,7 +52,7 @@ class BudgetTest extends TestCase
     public function test_index_does_not_show_other_users_budgets(): void
     {
         $other = User::factory()->create();
-        Budget::factory()->count(2)->create(['user_id' => $other->id]);
+        Budget::factory()->mensuel()->count(2)->create(['user_id' => $other->id]);
 
         $this->actingAs($this->user)->get('/budgets')
             ->assertInertia(fn ($page) => $page->has('budgets.data', 0));
@@ -64,7 +64,7 @@ class BudgetTest extends TestCase
             'type' => 'annuel', 'month' => null, 'year' => 2000 + $seq->index,
         ])->create(['user_id' => $this->user->id]);
 
-        $this->actingAs($this->user)->get('/budgets')
+        $this->actingAs($this->user)->get('/budgets?month=all&year=all')
             ->assertInertia(fn ($page) => $page
                 ->has('budgets.data', 10)
                 ->where('budgets.total', 15)
@@ -76,42 +76,42 @@ class BudgetTest extends TestCase
     public function test_user_can_create_annuel_budget(): void
     {
         $this->actingAs($this->user)->post('/budgets', [
-            'type'           => 'annuel',
-            'year'           => 2026,
+            'type' => 'annuel',
+            'year' => 2026,
             'planned_amount' => 1200000,
-            'label'          => 'Budget annuel 2026',
+            'label' => 'Budget annuel 2026',
         ])->assertRedirect('/budgets');
 
         $this->assertDatabaseHas('budgets', [
             'user_id' => $this->user->id,
-            'type'    => 'annuel',
-            'month'   => null,
-            'year'    => 2026,
+            'type' => 'annuel',
+            'month' => null,
+            'year' => 2026,
         ]);
     }
 
     public function test_user_can_create_mensuel_budget_with_month(): void
     {
         $this->actingAs($this->user)->post('/budgets', [
-            'type'           => 'mensuel',
-            'month'          => 4,
-            'year'           => 2026,
+            'type' => 'mensuel',
+            'month' => 4,
+            'year' => 2026,
             'planned_amount' => 150000,
         ])->assertRedirect('/budgets');
 
         $this->assertDatabaseHas('budgets', [
             'user_id' => $this->user->id,
-            'type'    => 'mensuel',
-            'month'   => 4,
-            'year'    => 2026,
+            'type' => 'mensuel',
+            'month' => 4,
+            'year' => 2026,
         ]);
     }
 
     public function test_label_is_optional(): void
     {
         $this->actingAs($this->user)->post('/budgets', [
-            'type'           => 'annuel',
-            'year'           => 2026,
+            'type' => 'annuel',
+            'year' => 2026,
             'planned_amount' => 100000,
         ])->assertRedirect('/budgets');
     }
@@ -121,9 +121,9 @@ class BudgetTest extends TestCase
         $other = User::factory()->create();
 
         $this->actingAs($this->user)->post('/budgets', [
-            'user_id'        => $other->id,   // attacker forges user_id
-            'type'           => 'annuel',
-            'year'           => 2026,
+            'user_id' => $other->id,   // attacker forges user_id
+            'type' => 'annuel',
+            'year' => 2026,
             'planned_amount' => 100000,
         ]);
 
@@ -142,8 +142,8 @@ class BudgetTest extends TestCase
     public function test_store_rejects_invalid_type(): void
     {
         $this->actingAs($this->user)->post('/budgets', [
-            'type'           => 'hebdomadaire',
-            'year'           => 2026,
+            'type' => 'hebdomadaire',
+            'year' => 2026,
             'planned_amount' => 100000,
         ])->assertSessionHasErrors(['type']);
     }
@@ -151,8 +151,8 @@ class BudgetTest extends TestCase
     public function test_mensuel_budget_requires_month(): void
     {
         $this->actingAs($this->user)->post('/budgets', [
-            'type'           => 'mensuel',
-            'year'           => 2026,
+            'type' => 'mensuel',
+            'year' => 2026,
             'planned_amount' => 100000,
             // month missing
         ])->assertSessionHasErrors(['month']);
@@ -161,9 +161,9 @@ class BudgetTest extends TestCase
     public function test_month_must_be_between_1_and_12(): void
     {
         $this->actingAs($this->user)->post('/budgets', [
-            'type'           => 'mensuel',
-            'month'          => 13,
-            'year'           => 2026,
+            'type' => 'mensuel',
+            'month' => 13,
+            'year' => 2026,
             'planned_amount' => 100000,
         ])->assertSessionHasErrors(['month']);
     }
@@ -171,8 +171,8 @@ class BudgetTest extends TestCase
     public function test_planned_amount_must_be_non_negative(): void
     {
         $this->actingAs($this->user)->post('/budgets', [
-            'type'           => 'annuel',
-            'year'           => 2026,
+            'type' => 'annuel',
+            'year' => 2026,
             'planned_amount' => -1,
         ])->assertSessionHasErrors(['planned_amount']);
     }
@@ -190,7 +190,7 @@ class BudgetTest extends TestCase
 
     public function test_show_loads_expenses_with_category(): void
     {
-        $budget   = Budget::factory()->create(['user_id' => $this->user->id]);
+        $budget = Budget::factory()->create(['user_id' => $this->user->id]);
         $category = Category::factory()->create();
         Expense::factory()->create([
             'user_id' => $this->user->id, 'budget_id' => $budget->id, 'category_id' => $category->id,
@@ -205,7 +205,7 @@ class BudgetTest extends TestCase
 
     public function test_show_budget_includes_appended_attributes(): void
     {
-        $budget   = Budget::factory()->create(['user_id' => $this->user->id, 'planned_amount' => 100000]);
+        $budget = Budget::factory()->create(['user_id' => $this->user->id, 'planned_amount' => 100000]);
         $category = Category::factory()->create();
         Expense::factory()->create([
             'user_id' => $this->user->id, 'budget_id' => $budget->id,
@@ -221,7 +221,7 @@ class BudgetTest extends TestCase
 
     public function test_user_cannot_view_other_users_budget(): void
     {
-        $other  = User::factory()->create();
+        $other = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $other->id]);
 
         $this->actingAs($this->user)->get("/budgets/{$budget->id}")->assertForbidden();
@@ -239,8 +239,8 @@ class BudgetTest extends TestCase
         $budget = Budget::factory()->annuel()->create(['user_id' => $this->user->id, 'planned_amount' => 100000]);
 
         $this->actingAs($this->user)->patch("/budgets/{$budget->id}", [
-            'type'           => 'annuel',
-            'year'           => $budget->year,
+            'type' => 'annuel',
+            'year' => $budget->year,
             'planned_amount' => 200000,
         ])->assertRedirect('/budgets');
 
@@ -252,9 +252,9 @@ class BudgetTest extends TestCase
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'planned_amount' => 100000]);
 
         $this->actingAs($this->user)->patch("/budgets/{$budget->id}", [
-            'type'           => 'mensuel',
-            'month'          => $budget->month,
-            'year'           => $budget->year,
+            'type' => 'mensuel',
+            'month' => $budget->month,
+            'year' => $budget->year,
             'planned_amount' => 200000,
         ])->assertRedirect('/budgets');
 
@@ -263,12 +263,12 @@ class BudgetTest extends TestCase
 
     public function test_user_cannot_update_other_users_budget(): void
     {
-        $other  = User::factory()->create();
+        $other = User::factory()->create();
         $budget = Budget::factory()->annuel()->create(['user_id' => $other->id]);
 
         $this->actingAs($this->user)->patch("/budgets/{$budget->id}", [
-            'type'           => 'annuel',
-            'year'           => $budget->year,
+            'type' => 'annuel',
+            'year' => $budget->year,
             'planned_amount' => 999999,
         ])->assertForbidden();
 
@@ -297,7 +297,7 @@ class BudgetTest extends TestCase
 
     public function test_user_cannot_delete_other_users_budget(): void
     {
-        $other  = User::factory()->create();
+        $other = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $other->id]);
 
         $this->actingAs($this->user)->delete("/budgets/{$budget->id}")->assertForbidden();
