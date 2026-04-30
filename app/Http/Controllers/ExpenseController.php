@@ -43,7 +43,7 @@ class ExpenseController extends Controller
             $query->whereYear('expense_date', $year);
         }
 
-        $totalAmount = (clone $query)->sum('montant');
+        $totalAmount = (clone $query)->sum('amount');
         $expenses = $query->paginate(self::PER_PAGE)->withQueryString();
 
         $budgets = Budget::where('user_id', Auth::id())
@@ -54,11 +54,11 @@ class ExpenseController extends Controller
         $categories = Category::enabledFor(Auth::user())->orderBy('name')->get(['id', 'name', 'color']);
 
         return Inertia::render('Expenses/Index', [
-            'expenses'    => $expenses,
+            'expenses' => $expenses,
             'totalAmount' => $totalAmount,
-            'budgets'     => $budgets,
-            'categories'  => $categories,
-            'filters'     => array_merge(
+            'budgets' => $budgets,
+            'categories' => $categories,
+            'filters' => array_merge(
                 $request->only('budget_id', 'category_id'),
                 ['month' => $month, 'year' => $year, 'currency' => $currency]
             ),
@@ -67,8 +67,8 @@ class ExpenseController extends Controller
 
     public function store(StoreExpenseRequest $request)
     {
-        $data                  = $request->validated();
-        $data['user_id']       = Auth::id();
+        $data = $request->validated();
+        $data['user_id'] = Auth::id();
         $data['currency_code'] ??= $this->currentCurrency();
 
         Expense::create($data);
@@ -80,7 +80,7 @@ class ExpenseController extends Controller
     {
         $this->authorize('update', $expense);
 
-        $data                  = $request->validated();
+        $data = $request->validated();
         $data['currency_code'] ??= $expense->currency_code ?? $this->currentCurrency();
         $expense->update($data);
 

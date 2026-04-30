@@ -66,6 +66,30 @@ class RevenuTest extends TestCase
             );
     }
 
+    public function test_index_total_amount_sums_matching_revenue_amounts(): void
+    {
+        Revenue::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'amount' => 100000,
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'amount' => 250000,
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'amount' => 999999,
+            'currency_code' => 'EUR',
+        ]);
+
+        $this->actingAs($this->user)->get('/revenues')
+            ->assertInertia(fn ($page) => $page
+                ->where('totalAmount', 350000)
+            );
+    }
+
     // ── Store ──────────────────────────────────────────────────────────────────
 
     public function test_user_can_create_revenue(): void

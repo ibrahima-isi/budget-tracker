@@ -33,13 +33,13 @@ class RevenueController extends Controller
             $query->where('year', $year);
         }
 
-        $totalAmount = (clone $query)->sum('montant');
+        $totalAmount = (clone $query)->sum('amount');
         $revenues = $query->paginate(self::PER_PAGE)->withQueryString();
 
         return Inertia::render('Revenues/Index', [
-            'revenues'    => $revenues,
+            'revenues' => $revenues,
             'totalAmount' => $totalAmount,
-            'filters'     => ['month' => $month, 'year' => $year, 'currency' => $currency],
+            'filters' => ['month' => $month, 'year' => $year, 'currency' => $currency],
         ]);
     }
 
@@ -47,9 +47,9 @@ class RevenueController extends Controller
     {
         $date = Carbon::parse($request->revenue_date);
         $data = $request->validated();
-        $data['user_id']       = Auth::id();
-        $data['month']         = $date->month;
-        $data['year']          = $date->year;
+        $data['user_id'] = Auth::id();
+        $data['month'] = $date->month;
+        $data['year'] = $date->year;
         $data['currency_code'] ??= $this->currentCurrency();
 
         Revenue::create($data);
@@ -61,10 +61,10 @@ class RevenueController extends Controller
     {
         $this->authorize('update', $revenue);
 
-        $date                  = Carbon::parse($request->revenue_date);
-        $data                  = $request->validated();
-        $data['month']         = $date->month;
-        $data['year']          = $date->year;
+        $date = Carbon::parse($request->revenue_date);
+        $data = $request->validated();
+        $data['month'] = $date->month;
+        $data['year'] = $date->year;
         $data['currency_code'] ??= $revenue->currency_code ?? $this->currentCurrency();
 
         $revenue->update($data);

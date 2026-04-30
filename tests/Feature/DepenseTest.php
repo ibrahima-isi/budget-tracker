@@ -81,6 +81,36 @@ class DepenseTest extends TestCase
             );
     }
 
+    public function test_index_total_amount_sums_matching_expense_amounts(): void
+    {
+        Expense::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'amount' => 1500,
+            'currency_code' => 'XOF',
+        ]);
+        Expense::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'amount' => 2500,
+            'currency_code' => 'XOF',
+        ]);
+        Expense::factory()->currentPeriod()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'amount' => 9999,
+            'currency_code' => 'EUR',
+        ]);
+
+        $this->actingAs($this->user)->get('/expenses')
+            ->assertInertia(fn ($page) => $page
+                ->where('totalAmount', 4000)
+            );
+    }
+
     public function test_index_passes_budgets_and_categories_to_view(): void
     {
         $this->actingAs($this->user)->get('/expenses')
