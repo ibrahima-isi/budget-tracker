@@ -17,15 +17,17 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
-        'canLogin'       => Route::has('login'),
-        'canRegister'    => Route::has('register'),
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
-        'phpVersion'     => PHP_VERSION,
+        'phpVersion' => PHP_VERSION,
     ]);
 })->name('home');
 
 // Serve the logo from private storage (not publicly accessible via /storage/)
 Route::get('/logo', [LogoController::class, 'show'])->name('logo');
+
+Route::get('/health', fn () => response()->json(['status' => 'ok']))->name('health');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -34,12 +36,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/user/currency', function (Request $request) {
         $request->validate(['currency' => 'required|string|max:10|exists:currencies,code']);
         $request->session()->put('current_currency', $request->input('currency'));
+
         return back();
     })->name('user.currency');
 
-    Route::resource('budgets',   BudgetController::class)->except(['create', 'edit']);
-    Route::resource('expenses',  ExpenseController::class)->except(['create', 'edit', 'show']);
-    Route::resource('revenues',  RevenueController::class)->except(['create', 'edit', 'show']);
+    Route::resource('budgets', BudgetController::class)->except(['create', 'edit']);
+    Route::resource('expenses', ExpenseController::class)->except(['create', 'edit', 'show']);
+    Route::resource('revenues', RevenueController::class)->except(['create', 'edit', 'show']);
     Route::resource('categories', CategoryController::class)->except(['create', 'edit', 'show']);
     Route::post('categories/{category}/toggle-enabled', [CategoryController::class, 'toggleEnabled'])->name('categories.toggleEnabled');
 
@@ -47,15 +50,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('admin')->group(function () {
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 
-        Route::get('settings',              [SettingsController::class, 'index'])->name('settings.index');
-        Route::post('settings',             [SettingsController::class, 'update'])->name('settings.update');
-        Route::delete('settings/logo',      [SettingsController::class, 'destroyLogo'])->name('settings.logo.destroy');
+        Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::delete('settings/logo', [SettingsController::class, 'destroyLogo'])->name('settings.logo.destroy');
 
-        Route::post('settings/currencies',                        [CurrencyController::class, 'store'])->name('currencies.store');
-        Route::patch('settings/currencies/{currency}',            [CurrencyController::class, 'update'])->name('currencies.update');
-        Route::patch('settings/currencies/{currency}/default',    [CurrencyController::class, 'setDefault'])->name('currencies.default');
-        Route::patch('settings/currencies/{currency}/toggle',     [CurrencyController::class, 'toggle'])->name('currencies.toggle');
-        Route::delete('settings/currencies/{currency}',           [CurrencyController::class, 'destroy'])->name('currencies.destroy');
+        Route::post('settings/currencies', [CurrencyController::class, 'store'])->name('currencies.store');
+        Route::patch('settings/currencies/{currency}', [CurrencyController::class, 'update'])->name('currencies.update');
+        Route::patch('settings/currencies/{currency}/default', [CurrencyController::class, 'setDefault'])->name('currencies.default');
+        Route::patch('settings/currencies/{currency}/toggle', [CurrencyController::class, 'toggle'])->name('currencies.toggle');
+        Route::delete('settings/currencies/{currency}', [CurrencyController::class, 'destroy'])->name('currencies.destroy');
     });
 });
 

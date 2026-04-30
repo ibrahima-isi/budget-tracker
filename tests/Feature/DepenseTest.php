@@ -366,6 +366,34 @@ class DepenseTest extends TestCase
             ->assertInertia(fn ($page) => $page->has('expenses.data', 1));
     }
 
+    public function test_month_filter_without_year_returns_matching_month_across_years(): void
+    {
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'expense_date' => '2024-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'expense_date' => '2025-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $this->budget->id,
+            'category_id' => $this->category->id,
+            'expense_date' => '2025-06-10',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/expenses?month=4&year=all&currency=XOF')
+            ->assertInertia(fn ($page) => $page->has('expenses.data', 2));
+    }
+
     public function test_year_filter_returns_only_matching_year(): void
     {
         Expense::factory()->create([

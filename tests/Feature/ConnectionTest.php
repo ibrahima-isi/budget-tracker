@@ -11,4 +11,11 @@ class ConnectionTest extends TestCase
     {
         $this->assertNotEmpty(DB::connection()->getDriverName());
     }
+
+    public function test_health_endpoint_returns_ok_without_authentication(): void
+    {
+        $this->get('/health')
+            ->assertOk()
+            ->assertExactJson(['status' => 'ok']);
+    }
 }

@@ -24,18 +24,23 @@ class DashboardService
     public function annual(User $user, int $year, string $currency): array
     {
         return Cache::remember(
-            AppCache::financeKey($user->id, 'dashboard:annual', compact('year', 'currency')),
+            AppCache::financeKey($user->id, 'dashboard:annual', [
+                'month' => null,
+                'year' => $year,
+                'currency' => $currency,
+            ]),
             AppCache::DASHBOARD_TTL,
             fn () => $this->buildAnnual($user, $year, $currency),
         );
     }
 
-    public function recentExpenses(User $user, string $currency): Collection
+    public function recentExpenses(User $user, string $currency, ?int $month = null, ?int $year = null): Collection
     {
         return Cache::remember(
-            AppCache::financeKey($user->id, 'dashboard:recent-expenses', compact('currency')),
+            AppCache::financeKey($user->id, 'dashboard:recent-expenses', compact('month', 'year', 'currency')),
             AppCache::DASHBOARD_TTL,
             fn () => $this->applyCurrency(Expense::where('user_id', $user->id), $currency)
+                ->select(['id', 'category_id', 'label', 'amount', 'expense_date', 'currency_code'])
                 ->with('category:id,name,color')
                 ->latest('expense_date')
                 ->take(5)

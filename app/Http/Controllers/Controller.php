@@ -73,7 +73,30 @@ abstract class Controller
         }
 
         if ($month) {
-            return $query->whereMonth($column, $month);
+            $bounds = (clone $query)
+                ->setEagerLoads([])
+                ->reorder()
+                ->select([])
+                ->selectRaw("MIN({$column}) as min_date, MAX({$column}) as max_date")
+                ->first();
+
+            if (! $bounds?->min_date || ! $bounds?->max_date) {
+                return $query->where($column, '<', '0001-01-01');
+            }
+
+            return $query->where(function ($q) use ($column, $month, $bounds) {
+                $startYear = Carbon::parse($bounds->min_date)->year;
+                $endYear = Carbon::parse($bounds->max_date)->year;
+
+                foreach (range($startYear, $endYear) as $candidateYear) {
+                    $start = Carbon::create($candidateYear, $month, 1)->startOfDay();
+
+                    $q->orWhere(function ($q2) use ($column, $start) {
+                        $q2->where($column, '>=', $start->toDateString())
+                            ->where($column, '<', $start->copy()->addMonth()->toDateString());
+                    });
+                }
+            });
         }
 
         return $query;

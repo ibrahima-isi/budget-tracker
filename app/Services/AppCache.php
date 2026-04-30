@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class AppCache
 {
@@ -33,14 +34,14 @@ class AppCache
             return;
         }
 
-        Cache::forever(self::financeVersionKey($userId), now()->getTimestamp());
+        Cache::forever(self::financeVersionKey($userId), (string) Str::uuid());
     }
 
-    public static function financeVersion(int $userId): int
+    public static function financeVersion(int $userId): string
     {
-        return (int) Cache::rememberForever(
+        return (string) Cache::rememberForever(
             self::financeVersionKey($userId),
-            fn () => now()->getTimestamp()
+            fn () => (string) Str::uuid()
         );
     }
 

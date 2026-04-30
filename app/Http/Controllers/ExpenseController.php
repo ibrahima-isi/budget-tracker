@@ -20,6 +20,7 @@ class ExpenseController extends Controller
         ['month' => $month, 'year' => $year, 'currency' => $currency] = $this->resolvePeriodFilters($request);
 
         $query = Expense::where('user_id', Auth::id())
+            ->select(['id', 'budget_id', 'category_id', 'label', 'amount', 'expense_date', 'note', 'currency_code'])
             ->with('category:id,name,color', 'budget:id,label,type,month,year')
             ->latest('expense_date');
 

@@ -19,6 +19,7 @@ class RevenueController extends Controller
         ['month' => $month, 'year' => $year, 'currency' => $currency] = $this->resolvePeriodFilters($request);
 
         $query = Revenue::where('user_id', Auth::id())
+            ->select(['id', 'source', 'amount', 'revenue_date', 'month', 'year', 'note', 'currency_code'])
             ->latest('revenue_date');
 
         if ($currency !== 'all') {

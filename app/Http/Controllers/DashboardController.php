@@ -24,7 +24,7 @@ class DashboardController extends Controller
 
         $monthly = $dashboard->monthly($user, $month, $year, $currency);
         $annual = $dashboard->annual($user, $year, $currency);
-        $recentExpenses = $dashboard->recentExpenses($user, $currency);
+        $recentExpenses = $dashboard->recentExpenses($user, $currency, $month, $year);
 
         return Inertia::render('Dashboard', [
             'monthly' => $monthly,

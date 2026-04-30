@@ -10,6 +10,7 @@ use App\Models\Expense;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -38,14 +39,27 @@ class BudgetController extends Controller
             });
         }
 
-        $budgetIds = (clone $query)->select('id');
+        $filteredBudgets = (clone $query)->select(['id', 'planned_amount']);
+        $expenseTotals = Expense::query()
+            ->whereIn('budget_id', (clone $query)->select('id'))
+            ->selectRaw('budget_id, SUM(amount) as spent')
+            ->groupBy('budget_id');
+
+        $totalsRow = DB::query()
+            ->fromSub($filteredBudgets, 'filtered_budgets')
+            ->leftJoinSub($expenseTotals, 'expense_totals', 'expense_totals.budget_id', '=', 'filtered_budgets.id')
+            ->selectRaw('COALESCE(SUM(filtered_budgets.planned_amount), 0) as planned')
+            ->selectRaw('COALESCE(SUM(expense_totals.spent), 0) as spent')
+            ->first();
+
         $totals = [
-            'planned' => (clone $query)->sum('planned_amount'),
-            'spent' => Expense::whereIn('budget_id', $budgetIds)->sum('amount'),
+            'planned' => (float) ($totalsRow->planned ?? 0),
+            'spent' => (float) ($totalsRow->spent ?? 0),
         ];
         $totals['balance'] = $totals['planned'] - $totals['spent'];
 
         $budgets = $query
+            ->select(['id', 'type', 'month', 'year', 'planned_amount', 'label', 'category_id', 'currency_code'])
             ->with('category:id,name,color')
             ->withCount('expenses')
             ->withSum('expenses as expense_amount_sum', 'amount')
@@ -65,7 +79,10 @@ class BudgetController extends Controller
     {
         $this->authorize('view', $budget);
 
-        $budget->load('expenses.category');
+        $budget->load([
+            'expenses:id,budget_id,category_id,label,amount,expense_date,note,currency_code',
+            'expenses.category:id,name,color',
+        ]);
 
         return Inertia::render('Budgets/Show', [
             'budget' => $budget,
