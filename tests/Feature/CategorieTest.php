@@ -40,7 +40,10 @@ class CategorieTest extends TestCase
 
         $this->actingAs($this->user)->get('/categories')
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('Categories/Index'));
+            ->assertInertia(fn ($page) => $page
+                ->component('Categories/Index')
+                ->has('categories.data', 4)
+            );
     }
 
     public function test_index_includes_expenses_count(): void
@@ -48,7 +51,18 @@ class CategorieTest extends TestCase
         Category::factory()->count(2)->create();
 
         $this->actingAs($this->user)->get('/categories')
-            ->assertInertia(fn ($page) => $page->has('categories.0.expenses_count'));
+            ->assertInertia(fn ($page) => $page->has('categories.data.0.expenses_count'));
+    }
+
+    public function test_index_paginates_categories(): void
+    {
+        Category::factory()->count(30)->create();
+
+        $this->actingAs($this->user)->get('/categories')
+            ->assertInertia(fn ($page) => $page
+                ->has('categories.data', 24)
+                ->where('categories.total', 30)
+            );
     }
 
     // ── Store ──────────────────────────────────────────────────────────────────
@@ -56,9 +70,9 @@ class CategorieTest extends TestCase
     public function test_user_can_create_category(): void
     {
         $this->actingAs($this->user)->post('/categories', [
-            'name'  => 'Alimentation',
+            'name' => 'Alimentation',
             'color' => '#FF5733',
-            'icon'  => 'shopping-cart',
+            'icon' => 'shopping-cart',
         ])->assertRedirect('/categories');
 
         $this->assertDatabaseHas('categories', ['name' => 'Alimentation']);
@@ -75,27 +89,27 @@ class CategorieTest extends TestCase
         Category::factory()->create(['name' => 'Transport']);
 
         $this->actingAs($this->user)->post('/categories', [
-            'name'  => 'Transport',
+            'name' => 'Transport',
             'color' => '#000000',
-            'icon'  => 'car',
+            'icon' => 'car',
         ])->assertSessionHasErrors(['name']);
     }
 
     public function test_store_rejects_invalid_hex_color(): void
     {
         $this->actingAs($this->user)->post('/categories', [
-            'name'  => 'Test',
+            'name' => 'Test',
             'color' => 'red',        // not a hex color
-            'icon'  => 'home',
+            'icon' => 'home',
         ])->assertSessionHasErrors(['color']);
     }
 
     public function test_store_rejects_short_hex_color(): void
     {
         $this->actingAs($this->user)->post('/categories', [
-            'name'  => 'Test',
+            'name' => 'Test',
             'color' => '#FFF',       // 3-digit hex, not accepted
-            'icon'  => 'home',
+            'icon' => 'home',
         ])->assertSessionHasErrors(['color']);
     }
 
@@ -103,9 +117,9 @@ class CategorieTest extends TestCase
     {
         foreach (['#000000', '#FFFFFF', '#1a2b3c', '#ABC123'] as $i => $color) {
             $this->actingAs($this->user)->post('/categories', [
-                'name'  => "Cat $i",
+                'name' => "Cat $i",
                 'color' => $color,
-                'icon'  => 'home',
+                'icon' => 'home',
             ])->assertRedirect('/categories');
         }
     }
@@ -117,9 +131,9 @@ class CategorieTest extends TestCase
         $category = Category::factory()->create(['name' => 'Old Name']);
 
         $this->actingAs($this->user)->patch("/categories/{$category->id}", [
-            'name'  => 'New Name',
+            'name' => 'New Name',
             'color' => $category->color,
-            'icon'  => $category->icon,
+            'icon' => $category->icon,
         ])->assertRedirect('/categories');
 
         $this->assertEquals('New Name', $category->fresh()->name);
@@ -131,9 +145,9 @@ class CategorieTest extends TestCase
 
         // Updating with the same name should pass uniqueness check (exclude self)
         $this->actingAs($this->user)->patch("/categories/{$category->id}", [
-            'name'  => 'Transport',
+            'name' => 'Transport',
             'color' => '#123456',
-            'icon'  => 'car',
+            'icon' => 'car',
         ])->assertRedirect('/categories');
     }
 
@@ -143,9 +157,9 @@ class CategorieTest extends TestCase
         $cat2 = Category::factory()->create(['name' => 'Transport']);
 
         $this->actingAs($this->user)->patch("/categories/{$cat2->id}", [
-            'name'  => 'Alimentation',  // taken by $cat1
+            'name' => 'Alimentation',  // taken by $cat1
             'color' => '#000000',
-            'icon'  => 'home',
+            'icon' => 'home',
         ])->assertSessionHasErrors(['name']);
     }
 

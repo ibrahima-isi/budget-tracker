@@ -6,6 +6,7 @@ use App\Http\Requests\StoreBudgetRequest;
 use App\Http\Requests\UpdateBudgetRequest;
 use App\Models\Budget;
 use App\Models\Category;
+use App\Models\Expense;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,10 +21,7 @@ class BudgetController extends Controller
     {
         ['month' => $month, 'year' => $year, 'currency' => $currency] = $this->resolvePeriodFilters($request);
 
-        $query = Budget::where('user_id', Auth::id())
-            ->with('category')
-            ->withCount('expenses')
-            ->latest();
+        $query = Budget::where('user_id', Auth::id());
 
         if ($currency !== 'all') {
             $query->where('currency_code', $currency);
@@ -36,23 +34,30 @@ class BudgetController extends Controller
         if ($month) {
             $query->where(function ($q) use ($month) {
                 $q->where('type', 'annuel')
-                  ->orWhere(fn ($q2) => $q2->where('type', 'mensuel')->where('month', $month));
+                    ->orWhere(fn ($q2) => $q2->where('type', 'mensuel')->where('month', $month));
             });
         }
 
+        $budgetIds = (clone $query)->select('id');
         $totals = [
             'planned' => (clone $query)->sum('planned_amount'),
-            'spent'   => (clone $query)->withSum('expenses as total_spent', 'amount')->get()->sum('total_spent'),
+            'spent' => Expense::whereIn('budget_id', $budgetIds)->sum('amount'),
         ];
         $totals['balance'] = $totals['planned'] - $totals['spent'];
 
-        $budgets = $query->paginate(self::PER_PAGE)->withQueryString();
+        $budgets = $query
+            ->with('category:id,name,color')
+            ->withCount('expenses')
+            ->withSum('expenses as expense_amount_sum', 'amount')
+            ->latest()
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
 
         return Inertia::render('Budgets/Index', [
-            'budgets'    => $budgets,
-            'totals'     => $totals,
+            'budgets' => $budgets,
+            'totals' => $totals,
             'categories' => Category::enabledFor(Auth::user())->orderBy('name')->get(['id', 'name', 'color']),
-            'filters'    => ['month' => $month, 'year' => $year, 'currency' => $currency],
+            'filters' => ['month' => $month, 'year' => $year, 'currency' => $currency],
         ]);
     }
 
@@ -63,7 +68,7 @@ class BudgetController extends Controller
         $budget->load('expenses.category');
 
         return Inertia::render('Budgets/Show', [
-            'budget'     => $budget,
+            'budget' => $budget,
             'categories' => Category::enabledFor(Auth::user())->orderBy('name')->get(['id', 'name', 'color']),
         ]);
     }
@@ -71,8 +76,8 @@ class BudgetController extends Controller
     public function store(StoreBudgetRequest $request)
     {
         try {
-            $data                  = $request->validated();
-            $data['user_id']       = Auth::id();
+            $data = $request->validated();
+            $data['user_id'] = Auth::id();
             $data['currency_code'] ??= $this->currentCurrency();
 
             Budget::create($data);
@@ -91,7 +96,7 @@ class BudgetController extends Controller
         $this->authorize('update', $budget);
 
         try {
-            $data                  = $request->validated();
+            $data = $request->validated();
             $data['currency_code'] ??= $budget->currency_code ?? $this->currentCurrency();
             $budget->update($data);
         } catch (UniqueConstraintViolationException) {

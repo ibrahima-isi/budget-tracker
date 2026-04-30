@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Expense;
 use App\Models\Revenue;
 use App\Models\User;
+use App\Observers\FinanceCacheObserver;
 use App\Observers\ModelActivityObserver;
 use App\Services\EncryptionService;
 use Illuminate\Auth\Events\Login;
@@ -51,13 +52,18 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // ── Activity logging ───────────────────────────────────────────────────
-        foreach ([Budget::class, Expense::class, Revenue::class, Category::class] as $model) {
+        foreach ([Budget::class, Expense::class, Revenue::class] as $model) {
+            $model::observe(ModelActivityObserver::class);
+            $model::observe(FinanceCacheObserver::class);
+        }
+
+        foreach ([Category::class] as $model) {
             $model::observe(ModelActivityObserver::class);
         }
 
-        Event::listen(Login::class,         [LogAuthEvent::class, 'handleLogin']);
-        Event::listen(Logout::class,        [LogAuthEvent::class, 'handleLogout']);
-        Event::listen(Registered::class,    [LogAuthEvent::class, 'handleRegistered']);
+        Event::listen(Login::class, [LogAuthEvent::class, 'handleLogin']);
+        Event::listen(Logout::class, [LogAuthEvent::class, 'handleLogout']);
+        Event::listen(Registered::class, [LogAuthEvent::class, 'handleRegistered']);
         Event::listen(PasswordReset::class, [LogAuthEvent::class, 'handlePasswordReset']);
 
         if ($this->app->environment('production')) {

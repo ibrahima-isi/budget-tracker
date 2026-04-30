@@ -41,7 +41,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
-                'error'   => fn () => $request->session()->get('error'),
+                'error' => fn () => $request->session()->get('error'),
             ],
             'appSettings' => function () {
                 // Cache within the request so the closure is only evaluated once
@@ -51,14 +51,12 @@ class HandleInertiaRequests extends Middleware
 
                 $data = $settings->only('business_name', 'business_email', 'phone', 'language', 'default_currency');
                 $data['logo_url'] = $settings->logo_path ? route('logo') : null;
+
                 return $data;
             },
             // Active currencies shared with every page so the navbar switcher
             // can list available options without a dedicated API call.
-            'currencies' => fn () => Currency::where('is_active', true)
-                ->orderBy('is_default', 'desc')
-                ->orderBy('code')
-                ->get(['code', 'name', 'symbol']),
+            'currencies' => fn () => Currency::activeOptions(),
 
             // The currency the user has selected (session), used as the active filter.
             'currentCurrency' => fn () => $request->session()->get('current_currency')

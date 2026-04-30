@@ -13,20 +13,20 @@ class SettingsController extends Controller
     public function index()
     {
         return Inertia::render('Settings/Index', [
-            'settings'   => Setting::instance(),
-            'currencies' => Currency::orderBy('is_default', 'desc')->orderBy('code')->get(),
+            'settings' => Setting::instance(),
+            'currencies' => Currency::orderedOptions(),
         ]);
     }
 
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'business_name'    => ['required', 'string', 'max:150'],
-            'business_email'   => ['nullable', 'email', 'max:150'],
-            'phone'            => ['nullable', 'string', 'max:30'],
-            'language'         => ['required', 'in:fr,en,es'],
+            'business_name' => ['required', 'string', 'max:150'],
+            'business_email' => ['nullable', 'email', 'max:150'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'language' => ['required', 'in:fr,en,es'],
             'default_currency' => ['required', 'string', 'max:10'],
-            'logo'             => ['nullable', 'image', 'max:2048'],
+            'logo' => ['nullable', 'image', 'max:2048'],
         ]);
 
         $settings = Setting::instance();

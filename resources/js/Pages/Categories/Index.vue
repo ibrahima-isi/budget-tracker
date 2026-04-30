@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -9,13 +9,14 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
 import InputError from '@/Components/InputError.vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { useFlash } from '@/composables/useFlash';
 
-const props = defineProps({ categories: Array });
+const props = defineProps({ categories: Object });
 const { t } = useI18n();
 const { success } = useFlash();
 const authUser = usePage().props.auth.user;
+const categoryItems = computed(() => props.categories?.data ?? []);
 
 // ── Create ────────────────────────────────────────────────────────────────────
 const showCreate = ref(false);
@@ -94,7 +95,7 @@ function canEditOrDelete(c) {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div
-                        v-for="c in categories"
+                        v-for="c in categoryItems"
                         :key="c.id"
                         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4"
                         :class="{ 'opacity-60': !c.enabled }"
@@ -154,9 +155,26 @@ function canEditOrDelete(c) {
                         </div>
                     </div>
 
-                    <div v-if="!categories.length" class="col-span-3 text-center text-gray-400 dark:text-gray-500 py-12">
+                    <div v-if="!categoryItems.length" class="col-span-3 text-center text-gray-400 dark:text-gray-500 py-12">
                         {{ $t('categories.noData') }}
                     </div>
+                </div>
+
+                <div v-if="categories.last_page > 1" class="mt-4 flex gap-2 flex-wrap">
+                    <template v-for="link in categories.links" :key="link.label">
+                        <Link
+                            v-if="link.url"
+                            :href="link.url"
+                            v-html="link.label"
+                            class="px-3 py-1 rounded text-sm border"
+                            :class="link.active ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+                        />
+                        <span
+                            v-else
+                            v-html="link.label"
+                            class="px-3 py-1 rounded text-sm border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600 cursor-default"
+                        />
+                    </template>
                 </div>
             </div>
         </div>

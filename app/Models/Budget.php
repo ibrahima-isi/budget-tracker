@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\BudgetFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Budget extends Model
 {
-    /** @use HasFactory<\Database\Factories\BudgetFactory> */
+    /** @use HasFactory<BudgetFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -33,6 +34,10 @@ class Budget extends Model
 
     public function getExpenseAmountAttribute(): float
     {
+        if (array_key_exists('expense_amount_sum', $this->attributes)) {
+            return (float) ($this->attributes['expense_amount_sum'] ?? 0);
+        }
+
         if ($this->relationLoaded('expenses')) {
             return (float) $this->expenses->sum('amount');
         }

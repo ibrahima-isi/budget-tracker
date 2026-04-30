@@ -35,13 +35,7 @@ class ExpenseController extends Controller
             $query->where('category_id', $request->integer('category_id'));
         }
 
-        if ($month) {
-            $query->whereMonth('expense_date', $month);
-        }
-
-        if ($year) {
-            $query->whereYear('expense_date', $year);
-        }
+        $this->applyDatePeriodFilter($query, 'expense_date', $month, $year);
 
         $totalAmount = (clone $query)->sum('amount');
         $expenses = $query->paginate(self::PER_PAGE)->withQueryString();

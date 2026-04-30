@@ -13,6 +13,8 @@ use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
+    private const PER_PAGE = 24;
+
     public function index()
     {
         $user = Auth::user();
@@ -21,13 +23,15 @@ class CategoryController extends Controller
             ->withCount('expenses')
             ->with(['userSettings' => fn ($q) => $q->where('user_id', $user->id)])
             ->orderBy('name')
-            ->get()
-            ->map(function ($cat) {
+            ->paginate(self::PER_PAGE)
+            ->through(function ($cat) {
                 $setting = $cat->userSettings->first();
                 $cat->enabled = $setting ? $setting->enabled : true;
                 $cat->unsetRelation('userSettings');
+
                 return $cat;
-            });
+            })
+            ->withQueryString();
 
         return Inertia::render('Categories/Index', [
             'categories' => $categories,
@@ -68,21 +72,21 @@ class CategoryController extends Controller
         $user = Auth::user();
 
         $setting = CategoryUserSetting::firstOrNew([
-            'user_id'     => $user->id,
+            'user_id' => $user->id,
             'category_id' => $category->id,
         ]);
 
-        if (!$setting->exists && !Category::visibleFor($user)->where('id', $category->id)->exists()) {
+        if (! $setting->exists && ! Category::visibleFor($user)->where('id', $category->id)->exists()) {
             abort(403, 'Action non autorisée.');
         }
 
-        $setting->enabled = $setting->exists ? !$setting->enabled : false;
+        $setting->enabled = $setting->exists ? ! $setting->enabled : false;
 
         try {
             $setting->save();
         } catch (UniqueConstraintViolationException) {
             CategoryUserSetting::where([
-                'user_id'     => $user->id,
+                'user_id' => $user->id,
                 'category_id' => $category->id,
             ])->update(['enabled' => false]);
         }

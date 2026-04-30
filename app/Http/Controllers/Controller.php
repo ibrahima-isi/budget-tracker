@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 abstract class Controller
 {
-    use \Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+    use AuthorizesRequests;
 
     /**
      * Return the currency code the current user has selected (from session),
@@ -27,7 +29,7 @@ abstract class Controller
     {
         // If the parameter is missing, we default to current month/year.
         // If it's explicitly 'all' (passed as empty string in some cases or we can use 0), we use null.
-        
+
         $month = now()->month;
         if ($request->has('month')) {
             $val = $request->query('month');
@@ -46,5 +48,34 @@ abstract class Controller
         }
 
         return compact('month', 'year', 'currency');
+    }
+
+    /**
+     * Apply period filters without wrapping indexed date columns in SQL functions
+     * when a year is present. This keeps Postgres/Neon able to use btree indexes.
+     */
+    protected function applyDatePeriodFilter($query, string $column, ?int $month, ?int $year)
+    {
+        if ($month && $year) {
+            $start = Carbon::create($year, $month, 1)->startOfDay();
+
+            return $query
+                ->where($column, '>=', $start->toDateString())
+                ->where($column, '<', $start->copy()->addMonth()->toDateString());
+        }
+
+        if ($year) {
+            $start = Carbon::create($year, 1, 1)->startOfDay();
+
+            return $query
+                ->where($column, '>=', $start->toDateString())
+                ->where($column, '<', $start->copy()->addYear()->toDateString());
+        }
+
+        if ($month) {
+            return $query->whereMonth($column, $month);
+        }
+
+        return $query;
     }
 }
