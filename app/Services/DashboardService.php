@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
 
 class DashboardService
 {
-    public function monthly(User $user, int $month, int $year, string $currency): array
+    public function monthly(User $user, ?int $month, ?int $year, string $currency): array
     {
         return Cache::remember(
             AppCache::financeKey($user->id, 'dashboard:monthly', compact('month', 'year', 'currency')),
@@ -21,7 +21,7 @@ class DashboardService
         );
     }
 
-    public function annual(User $user, int $year, string $currency): array
+    public function annual(User $user, ?int $year, string $currency): array
     {
         return Cache::remember(
             AppCache::financeKey($user->id, 'dashboard:annual', [
@@ -39,7 +39,12 @@ class DashboardService
         return Cache::remember(
             AppCache::financeKey($user->id, 'dashboard:recent-expenses', compact('month', 'year', 'currency')),
             AppCache::DASHBOARD_TTL,
-            fn () => $this->applyCurrency(Expense::where('user_id', $user->id), $currency)
+            fn () => $this->applyDatePeriod(
+                $this->applyCurrency(Expense::where('user_id', $user->id), $currency),
+                'expense_date',
+                $month,
+                $year,
+            )
                 ->select(['id', 'category_id', 'label', 'amount', 'expense_date', 'currency_code'])
                 ->with('category:id,name,color')
                 ->latest('expense_date')
@@ -48,18 +53,32 @@ class DashboardService
         );
     }
 
-    private function buildMonthly(User $user, int $month, int $year, string $currency): array
+    private function buildMonthly(User $user, ?int $month, ?int $year, string $currency): array
     {
-        $totalBudget = $this->applyCurrency(Budget::where('user_id', $user->id), $currency)
-            ->where('type', 'mensuel')
-            ->where('month', $month)
-            ->where('year', $year)
-            ->sum('planned_amount');
+        $budgetQuery = $this->applyCurrency(Budget::where('user_id', $user->id), $currency)
+            ->where('type', 'mensuel');
 
-        $totalRevenues = $this->applyCurrency(Revenue::where('user_id', $user->id), $currency)
-            ->where('month', $month)
-            ->where('year', $year)
-            ->sum('amount');
+        if ($month) {
+            $budgetQuery->where('month', $month);
+        }
+
+        if ($year) {
+            $budgetQuery->where('year', $year);
+        }
+
+        $totalBudget = $budgetQuery->sum('planned_amount');
+
+        $revenueQuery = $this->applyCurrency(Revenue::where('user_id', $user->id), $currency);
+
+        if ($month) {
+            $revenueQuery->where('month', $month);
+        }
+
+        if ($year) {
+            $revenueQuery->where('year', $year);
+        }
+
+        $totalRevenues = $revenueQuery->sum('amount');
 
         $expensesByCategory = $this->applyDatePeriod(
             $this->applyCurrency(Expense::where('user_id', $user->id), $currency),
@@ -89,10 +108,10 @@ class DashboardService
         ];
     }
 
-    private function buildAnnual(User $user, int $year, string $currency): array
+    private function buildAnnual(User $user, ?int $year, string $currency): array
     {
         $budgetTotals = $this->applyCurrency(Budget::where('user_id', $user->id), $currency)
-            ->where('year', $year)
+            ->when($year, fn ($query) => $query->where('year', $year))
             ->selectRaw("
                 COALESCE(SUM(CASE WHEN type = 'mensuel' THEN planned_amount ELSE 0 END), 0) as monthly
             ")
@@ -105,7 +124,7 @@ class DashboardService
         $totalAnnualBudget = (float) ($budgetTotals->annual ?? 0);
 
         $totalRevenues = $this->applyCurrency(Revenue::where('user_id', $user->id), $currency)
-            ->where('year', $year)
+            ->when($year, fn ($query) => $query->where('year', $year))
             ->sum('amount');
 
         $expensesByCategory = $this->applyDatePeriod(
@@ -157,6 +176,33 @@ class DashboardService
             return $query
                 ->where($column, '>=', $start->toDateString())
                 ->where($column, '<', $start->copy()->addYear()->toDateString());
+        }
+
+        if ($month) {
+            $bounds = (clone $query)
+                ->setEagerLoads([])
+                ->reorder()
+                ->select([])
+                ->selectRaw("MIN({$column}) as min_date, MAX({$column}) as max_date")
+                ->first();
+
+            if (! $bounds?->min_date || ! $bounds?->max_date) {
+                return $query->where($column, '<', '0001-01-01');
+            }
+
+            return $query->where(function ($q) use ($column, $month, $bounds) {
+                $startYear = Carbon::parse($bounds->min_date)->year;
+                $endYear = Carbon::parse($bounds->max_date)->year;
+
+                foreach (range($startYear, $endYear) as $candidateYear) {
+                    $start = Carbon::create($candidateYear, $month, 1)->startOfDay();
+
+                    $q->orWhere(function ($q2) use ($column, $start) {
+                        $q2->where($column, '>=', $start->toDateString())
+                            ->where($column, '<', $start->copy()->addMonth()->toDateString());
+                    });
+                }
+            });
         }
 
         return $query;

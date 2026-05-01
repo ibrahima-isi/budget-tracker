@@ -27,7 +27,7 @@ const localCurrency = ref(props.currency ?? '');
 
 watch([localMois, localAnnee, localCurrency], () => {
     emit('change', {
-        mois:     localMois.value     || undefined,
+        mois:     props.showMonth ? (localMois.value || undefined) : undefined,
         annee:    localAnnee.value    || undefined,
         currency: localCurrency.value || undefined,
     });

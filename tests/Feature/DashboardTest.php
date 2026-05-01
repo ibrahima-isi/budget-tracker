@@ -246,7 +246,7 @@ class DashboardTest extends TestCase
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
         $cat    = Category::factory()->create();
 
-        Expense::factory()->count(8)->create([
+        Expense::factory()->currentPeriod()->count(8)->create([
             'user_id'     => $this->user->id,
             'budget_id'   => $budget->id,
             'category_id' => $cat->id,
@@ -356,6 +356,138 @@ class DashboardTest extends TestCase
 
         $this->actingAs($this->user)->get('/dashboard?month=4&year=2025')
             ->assertInertia(fn ($page) => $page->where('monthly.totalRevenues', 300000));
+    }
+
+    public function test_year_filter_returns_totals_for_whole_matching_year(): void
+    {
+        $budget = Budget::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'mensuel',
+            'month' => 4,
+            'year' => 2025,
+            'planned_amount' => 100000,
+            'currency_code' => 'XOF',
+        ]);
+        $cat = Category::factory()->create();
+
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 40000,
+            'expense_date' => '2025-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->create([
+            'user_id' => $this->user->id,
+            'amount' => 150000,
+            'month' => 4,
+            'year' => 2025,
+            'revenue_date' => '2025-04-01',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/dashboard?year=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.month', null)
+                ->where('filters.year', 2025)
+                ->where('monthly.totalBudget', 100000)
+                ->where('monthly.totalExpenses', 40000)
+                ->where('monthly.totalRevenues', 150000)
+                ->where('annual.totalBudget', 100000)
+                ->where('annual.totalExpenses', 40000)
+                ->where('annual.totalRevenues', 150000)
+            );
+    }
+
+    public function test_month_filter_without_year_returns_matching_month_across_years(): void
+    {
+        $budget2024 = Budget::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'mensuel',
+            'month' => 4,
+            'year' => 2024,
+            'planned_amount' => 100000,
+            'currency_code' => 'XOF',
+        ]);
+        $budget2025 = Budget::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'mensuel',
+            'month' => 4,
+            'year' => 2025,
+            'planned_amount' => 200000,
+            'currency_code' => 'XOF',
+        ]);
+        $cat = Category::factory()->create();
+
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $budget2024->id,
+            'category_id' => $cat->id,
+            'amount' => 40000,
+            'expense_date' => '2024-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $budget2025->id,
+            'category_id' => $cat->id,
+            'amount' => 60000,
+            'expense_date' => '2025-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->create([
+            'user_id' => $this->user->id,
+            'amount' => 150000,
+            'month' => 4,
+            'year' => 2024,
+            'revenue_date' => '2024-04-01',
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->create([
+            'user_id' => $this->user->id,
+            'amount' => 250000,
+            'month' => 4,
+            'year' => 2025,
+            'revenue_date' => '2025-04-01',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/dashboard?month=4&year=all&currency=XOF')
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.month', 4)
+                ->where('filters.year', null)
+                ->where('monthly.totalBudget', 300000)
+                ->where('monthly.totalExpenses', 100000)
+                ->where('monthly.totalRevenues', 400000)
+            );
+    }
+
+    public function test_recent_expenses_respect_year_filter(): void
+    {
+        $budget = Budget::factory()->create(['user_id' => $this->user->id]);
+        $cat = Category::factory()->create();
+
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'expense_date' => '2025-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'expense_date' => '2024-04-10',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/dashboard?year=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page
+                ->has('recentExpenses', 1)
+                ->where('recentExpenses.0.expense_date', '2025-04-10T00:00:00.000000Z')
+            );
     }
 
     // ── Currency filter ────────────────────────────────────────────────────────

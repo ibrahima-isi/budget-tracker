@@ -13,14 +13,7 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Period defaults to current month/year; query params override.
-        $month = $request->query('month') ? (int) $request->query('month') : now()->month;
-        $year = $request->query('year') ? (int) $request->query('year') : now()->year;
-
-        $currency = $request->query('currency', '');
-        if ($currency === '' || $currency === null) {
-            $currency = $this->currentCurrency();
-        }
+        ['month' => $month, 'year' => $year, 'currency' => $currency] = $this->resolvePeriodFilters($request);
 
         $monthly = $dashboard->monthly($user, $month, $year, $currency);
         $annual = $dashboard->annual($user, $year, $currency);

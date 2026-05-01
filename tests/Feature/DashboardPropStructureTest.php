@@ -87,7 +87,7 @@ class DashboardPropStructureTest extends TestCase
         $budget = Budget::factory()->create(['user_id' => $this->user->id]);
         $cat    = Category::factory()->create(['name' => 'Alimentation']);
 
-        Expense::factory()->create([
+        Expense::factory()->currentPeriod()->create([
             'user_id'     => $this->user->id,
             'budget_id'   => $budget->id,
             'category_id' => $cat->id,

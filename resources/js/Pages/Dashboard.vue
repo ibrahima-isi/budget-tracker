@@ -51,10 +51,20 @@ const current = computed(() => periode.value === 'mensuel' ? props.monthly : pro
 
 const periodeLabel = computed(() => {
     if (periode.value === 'mensuel') {
-        return new Date(props.year, props.month - 1)
-            .toLocaleString(locale.value, { month: 'long', year: 'numeric' });
+        if (props.month && props.year) {
+            return new Date(props.year, props.month - 1)
+                .toLocaleString(locale.value, { month: 'long', year: 'numeric' });
+        }
+
+        if (props.month) {
+            return new Date(2000, props.month - 1)
+                .toLocaleString(locale.value, { month: 'long' });
+        }
+
+        return props.year ? String(props.year) : 'Toutes les périodes';
     }
-    return String(props.year);
+
+    return props.year ? String(props.year) : 'Toutes les années';
 });
 
 const chartData = computed(() => ({
