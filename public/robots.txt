@@ -1,2 +1,13 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /dashboard
+Disallow: /budgets
+Disallow: /expenses
+Disallow: /revenues
+Disallow: /categories
+Disallow: /settings
+Disallow: /profile
+Disallow: /activity-logs
+Disallow: /user
+
+Sitemap: https://budget.gui-connect.com/sitemap.xml

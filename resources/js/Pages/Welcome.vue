@@ -9,7 +9,7 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Gestion de Budget Personnel" />
+    <Head title="BudgetTracker - GUI CONNECT" />
 
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white flex flex-col">
 
@@ -21,7 +21,7 @@ defineProps({
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                 </div>
-                <span class="font-bold text-lg tracking-tight">BudgetTrack</span>
+                <span class="font-bold text-lg tracking-tight">BudgetTracker</span>
             </div>
 
             <div v-if="canLogin" class="flex items-center gap-3">
@@ -54,16 +54,15 @@ defineProps({
         <section class="flex-1 flex flex-col items-center justify-center text-center px-6 py-20">
             <span class="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-medium px-3 py-1.5 rounded-full mb-6">
                 <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                Gérez vos finances en toute simplicité
+                Un produit GUI CONNECT
             </span>
 
             <h1 class="text-5xl sm:text-6xl font-extrabold tracking-tight max-w-3xl leading-tight mb-6">
-                Prenez le contrôle de
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">votre budget</span>
+                Budget Tracker
             </h1>
 
             <p class="text-lg text-slate-400 max-w-xl mb-10 leading-relaxed">
-                Suivez vos dépenses, planifiez vos budgets et visualisez vos revenus. Tout en francs CFA, tout en un seul endroit.
+                Suivez vos dépenses, planifiez vos budgets et visualisez vos revenus avec l'application de gestion de budget personnel de GUI CONNECT.
             </p>
 
             <div class="flex flex-col sm:flex-row gap-3">
