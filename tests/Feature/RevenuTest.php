@@ -312,6 +312,38 @@ class RevenuTest extends TestCase
             ->assertInertia(fn ($page) => $page->has('revenues.data', 1));
     }
 
+    public function test_all_months_filter_returns_whole_matching_year(): void
+    {
+        Revenue::factory()->create([
+            'user_id' => $this->user->id,
+            'month' => 4,
+            'year' => 2025,
+            'revenue_date' => '2025-04-01',
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->create([
+            'user_id' => $this->user->id,
+            'month' => 6,
+            'year' => 2025,
+            'revenue_date' => '2025-06-01',
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->create([
+            'user_id' => $this->user->id,
+            'month' => 4,
+            'year' => 2024,
+            'revenue_date' => '2024-04-01',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/revenues?month=all&year=2025&currency=XOF')
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.month', null)
+                ->where('filters.year', 2025)
+                ->has('revenues.data', 2)
+            );
+    }
+
     public function test_currency_all_shows_all_currencies(): void
     {
         Revenue::factory()->create([

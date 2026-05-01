@@ -490,6 +490,72 @@ class DashboardTest extends TestCase
             );
     }
 
+    public function test_all_period_filters_return_all_time_totals(): void
+    {
+        $budget2024 = Budget::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'mensuel',
+            'month' => 4,
+            'year' => 2024,
+            'planned_amount' => 100000,
+            'currency_code' => 'XOF',
+        ]);
+        $budget2025 = Budget::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'mensuel',
+            'month' => 6,
+            'year' => 2025,
+            'planned_amount' => 200000,
+            'currency_code' => 'XOF',
+        ]);
+        $cat = Category::factory()->create();
+
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $budget2024->id,
+            'category_id' => $cat->id,
+            'amount' => 40000,
+            'expense_date' => '2024-04-10',
+            'currency_code' => 'XOF',
+        ]);
+        Expense::factory()->create([
+            'user_id' => $this->user->id,
+            'budget_id' => $budget2025->id,
+            'category_id' => $cat->id,
+            'amount' => 60000,
+            'expense_date' => '2025-06-10',
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->create([
+            'user_id' => $this->user->id,
+            'amount' => 150000,
+            'month' => 4,
+            'year' => 2024,
+            'revenue_date' => '2024-04-01',
+            'currency_code' => 'XOF',
+        ]);
+        Revenue::factory()->create([
+            'user_id' => $this->user->id,
+            'amount' => 250000,
+            'month' => 6,
+            'year' => 2025,
+            'revenue_date' => '2025-06-01',
+            'currency_code' => 'XOF',
+        ]);
+
+        $this->actingAs($this->user)->get('/dashboard?month=all&year=all&currency=XOF')
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.month', null)
+                ->where('filters.year', null)
+                ->where('monthly.totalBudget', 300000)
+                ->where('monthly.totalExpenses', 100000)
+                ->where('monthly.totalRevenues', 400000)
+                ->where('annual.totalBudget', 300000)
+                ->where('annual.totalExpenses', 100000)
+                ->where('annual.totalRevenues', 400000)
+            );
+    }
+
     // ── Currency filter ────────────────────────────────────────────────────────
 
     public function test_currency_all_includes_all_currencies(): void

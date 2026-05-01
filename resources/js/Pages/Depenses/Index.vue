@@ -32,13 +32,21 @@ const isAllCurrencies = computed(() => props.filters?.currency === 'all');
 const filterBudget    = ref(props.filters.budget_id    ?? '');
 const filterCategorie = ref(props.filters.categorie_id ?? '');
 
+function filterValue(filters, key, fallback) {
+    return Object.prototype.hasOwnProperty.call(filters, key) ? filters[key] : fallback;
+}
+
+function periodQueryValue(value) {
+    return value ?? 'all';
+}
+
 function applyFilters(periodFilters = {}) {
     router.get(route('depenses.index'), {
         budget_id:    filterBudget.value    || undefined,
         categorie_id: filterCategorie.value || undefined,
-        mois:         periodFilters.mois     ?? props.filters?.mois     ?? undefined,
-        annee:        periodFilters.annee    ?? props.filters?.annee    ?? undefined,
-        currency:     periodFilters.currency ?? props.filters?.currency ?? undefined,
+        mois:         periodQueryValue(filterValue(periodFilters, 'mois', props.filters?.mois)),
+        annee:        periodQueryValue(filterValue(periodFilters, 'annee', props.filters?.annee)),
+        currency:     filterValue(periodFilters, 'currency', props.filters?.currency) ?? undefined,
     }, { preserveState: false, replace: true });
 }
 

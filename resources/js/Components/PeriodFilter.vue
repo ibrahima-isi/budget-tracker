@@ -21,14 +21,20 @@ const { currencies } = useCurrency();
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 7 }, (_, i) => currentYear - 5 + i);
 
-const localMois     = ref(props.mois     ?? '');
-const localAnnee    = ref(props.annee    ?? '');
+const localMois     = ref(props.mois     ?? 'all');
+const localAnnee    = ref(props.annee    ?? 'all');
 const localCurrency = ref(props.currency ?? '');
 
-watch([localMois, localAnnee, localCurrency], () => {
+function periodValue(value) {
+    return value === '' || value === 0 || value === '0' || value === null || value === undefined
+        ? 'all'
+        : value;
+}
+
+watch([localMois, localAnnee, localCurrency, () => props.showMonth], () => {
     emit('change', {
-        mois:     props.showMonth ? (localMois.value || undefined) : undefined,
-        annee:    localAnnee.value    || undefined,
+        mois:     props.showMonth ? periodValue(localMois.value) : 'all',
+        annee:    periodValue(localAnnee.value),
         currency: localCurrency.value || undefined,
     });
 });
@@ -43,7 +49,7 @@ watch([localMois, localAnnee, localCurrency], () => {
                 v-model="localMois"
                 class="block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm"
             >
-                <option :value="0">{{ $t('common.allMonths') }}</option>
+                <option value="all">{{ $t('common.allMonths') }}</option>
                 <option v-for="(name, i) in moisLongs.slice(1)" :key="i + 1" :value="i + 1">
                     {{ name }}
                 </option>
@@ -57,7 +63,7 @@ watch([localMois, localAnnee, localCurrency], () => {
                 v-model="localAnnee"
                 class="block w-full sm:w-auto rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm text-sm"
             >
-                <option :value="0">{{ $t('common.allYears') }}</option>
+                <option value="all">{{ $t('common.allYears') }}</option>
                 <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
             </select>
         </div>
