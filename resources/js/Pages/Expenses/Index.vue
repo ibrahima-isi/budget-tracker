@@ -37,8 +37,8 @@ function applyFilters(periodFilters = {}) {
     router.get(route('expenses.index'), {
         budget_id:   filterBudget.value   || undefined,
         category_id: filterCategory.value || undefined,
-        month:       periodFilters.month    ?? props.filters?.month    ?? undefined,
-        year:        periodFilters.year     ?? props.filters?.year     ?? undefined,
+        month:       periodFilters.mois     ?? props.filters?.month    ?? undefined,
+        year:        periodFilters.annee    ?? props.filters?.year     ?? undefined,
         currency:    periodFilters.currency ?? props.filters?.currency ?? undefined,
     }, { preserveState: false, replace: true });
 }

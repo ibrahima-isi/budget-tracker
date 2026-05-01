@@ -27,16 +27,18 @@ abstract class Controller
      */
     protected function resolvePeriodFilters(Request $request): array
     {
-        // If the parameter is missing, we default to current month/year.
-        // If it's explicitly 'all' (passed as empty string in some cases or we can use 0), we use null.
+        // With no period filters, default to the current month/year. Once a
+        // period filter is present, omitted or "all" values mean no limit for
+        // that dimension, e.g. ?year=2025 means the whole year.
+        $hasPeriodFilter = $request->has('month') || $request->has('year');
 
-        $month = now()->month;
+        $month = $hasPeriodFilter ? null : now()->month;
         if ($request->has('month')) {
             $val = $request->query('month');
             $month = ($val === 'all' || $val === '' || $val === '0') ? null : (int) $val;
         }
 
-        $year = now()->year;
+        $year = $hasPeriodFilter ? null : now()->year;
         if ($request->has('year')) {
             $val = $request->query('year');
             $year = ($val === 'all' || $val === '' || $val === '0') ? null : (int) $val;
