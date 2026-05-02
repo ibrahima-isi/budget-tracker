@@ -22,9 +22,13 @@ PHP (Laravel)
 |-----|-----------|-------------|
 | Clé publique | `storage/keys/public.pgp` (dev) ou `APP_PUBLIC_KEY` (prod) | PHP, transmise à PostgreSQL à chaque chiffrement |
 | Clé privée | `APP_PRIVATE_KEY` (env uniquement, jamais sur disque en prod) | PHP, transmise à PostgreSQL à chaque déchiffrement |
+| Clé HMAC email | `APP_EMAIL_HASH_KEY` (env) | PHP uniquement, jamais transmise à PostgreSQL |
 
-- La connexion Neon est **SSL-only** : les clés ne transitent jamais en clair.
+- Les lectures chiffrées exigent `DB_SSLMODE=verify-full` avant que
+  `APP_PRIVATE_KEY` soit transmise à PostgreSQL.
 - Aucune clé n'est stockée en base de données.
+- `email_hash` est un HMAC déterministe de l'email normalisé, pas un SHA-256
+  public. Il sert uniquement d'index de recherche.
 - `__debugInfo()` masque les clés dans les dumps PHP et les logs Laravel.
 
 ---
@@ -52,6 +56,9 @@ gpg --batch --passphrase '' --armor --export-secret-keys \
 # 3. Encoder en base64 pour les variables d'environnement
 base64 -w0 storage/keys/public.pgp   # → APP_PUBLIC_KEY
 base64 -w0 storage/keys/private.pgp  # → APP_PRIVATE_KEY
+
+# 4. Générer un secret indépendant pour les recherches email
+openssl rand -base64 32              # → APP_EMAIL_HASH_KEY
 ```
 
 > **Important** : `private.pgp` ne doit **jamais** être commité ni déployé
@@ -72,6 +79,14 @@ php artisan users:encrypt-existing
 ```
 
 La commande est **idempotente** : les lignes déjà chiffrées sont ignorées.
+
+Si la base contient déjà des `email_hash` créés avant le passage au HMAC,
+rehacher l'index après migration :
+
+```bash
+php artisan users:rehash-email-hashes --dry-run
+php artisan users:rehash-email-hashes
+```
 
 ---
 
@@ -124,32 +139,18 @@ base64 -w0 storage/keys/private_v2.pgp  # → NEW APP_PRIVATE_KEY
 
 ---
 
-### Étape 2 — Préparer la commande artisan
+### Étape 2 — Préparer les secrets de rotation
 
-La commande se trouve dans :
-`app/Console/Commands/RotateUserEncryptionKeys.php`
+Ne jamais coller de clé dans le code. La commande lit les clés depuis des
+variables d'environnement :
 
-Elle contient deux constantes **placeholder** à remplacer avant de lancer :
-
-```php
-// Récupérer l'ancienne clé privée depuis 1Password :
-// op item get xrs5dsanxdd3jqcemdewh2dtny --reveal --fields "Private Key (armored)"
-private const OLD_PRIVATE_KEY = <<<'PGP'
------BEGIN PGP PRIVATE KEY BLOCK-----
-<coller ici l'ancienne clé privée>
------END PGP PRIVATE KEY BLOCK-----
-PGP;
-
-// Coller ici le contenu de storage/keys/public_v2.pgp
-private const NEW_PUBLIC_KEY = <<<'PGP'
------BEGIN PGP PUBLIC KEY BLOCK-----
-<coller ici la nouvelle clé publique>
------END PGP PUBLIC KEY BLOCK-----
-PGP;
+```bash
+export APP_OLD_PRIVATE_KEY="$(base64 -w0 storage/keys/private.pgp | tr -d '\n')"
+export APP_NEW_PUBLIC_KEY="$(base64 -w0 storage/keys/public_v2.pgp | tr -d '\n')"
 ```
 
-> **Ne jamais committer ce fichier avec de vraies clés.**
-> Remplacer les clés, lancer la commande, puis remettre les placeholders.
+En production, fournir ces valeurs via le secret manager de la plateforme
+(`railway run --env` / variables temporaires selon le workflow choisi).
 
 ---
 
@@ -174,8 +175,8 @@ railway run php artisan users:rotate-keys --force
 ```
 
 La commande traite les lignes par batch de 50 (configurable avec `--chunk=N`).
-En cas d'erreur partielle, les lignes déjà traitées utilisent la **nouvelle clé**,
-les restantes l'**ancienne**. Garder les deux clés disponibles jusqu'à succès complet.
+La rotation est transactionnelle : en cas d'erreur, toute la table reste sur
+l'ancienne clé.
 
 ---
 
@@ -238,13 +239,6 @@ SET
                 pgp_pub_decrypt(email, dearmor('OLD_PRIV_KEY')),
                 dearmor('NEW_PUB_KEY')
             ),
-    email_hash = encode(
-                     digest(
-                         lower(pgp_pub_decrypt(email, dearmor('OLD_PRIV_KEY'))),
-                         'sha256'
-                     ),
-                     'hex'
-                 ),
     updated_at = NOW()
 WHERE id BETWEEN 1 AND 100;  -- ajuster la plage selon le batch souhaité
 

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
  *
  * Security model:
  *  - The public key is passed IN by the caller (PHP) at encrypt time.
+ *  - The email_hash is a PHP-generated keyed HMAC; the DB never receives the
+ *    hash key.
  *  - The private key is passed IN by the caller (PHP) at decrypt time.
  *  - Neither key is ever stored in the database.
  *  - Neon enforces SSL on all connections, protecting the keys in transit.
@@ -37,6 +39,7 @@ return new class extends Migration
                 p_name          TEXT,
                 p_email         TEXT,
                 p_password      TEXT,
+                p_email_hash    TEXT,
                 p_pub_key       TEXT,
                 p_is_admin      BOOLEAN DEFAULT FALSE
             )
@@ -44,16 +47,13 @@ return new class extends Migration
             LANGUAGE plpgsql
             AS $$
             DECLARE
-                v_id   BIGINT;
-                v_hash TEXT;
+                v_id BIGINT;
             BEGIN
-                v_hash := encode(digest(lower(p_email), 'sha256'), 'hex');
-
                 INSERT INTO users (name, email, email_hash, password, is_admin, created_at, updated_at)
                 VALUES (
                     pgp_pub_encrypt(p_name,  dearmor(p_pub_key)),
                     pgp_pub_encrypt(p_email, dearmor(p_pub_key)),
-                    v_hash,
+                    p_email_hash,
                     p_password,
                     p_is_admin,
                     NOW(),
@@ -157,18 +157,13 @@ return new class extends Migration
                 p_id        BIGINT,
                 p_name      TEXT,
                 p_email     TEXT,
+                p_email_hash TEXT,
                 p_pub_key   TEXT
             )
             RETURNS VOID
             LANGUAGE plpgsql
             AS $$
-            DECLARE
-                v_hash TEXT;
             BEGIN
-                IF p_email IS NOT NULL THEN
-                    v_hash := encode(digest(lower(p_email), 'sha256'), 'hex');
-                END IF;
-
                 UPDATE users
                 SET
                     name       = CASE WHEN p_name  IS NOT NULL
@@ -177,7 +172,7 @@ return new class extends Migration
                     email      = CASE WHEN p_email IS NOT NULL
                                       THEN pgp_pub_encrypt(p_email, dearmor(p_pub_key))
                                       ELSE email END,
-                    email_hash = CASE WHEN p_email IS NOT NULL THEN v_hash ELSE email_hash END,
+                    email_hash = CASE WHEN p_email IS NOT NULL THEN p_email_hash ELSE email_hash END,
                     updated_at = NOW()
                 WHERE id = p_id;
             END;
@@ -191,9 +186,9 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('DROP FUNCTION IF EXISTS update_user(BIGINT, TEXT, TEXT, TEXT)');
+        DB::statement('DROP FUNCTION IF EXISTS update_user(BIGINT, TEXT, TEXT, TEXT, TEXT)');
         DB::statement('DROP FUNCTION IF EXISTS search_by_email_hash(TEXT, TEXT)');
         DB::statement('DROP FUNCTION IF EXISTS read_user(BIGINT, TEXT)');
-        DB::statement('DROP FUNCTION IF EXISTS create_user(TEXT, TEXT, TEXT, TEXT, BOOLEAN)');
+        DB::statement('DROP FUNCTION IF EXISTS create_user(TEXT, TEXT, TEXT, TEXT, TEXT, BOOLEAN)');
     }
 };

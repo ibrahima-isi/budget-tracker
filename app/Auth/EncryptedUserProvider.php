@@ -10,7 +10,6 @@ use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 /**
  * Replaces EloquentUserProvider for the encrypted users table.
@@ -45,8 +44,7 @@ class EncryptedUserProvider extends EloquentUserProvider
      */
     private function isEncryptedMode(): bool
     {
-        return DB::connection()->getDriverName() === 'pgsql'
-            && Schema::hasColumn('users', 'email_hash');
+        return User::usesEncryptedStorage();
     }
 
     // ------------------------------------------------------------------

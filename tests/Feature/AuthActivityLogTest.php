@@ -24,7 +24,7 @@ class AuthActivityLogTest extends TestCase
         $this->post('/login', ['email' => $user->email, 'password' => 'password']);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'   => 'login',
+            'event' => 'login',
             'user_id' => $user->id,
         ]);
     }
@@ -39,7 +39,7 @@ class AuthActivityLogTest extends TestCase
         $this->post('/logout');
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'   => 'logout',
+            'event' => 'logout',
             'user_id' => $user->id,
         ]);
     }
@@ -49,31 +49,36 @@ class AuthActivityLogTest extends TestCase
     public function test_registration_event_is_logged(): void
     {
         $this->post('/register', [
-            'name'                  => 'Nouveau User',
-            'email'                 => 'new@example.com',
-            'password'              => 'password123',
+            'name' => 'Nouveau User',
+            'email' => 'new@example.com',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
         // Auth context may not be set when the Registered event fires,
-        // so we check event name and subject label rather than user_id.
-        $this->assertDatabaseHas('activity_logs', [
-            'event'         => 'registered',
-            'subject_type'  => 'User',
-            'subject_label' => 'Nouveau User',
-        ]);
+        // so we check event name and subject type rather than user_id.
+        $log = ActivityLog::where('event', 'registered')->first();
+
+        $this->assertNotNull($log);
+        $this->assertSame('User', $log->subject_type);
+        $this->assertStringStartsWith('user#', $log->subject_label);
     }
 
     // ── Log contents ──────────────────────────────────────────────────────────
 
-    public function test_login_log_contains_user_name(): void
+    public function test_login_log_contains_redacted_user_reference(): void
     {
         $user = User::factory()->create(['name' => 'Ibrahima', 'password' => bcrypt('password')]);
 
         $this->post('/login', ['email' => $user->email, 'password' => 'password']);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'     => 'login',
+            'event' => 'login',
+            'user_name' => 'user#'.$user->id,
+        ]);
+
+        $this->assertDatabaseMissing('activity_logs', [
+            'event' => 'login',
             'user_name' => 'Ibrahima',
         ]);
     }

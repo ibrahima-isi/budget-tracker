@@ -18,7 +18,8 @@ use RuntimeException;
  */
 class EncryptionService
 {
-    private ?string $publicKey  = null;
+    private ?string $publicKey = null;
+
     private ?string $privateKey = null;
 
     // ------------------------------------------------------------------
@@ -42,6 +43,7 @@ class EncryptionService
 
         if (file_exists($path)) {
             $this->publicKey = file_get_contents($path);
+
             return $this->publicKey;
         }
 
@@ -54,6 +56,7 @@ class EncryptionService
                 );
             }
             $this->publicKey = $decoded;
+
             return $this->publicKey;
         }
 
@@ -74,6 +77,8 @@ class EncryptionService
      */
     public function privateKey(): string
     {
+        $this->assertVerifiedDatabaseTransport();
+
         if ($this->privateKey !== null) {
             return $this->privateKey;
         }
@@ -93,6 +98,7 @@ class EncryptionService
         }
 
         $this->privateKey = $decoded;
+
         return $this->privateKey;
     }
 
@@ -101,12 +107,20 @@ class EncryptionService
     // ------------------------------------------------------------------
 
     /**
-     * Returns the SHA-256 hex hash of a lowercased email address.
+     * Returns a keyed deterministic lookup hash for a lowercased email address.
      * Used for the unique email_hash index.
      */
     public function emailHash(string $email): string
     {
-        return hash('sha256', mb_strtolower(trim($email)));
+        return hash_hmac('sha256', $this->normalizeEmail($email), $this->emailHashKey());
+    }
+
+    /**
+     * Legacy unsalted hash kept only for seamless one-time migration lookups.
+     */
+    public function legacyEmailHash(string $email): string
+    {
+        return hash('sha256', $this->normalizeEmail($email));
     }
 
     /**
@@ -114,8 +128,50 @@ class EncryptionService
      */
     public function flush(): void
     {
-        $this->publicKey  = null;
+        $this->publicKey = null;
         $this->privateKey = null;
+    }
+
+    private function normalizeEmail(string $email): string
+    {
+        return mb_strtolower(trim($email));
+    }
+
+    private function emailHashKey(): string
+    {
+        $key = config('encryption.email_hash_key');
+
+        if (! is_string($key) || $key === '') {
+            throw new RuntimeException(
+                'APP_EMAIL_HASH_KEY or APP_KEY must be set before email_hash can be generated.'
+            );
+        }
+
+        return $key;
+    }
+
+    private function assertVerifiedDatabaseTransport(): void
+    {
+        if (! (bool) config('encryption.require_verified_database_tls', true)) {
+            return;
+        }
+
+        $connectionName = config('database.default');
+        $connection = config("database.connections.{$connectionName}", []);
+
+        if (($connection['driver'] ?? null) !== 'pgsql') {
+            return;
+        }
+
+        $sslMode = strtolower((string) ($connection['sslmode'] ?? ''));
+        if ($sslMode === 'verify-full') {
+            return;
+        }
+
+        throw new RuntimeException(
+            'Encrypted user reads require PostgreSQL DB_SSLMODE=verify-full before APP_PRIVATE_KEY can be sent to the database. '
+            .'Set APP_ENCRYPTION_REQUIRE_VERIFIED_DB_TLS=false only for local test databases.'
+        );
     }
 
     // ------------------------------------------------------------------
@@ -125,7 +181,7 @@ class EncryptionService
     public function __debugInfo(): array
     {
         return [
-            'public_key_loaded'  => $this->publicKey  !== null,
+            'public_key_loaded' => $this->publicKey !== null,
             'private_key_loaded' => $this->privateKey !== null,
         ];
     }

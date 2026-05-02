@@ -29,4 +29,23 @@ return [
     | base64 -w0 storage/keys/private.pgp
     */
     'private_key' => env('APP_PRIVATE_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email lookup hash key
+    |--------------------------------------------------------------------------
+    | Secret used to build deterministic HMAC indexes for encrypted emails.
+    | APP_KEY is used as a fallback so existing deployments stay functional,
+    | but production should set APP_EMAIL_HASH_KEY to an independent secret.
+    */
+    'email_hash_key' => env('APP_EMAIL_HASH_KEY', env('APP_KEY')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | PostgreSQL private-key transport guard
+    |--------------------------------------------------------------------------
+    | When enabled, APP_PRIVATE_KEY will only be handed to PostgreSQL over a
+    | certificate-verified TLS connection. Disable only for local test DBs.
+    */
+    'require_verified_database_tls' => env('APP_ENCRYPTION_REQUIRE_VERIFIED_DB_TLS', true),
 ];

@@ -21,6 +21,8 @@ The project implements **database-level asymmetric encryption** for user PII (`n
 ### Implementation Details
 - **Encryption Logic**: Handles by `App\Services\EncryptionService`.
 - **Stored Functions**: PHP calls PostgreSQL functions (`create_user`, `read_user`, `search_by_email_hash`, `update_user`) to perform cryptographic operations. This ensures plain-text data is only visible to the database engine during the operation and never stored on disk in plain text.
+- **Email Lookup**: `email_hash` is a deterministic HMAC generated in PHP with `APP_EMAIL_HASH_KEY`; do not replace it with a plain SHA hash.
+- **TLS Guard**: Encrypted reads require `DB_SSLMODE=verify-full` before `APP_PRIVATE_KEY` is sent to PostgreSQL.
 - **Model Usage**:
   - **NEVER** use `User::find($id)` if you need to read name or email. It returns a binary stream.
   - **ALWAYS** use `User::findDecrypted($id)` or `User::findByEmail($email)`.
@@ -59,6 +61,6 @@ The project implements **database-level asymmetric encryption** for user PII (`n
 
 ## 📋 Guidelines for Gemini
 1. **PII Protection**: When writing tests or examples, never use real emails/names.
-2. **Encryption Awareness**: If you modify the `User` model or any logic touching user registration/auth, you **must** respect the `createEncrypted` and `updateEncrypted` patterns.
+2. **Encryption Awareness**: If you modify the `User` model or any logic touching user registration/auth, keep all `name`/`email` writes routed through the encrypted `User` write path.
 3. **Category Scoping**: When querying categories, use `Categorie::visibleFor(auth()->user())` to ensure users see their personal categories plus global ones.
 4. **Admin Routes**: Any new administrative feature should be nested under the `admin` middleware in `web.php`.

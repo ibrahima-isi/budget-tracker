@@ -14,9 +14,9 @@ use Throwable;
  *
  * After the encryption migration, existing rows hold their original data as raw
  * UTF-8 bytes (BYTEA), NOT as PGP packets.  This command detects those rows via
- * `WHERE email_hash IS NULL` and re-encrypts them in a single SQL UPDATE per
- * batch, using pgcrypto directly in PostgreSQL — no plaintext data is sent over
- * the wire.
+ * `WHERE email_hash IS NULL`, using pgcrypto directly in PostgreSQL. The email
+ * address is read by PHP only long enough to compute the keyed email_hash HMAC;
+ * names are never read out of PostgreSQL by this command.
  *
  * Run order:
  *   1. php artisan migrate          ← applies the two encryption migrations
@@ -26,7 +26,7 @@ use Throwable;
  */
 class EncryptExistingUsers extends Command
 {
-    protected $signature   = 'users:encrypt-existing
+    protected $signature = 'users:encrypt-existing
                                 {--dry-run : Count affected rows without writing}
                                 {--chunk=200 : Rows processed per UPDATE statement}';
 
@@ -34,13 +34,14 @@ class EncryptExistingUsers extends Command
 
     public function handle(EncryptionService $encryption): int
     {
-        $dryRun    = (bool) $this->option('dry-run');
-        $chunkSize = (int)  $this->option('chunk');
+        $dryRun = (bool) $this->option('dry-run');
+        $chunkSize = (int) $this->option('chunk');
 
         $pending = DB::table('users')->whereNull('email_hash')->count();
 
         if ($pending === 0) {
             $this->info('Nothing to do — all users already have email_hash set.');
+
             return self::SUCCESS;
         }
 
@@ -52,55 +53,59 @@ class EncryptExistingUsers extends Command
 
         if ($dryRun) {
             $this->table(['Pending rows'], [[$pending]]);
+
             return self::SUCCESS;
         }
 
         $publicKey = $encryption->publicKey();
         $processed = 0;
-        $errors    = 0;
+        $errors = 0;
 
         // Process in batches to avoid a single giant UPDATE locking the table
         do {
-            $ids = DB::table('users')
+            $rows = DB::table('users')
                 ->whereNull('email_hash')
+                ->select('id')
+                ->selectRaw("convert_from(email, 'UTF8') AS email")
                 ->orderBy('id')
                 ->limit($chunkSize)
-                ->pluck('id')
-                ->toArray();
+                ->get();
 
-            if (empty($ids)) {
+            if ($rows->isEmpty()) {
                 break;
             }
 
-            $placeholders = implode(',', array_fill(0, count($ids), '?'));
-
             try {
-                // Pure SQL: read raw BYTEA → convert back to text → PGP-encrypt.
-                // No plaintext data leaves PostgreSQL.
-                DB::statement(<<<SQL
-                    UPDATE users
-                    SET
-                        name = pgp_pub_encrypt(
-                            convert_from(name, 'UTF8'),
-                            dearmor(?)
-                        ),
-                        email = pgp_pub_encrypt(
-                            convert_from(email, 'UTF8'),
-                            dearmor(?)
-                        ),
-                        email_hash = encode(
-                            digest(lower(convert_from(email, 'UTF8')), 'sha256'),
-                            'hex'
-                        )
-                    WHERE id IN ($placeholders)
-                      AND email_hash IS NULL
-                SQL, array_merge([$publicKey, $publicKey], $ids));
+                DB::transaction(function () use ($rows, $publicKey, $encryption): void {
+                    foreach ($rows as $row) {
+                        DB::statement(<<<'SQL'
+                            UPDATE users
+                            SET
+                                name = pgp_pub_encrypt(
+                                    convert_from(name, 'UTF8'),
+                                    dearmor(?)
+                                ),
+                                email = pgp_pub_encrypt(
+                                    convert_from(email, 'UTF8'),
+                                    dearmor(?)
+                                ),
+                                email_hash = ?
+                            WHERE id = ?
+                              AND email_hash IS NULL
+                        SQL, [
+                            $publicKey,
+                            $publicKey,
+                            $encryption->emailHash((string) $row->email),
+                            $row->id,
+                        ]);
+                    }
+                });
 
-                $processed += count($ids);
-                $this->line(sprintf('  <info>ok</info> batch of %d (total: %d)', count($ids), $processed));
+                $processed += $rows->count();
+                $this->line(sprintf('  <info>ok</info> batch of %d (total: %d)', $rows->count(), $processed));
             } catch (Throwable $e) {
                 $errors++;
-                $this->error('  Batch failed: ' . $e->getMessage());
+                $this->error('  Batch failed: '.$this->sanitizeMessage($e->getMessage()));
                 break;
             }
 
@@ -114,10 +119,21 @@ class EncryptExistingUsers extends Command
 
         if ($errors > 0) {
             $this->error('Encryption failed on one or more batches.');
+
             return self::FAILURE;
         }
 
         $this->info('All rows encrypted successfully.');
+
         return self::SUCCESS;
+    }
+
+    private function sanitizeMessage(string $message): string
+    {
+        return preg_replace(
+            '/-----BEGIN PGP [A-Z ]+ KEY BLOCK-----.*?-----END PGP [A-Z ]+ KEY BLOCK-----/s',
+            '[PGP KEY REDACTED]',
+            $message
+        ) ?? $message;
     }
 }

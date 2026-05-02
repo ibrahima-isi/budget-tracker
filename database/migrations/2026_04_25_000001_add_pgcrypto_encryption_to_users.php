@@ -47,13 +47,13 @@ return new class extends Migration
         DB::statement("ALTER TABLE users ALTER COLUMN name  TYPE BYTEA USING convert_to(name,  'UTF8')");
         DB::statement("ALTER TABLE users ALTER COLUMN email TYPE BYTEA USING convert_to(email, 'UTF8')");
 
-        // email_hash: SHA-256 hex of lower(email). Filled by users:encrypt-existing.
+        // email_hash: keyed HMAC of lower(email). Filled by users:encrypt-existing.
         DB::statement('ALTER TABLE users ADD COLUMN IF NOT EXISTS email_hash TEXT');
 
         // Unique index on email_hash (partial: only rows that have been processed)
         DB::statement(
             'CREATE UNIQUE INDEX IF NOT EXISTS users_email_hash_unique ON users (email_hash) '
-            . 'WHERE email_hash IS NOT NULL'
+            .'WHERE email_hash IS NOT NULL'
         );
     }
 

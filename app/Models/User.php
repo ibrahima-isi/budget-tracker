@@ -12,7 +12,10 @@ use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
+use Throwable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -35,8 +38,8 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'is_admin'          => 'boolean',
+            'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 
@@ -53,29 +56,79 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public static function createEncrypted(array $attributes): self
     {
-        $svc      = app(EncryptionService::class);
-        $isAdmin  = ($attributes['is_admin'] ?? false) ? 'true' : 'false';
+        $svc = app(EncryptionService::class);
+        $isAdmin = ($attributes['is_admin'] ?? false) ? 'true' : 'false';
+        $password = self::normalizedPassword($attributes['password'] ?? '');
+        $emailHash = $svc->emailHash((string) $attributes['email']);
+        $plain = self::plainColumnAttributes($attributes, ['email_verified_at', 'remember_token']);
+
+        // createEncrypted returns a decrypted model, so fail before inserting if
+        // the private key cannot be used safely.
+        $svc->privateKey();
 
         try {
-            $id = DB::selectOne(
-                'SELECT create_user(?, ?, ?, ?, ?::boolean) AS id',
-                [
-                    $attributes['name'],
-                    $attributes['email'],
-                    $attributes['password'],
-                    $svc->publicKey(),
-                    $isAdmin,
-                ]
-            )->id;
+            $id = DB::transaction(function () use ($attributes, $password, $emailHash, $svc, $isAdmin, $plain) {
+                $id = DB::selectOne(
+                    'SELECT create_user(?, ?, ?, ?, ?, ?::boolean) AS id',
+                    [
+                        $attributes['name'],
+                        $attributes['email'],
+                        $password,
+                        $emailHash,
+                        $svc->publicKey(),
+                        $isAdmin,
+                    ]
+                )->id;
+
+                if (! empty($plain)) {
+                    DB::table('users')->where('id', $id)->update($plain);
+                }
+
+                return $id;
+            });
         } catch (QueryException $e) {
             throw new RuntimeException(
-                'Failed to create encrypted user: ' . self::sanitizeMessage($e->getMessage()),
+                'Failed to create encrypted user: '.self::sanitizeMessage($e->getMessage()),
                 0,
                 $e
             );
         }
 
         return self::findDecrypted((int) $id);
+    }
+
+    public static function usesEncryptedStorage(): bool
+    {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return false;
+        }
+
+        try {
+            return Schema::hasColumn('users', 'email_hash');
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    public static function emailExists(string $email, ?int $exceptId = null): bool
+    {
+        if (! self::usesEncryptedStorage()) {
+            return self::query()
+                ->where('email', $email)
+                ->when($exceptId, fn ($query) => $query->whereKeyNot($exceptId))
+                ->exists();
+        }
+
+        $svc = app(EncryptionService::class);
+        $hashes = array_unique([
+            $svc->emailHash($email),
+            $svc->legacyEmailHash($email),
+        ]);
+
+        return DB::table('users')
+            ->whereIn('email_hash', $hashes)
+            ->when($exceptId, fn ($query) => $query->where('id', '!=', $exceptId))
+            ->exists();
     }
 
     /**
@@ -92,7 +145,7 @@ class User extends Authenticatable implements MustVerifyEmail
             ]);
         } catch (QueryException $e) {
             throw new RuntimeException(
-                'Failed to decrypt user: ' . self::sanitizeMessage($e->getMessage()),
+                'Failed to decrypt user: '.self::sanitizeMessage($e->getMessage()),
                 0,
                 $e
             );
@@ -102,21 +155,38 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Find a user by email address (uses SHA-256 email_hash index).
+     * Find a user by email address (uses the keyed email_hash index).
      */
     public static function findByEmail(string $email): ?self
     {
-        $svc  = app(EncryptionService::class);
+        $svc = app(EncryptionService::class);
         $hash = $svc->emailHash($email);
+        $legacyHash = $svc->legacyEmailHash($email);
 
         try {
             $row = DB::selectOne('SELECT * FROM search_by_email_hash(?, ?)', [
                 $hash,
                 $svc->privateKey(),
             ]);
+
+            if (! $row && $legacyHash !== $hash) {
+                $row = DB::selectOne('SELECT * FROM search_by_email_hash(?, ?)', [
+                    $legacyHash,
+                    $svc->privateKey(),
+                ]);
+
+                if ($row) {
+                    DB::table('users')
+                        ->where('id', $row->id)
+                        ->where('email_hash', $legacyHash)
+                        ->update(['email_hash' => $hash]);
+
+                    $row->email_hash = $hash;
+                }
+            }
         } catch (QueryException $e) {
             throw new RuntimeException(
-                'Failed to search by email: ' . self::sanitizeMessage($e->getMessage()),
+                'Failed to search by email: '.self::sanitizeMessage($e->getMessage()),
                 0,
                 $e
             );
@@ -132,35 +202,74 @@ class User extends Authenticatable implements MustVerifyEmail
     public function updateEncrypted(array $attributes): bool
     {
         $svc = app(EncryptionService::class);
+        $updatesEncryptedColumns = array_key_exists('name', $attributes) || array_key_exists('email', $attributes);
+
+        // Update non-encrypted fields normally via Eloquent
+        $plain = self::plainColumnAttributes(
+            $attributes,
+            ['email_verified_at', 'password', 'remember_token', 'is_admin']
+        );
+
+        if (isset($plain['password'])) {
+            $plain['password'] = self::normalizedPassword($plain['password']);
+        }
 
         try {
-            DB::statement('SELECT update_user(?, ?, ?, ?)', [
-                $this->id,
-                $attributes['name']  ?? null,
-                $attributes['email'] ?? null,
-                $svc->publicKey(),
-            ]);
+            DB::transaction(function () use ($updatesEncryptedColumns, $attributes, $svc, $plain): void {
+                if (! $updatesEncryptedColumns) {
+                    if (! empty($plain)) {
+                        parent::forceFill($plain);
+                        parent::save();
+                    }
+
+                    return;
+                }
+
+                DB::statement('SELECT update_user(?, ?, ?, ?, ?)', [
+                    $this->id,
+                    $attributes['name'] ?? null,
+                    $attributes['email'] ?? null,
+                    array_key_exists('email', $attributes) ? $svc->emailHash((string) $attributes['email']) : null,
+                    $svc->publicKey(),
+                ]);
+
+                // Refresh in-memory attributes from DB
+                $fresh = self::findDecrypted($this->id);
+                if ($fresh) {
+                    $this->setRawAttributes($fresh->getAttributes(), true);
+                }
+
+                if (! empty($plain)) {
+                    parent::forceFill($plain);
+                    parent::save();
+                }
+            });
         } catch (QueryException $e) {
             throw new RuntimeException(
-                'Failed to update encrypted user: ' . self::sanitizeMessage($e->getMessage()),
+                'Failed to update encrypted user: '.self::sanitizeMessage($e->getMessage()),
                 0,
                 $e
             );
         }
 
-        // Refresh in-memory attributes from DB
-        $fresh = self::findDecrypted($this->id);
-        if ($fresh) {
-            $this->setRawAttributes($fresh->getAttributes());
-        }
-
-        // Update non-encrypted fields normally via Eloquent
-        $plain = array_diff_key($attributes, array_flip(['name', 'email']));
-        if (! empty($plain)) {
-            parent::fill($plain)->save();
-        }
-
         return true;
+    }
+
+    public function save(array $options = []): bool
+    {
+        if (! self::usesEncryptedStorage()) {
+            return parent::save($options);
+        }
+
+        if (! $this->exists && $this->hasEncryptedIdentityAttributes()) {
+            return $this->insertThroughEncryptedStorage();
+        }
+
+        if ($this->exists && ($this->isDirty('name') || $this->isDirty('email'))) {
+            return $this->updateThroughEncryptedStorage();
+        }
+
+        return parent::save($options);
     }
 
     // ------------------------------------------------------------------
@@ -202,22 +311,76 @@ class User extends Authenticatable implements MustVerifyEmail
 
     private static function hydrateRow(array $row): self
     {
-        $user = new self();
+        $user = new self;
         $user->exists = true;
         $user->setRawAttributes([
-            'id'                => $row['id'],
-            'name'              => $row['name'],
-            'email'             => $row['email'],
-            'email_hash'        => $row['email_hash'],
+            'id' => $row['id'],
+            'name' => $row['name'],
+            'email' => $row['email'],
+            'email_hash' => $row['email_hash'],
             'email_verified_at' => $row['email_verified_at'],
-            'password'          => $row['password'],
-            'remember_token'    => $row['remember_token'] ?? null,
-            'is_admin'          => $row['is_admin'],
-            'created_at'        => $row['created_at'],
-            'updated_at'        => $row['updated_at'],
-        ]);
+            'password' => $row['password'],
+            'remember_token' => $row['remember_token'] ?? null,
+            'is_admin' => $row['is_admin'],
+            'created_at' => $row['created_at'],
+            'updated_at' => $row['updated_at'],
+        ], true);
 
         return $user;
+    }
+
+    private static function normalizedPassword(mixed $password): string
+    {
+        $password = (string) $password;
+
+        return Hash::needsRehash($password) ? Hash::make($password) : $password;
+    }
+
+    private static function plainColumnAttributes(array $attributes, array $allowed): array
+    {
+        return array_intersect_key($attributes, array_flip($allowed));
+    }
+
+    private function hasEncryptedIdentityAttributes(): bool
+    {
+        return array_key_exists('name', $this->attributes)
+            || array_key_exists('email', $this->attributes);
+    }
+
+    private function insertThroughEncryptedStorage(): bool
+    {
+        if ($this->fireModelEvent('creating') === false) {
+            return false;
+        }
+
+        $created = self::createEncrypted($this->getAttributes());
+
+        $this->exists = true;
+        $this->wasRecentlyCreated = true;
+        $this->setRawAttributes($created->getAttributes(), true);
+
+        $this->fireModelEvent('created', false);
+        $this->fireModelEvent('saved', false);
+
+        return true;
+    }
+
+    private function updateThroughEncryptedStorage(): bool
+    {
+        if (! $this->isDirty()) {
+            return true;
+        }
+
+        if ($this->fireModelEvent('updating') === false) {
+            return false;
+        }
+
+        $this->updateEncrypted($this->getDirty());
+
+        $this->fireModelEvent('updated', false);
+        $this->fireModelEvent('saved', false);
+
+        return true;
     }
 
     /**
@@ -258,7 +421,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new VerifyEmailNotification());
+        $this->notify(new VerifyEmailNotification);
     }
 
     public function sendPasswordResetNotification($token): void
@@ -273,7 +436,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function __debugInfo(): array
     {
         return [
-            'id'       => $this->id,
+            'id' => $this->id,
             'is_admin' => $this->is_admin,
         ];
     }

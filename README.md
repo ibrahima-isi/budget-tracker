@@ -171,7 +171,12 @@ DB_PORT=5432
 DB_DATABASE=...
 DB_USERNAME=...
 DB_PASSWORD=...
-DB_SSLMODE=require
+DB_SSLMODE=verify-full
+DB_SSLROOTCERT=                  # optional CA bundle path when your host requires it
+
+APP_PUBLIC_KEY=                  # base64-encoded armored PGP public key
+APP_PRIVATE_KEY=                 # base64-encoded armored PGP private key
+APP_EMAIL_HASH_KEY=              # independent secret for deterministic email lookup HMAC
 
 SESSION_DRIVER=database
 

@@ -16,13 +16,13 @@ return new class extends Migration
 
             // Who — nullable so system/guest events (failed login, etc.) can also be stored
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->string('user_name', 255)->nullable();    // denormalized: survives user deletion
+            $table->string('user_name', 255)->nullable();    // redacted actor reference, e.g. user#123
 
             // What happened
             $table->string('event', 50);                     // created|updated|deleted|login|logout|registered|password_reset
             $table->string('subject_type', 100)->nullable(); // e.g. "Budget", "Depense"
             $table->unsignedBigInteger('subject_id')->nullable();
-            $table->string('subject_label', 255)->nullable();// human-readable: libelle, source, nom…
+            $table->string('subject_label', 255)->nullable(); // human-readable: libelle, source, nom…
 
             // Diff payload  { "old": {…}, "new": {…} }
             $table->json('properties')->nullable();

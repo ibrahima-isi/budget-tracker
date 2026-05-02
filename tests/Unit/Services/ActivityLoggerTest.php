@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Services;
 
-use App\Models\ActivityLog;
 use App\Models\Budget;
 use App\Models\Category;
 use App\Models\User;
@@ -34,36 +33,34 @@ class ActivityLoggerTest extends TestCase
     public function test_label_for_falls_back_to_primary_key_when_no_named_attr(): void
     {
         $user = User::factory()->make(['id' => 42]);
-        // User has name attr so it will use that
-        $user->name = '';
 
-        // Force empty name — label should fall back to key
-        $this->assertEquals('#42', ActivityLogger::labelFor($user));
+        $this->assertEquals('user#42', ActivityLogger::labelFor($user));
     }
 
     // ── sanitize ──────────────────────────────────────────────────────────────
 
     public function test_sanitize_removes_always_redact_fields(): void
     {
-        $user  = new User();
+        $user = new User;
         $attrs = ['id' => 1, 'email' => 'a@b.com', 'password' => 'hashed', 'remember_token' => 'tok'];
 
         $result = ActivityLogger::sanitize($user, $attrs);
 
-        $this->assertArrayHasKey('email', $result);
+        $this->assertArrayNotHasKey('email', $result);
         $this->assertArrayNotHasKey('password', $result);
         $this->assertArrayNotHasKey('remember_token', $result);
     }
 
-    public function test_sanitize_removes_model_hidden_fields(): void
+    public function test_sanitize_removes_user_pii_fields(): void
     {
-        $user  = new User(); // User hides password and remember_token
-        $attrs = ['id' => 1, 'name' => 'Alice', 'password' => 'secret'];
+        $user = new User; // User hides password and remember_token
+        $attrs = ['id' => 1, 'name' => 'Alice', 'email' => 'alice@example.com', 'password' => 'secret'];
 
         $result = ActivityLogger::sanitize($user, $attrs);
 
         $this->assertArrayNotHasKey('password', $result);
-        $this->assertArrayHasKey('name', $result);
+        $this->assertArrayNotHasKey('name', $result);
+        $this->assertArrayNotHasKey('email', $result);
     }
 
     // ── snapshot ──────────────────────────────────────────────────────────────
@@ -96,7 +93,7 @@ class ActivityLoggerTest extends TestCase
 
     public function test_diff_returns_empty_array_when_nothing_changed(): void
     {
-        $cat  = Category::factory()->create(['name' => 'Same']);
+        $cat = Category::factory()->create(['name' => 'Same']);
         $diff = ActivityLogger::diff($cat); // no dirty fields after fresh create+sync
 
         $this->assertEmpty($diff);
@@ -114,10 +111,11 @@ class ActivityLoggerTest extends TestCase
         ActivityLogger::log('created', $cat, ['new' => ['name' => 'Courses']]);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'         => 'created',
-            'subject_type'  => 'Category',
+            'event' => 'created',
+            'subject_type' => 'Category',
             'subject_label' => 'Courses',
-            'user_id'       => $user->id,
+            'user_id' => $user->id,
+            'user_name' => 'user#'.$user->id,
         ]);
     }
 
@@ -129,8 +127,9 @@ class ActivityLoggerTest extends TestCase
         ActivityLogger::log('login', $user);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'   => 'login',
+            'event' => 'login',
             'user_id' => $user->id,
+            'user_name' => 'user#'.$user->id,
         ]);
     }
 
@@ -141,8 +140,8 @@ class ActivityLoggerTest extends TestCase
         ActivityLogger::log('created', $cat);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'    => 'created',
-            'user_id'  => null,
+            'event' => 'created',
+            'user_id' => null,
             'user_name' => null,
         ]);
     }

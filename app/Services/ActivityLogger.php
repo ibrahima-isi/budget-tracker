@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -19,28 +20,29 @@ class ActivityLogger
     /**
      * Record a single activity to the DB and to the rotating activity log file.
      *
-     * @param  string       $event      created|updated|deleted|login|logout|registered|password_reset
-     * @param  Model|null   $subject    The Eloquent model that was acted upon
-     * @param  array        $properties Extra context, e.g. ['old'=>[…], 'new'=>[…]]
+     * @param  string  $event  created|updated|deleted|login|logout|registered|password_reset
+     * @param  Model|null  $subject  The Eloquent model that was acted upon
+     * @param  array  $properties  Extra context, e.g. ['old'=>[…], 'new'=>[…]]
      */
     public static function log(
         string $event,
         ?Model $subject = null,
-        array  $properties = [],
+        array $properties = [],
     ): void {
-        $user    = Auth::user();
+        $user = Auth::user();
         $request = Request::instance();
+        $actor = $user ? 'user#'.$user->getAuthIdentifier() : null;
 
         $entry = [
-            'user_id'       => $user?->id,
-            'user_name'     => $user?->name,
-            'event'         => $event,
-            'subject_type'  => $subject ? class_basename($subject) : null,
-            'subject_id'    => $subject?->getKey(),
+            'user_id' => $user?->id,
+            'user_name' => $actor,
+            'event' => $event,
+            'subject_type' => $subject ? class_basename($subject) : null,
+            'subject_id' => $subject?->getKey(),
             'subject_label' => $subject ? static::labelFor($subject) : null,
-            'properties'    => empty($properties) ? null : $properties,
-            'ip_address'    => $request->ip(),
-            'user_agent'    => substr((string) $request->userAgent(), 0, 500),
+            'properties' => empty($properties) ? null : $properties,
+            'ip_address' => $request->ip(),
+            'user_agent' => substr((string) $request->userAgent(), 0, 500),
         ];
 
         // ── 1. Persist to database ─────────────────────────────────────────────
@@ -48,11 +50,11 @@ class ActivityLogger
 
         // ── 2. Mirror to the daily rotating activity log file ─────────────────
         Log::channel('activity')->info($event, array_filter([
-            'user'    => $user?->name ?? 'guest',
+            'user' => $actor ?? 'guest',
             'subject' => $entry['subject_type'] ? "{$entry['subject_type']}#{$entry['subject_id']}" : null,
-            'label'   => $entry['subject_label'],
-            'ip'      => $entry['ip_address'],
-            'props'   => $entry['properties'],
+            'label' => $entry['subject_label'],
+            'ip' => $entry['ip_address'],
+            'props' => $entry['properties'],
         ]));
     }
 
@@ -64,13 +66,17 @@ class ActivityLogger
      */
     public static function labelFor(Model $model): string
     {
+        if ($model instanceof User) {
+            return $model->getKey() ? 'user#'.$model->getKey() : 'user';
+        }
+
         foreach (['label', 'source', 'name', 'title', 'code'] as $attr) {
             if (! empty($model->{$attr})) {
                 return (string) $model->{$attr};
             }
         }
 
-        return '#' . $model->getKey();
+        return '#'.$model->getKey();
     }
 
     /**
@@ -79,6 +85,10 @@ class ActivityLogger
     public static function sanitize(Model $model, array $attributes): array
     {
         $redact = array_merge(static::ALWAYS_REDACT, $model->getHidden());
+
+        if ($model instanceof User) {
+            $redact = array_merge($redact, ['name', 'email', 'email_hash']);
+        }
 
         return array_diff_key($attributes, array_flip($redact));
     }
