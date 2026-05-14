@@ -20,7 +20,11 @@ jobs:
         with:
           php-version: '8.4'
           extensions: pdo, pdo_sqlite, pdo_pgsql, mbstring, xml, curl, zip, gd, fileinfo
+          tools: composer:2.9.5
           coverage: none
+
+      - name: Show Composer version
+        run: composer --version
 
       - name: Cache Composer packages
         uses: actions/cache@v4
