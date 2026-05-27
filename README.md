@@ -6,7 +6,7 @@
 ![Composer](https://img.shields.io/badge/Composer-2.9-885630?logo=composer&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 
-A personal budget tracking web application built with Laravel 12, Inertia.js, and Vue 3. Track your budgets, expenses, revenues, and categories with a clean interface, dark mode, and multi-language support.
+A personal budget tracking web application built with Laravel 12, Inertia.js, and Vue 3. Track your budgets, expenses, revenues, and categories with a clean interface, dark mode, multi-language support, and admin-controlled user access.
 
 ---
 
@@ -17,12 +17,15 @@ A personal budget tracking web application built with Laravel 12, Inertia.js, an
 - **Revenues** — record income sources by date, automatically grouped by month/year
 - **Categories** — global categories (seeded or admin-created) are available to all users; users can also create personal categories visible only to themselves. Any user can enable or disable a category for their own account — disabled categories are hidden from all budget and expense select lists. Only admins can edit or delete global categories; users can edit or delete their own.
 - **Dashboard** — summary cards (budget, expenses, revenues, balance) each have an independent M/A toggle to switch between monthly and annual view; a global toggle in the header syncs all cards at once. Includes a budget progress bar, donut chart by category, and the last 5 expenses.
-- **Admin backoffice** — manage app settings (business name, logo, language, default currency) and currencies
+- **Admin backoffice** — manage app settings (business name, logo, language, default currency), currencies, activity logs, and user approvals
+- **User approval workflow** — newly registered users remain pending until an admin approves them
+- **Anti-brute-force controls** — login is locked for 5 minutes after 5 failed attempts, with a visible countdown; global request throttling limits abusive traffic by IP and network
 - **Dark mode** — toggleable, persisted in `localStorage`, respects system preference on first visit
 - **Multi-language** — French, English, Spanish (set by admin in Settings; applied app-wide via vue-i18n)
 - **Email verification** — required on registration, sent via Brevo HTTP API
 - **Private logo storage** — logo served through a controller, never exposed via public `/storage/` URL
-- **CI/CD** — GitHub Actions runs 250 tests on every push; deploys to Railway only when all pass
+- **GUI CONNECT favicon** — SVG favicon with an ICO fallback served from `public/`
+- **CI/CD** — GitHub Actions runs the test suite on every push; deploys to Railway only when all pass
 
 ---
 
@@ -44,7 +47,7 @@ A personal budget tracking web application built with Laravel 12, Inertia.js, an
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.4+
 - Composer
 - Node.js 22+
 - PostgreSQL (or MySQL)
@@ -86,6 +89,13 @@ MAIL_MAILER=brevo
 BREVO_KEY=your-brevo-api-key
 MAIL_FROM_ADDRESS=you@example.com
 MAIL_FROM_NAME="BudgetTrack"
+
+LOGIN_MAX_ATTEMPTS=5
+LOGIN_LOCKOUT_SECONDS=300
+DYNAMIC_RATE_LIMIT_IP_ATTEMPTS=120
+DYNAMIC_RATE_LIMIT_NETWORK_ATTEMPTS=600
+DYNAMIC_RATE_LIMIT_WINDOW_SECONDS=60
+DYNAMIC_RATE_LIMIT_BLOCK_SECONDS=900
 ```
 
 > **MySQL users:** change `DB_CONNECTION=mysql` and `DB_PORT=3306`. All queries use Eloquent — no raw SQL.
@@ -126,6 +136,7 @@ Admin users see a **Settings** link in the navbar to manage:
 - App language (fr / en / es) — applies to all users
 - Default currency
 - Currency list (add, edit, enable/disable, set default)
+- Users awaiting approval (`Settings` → `Users`)
 
 ---
 
@@ -147,7 +158,7 @@ Run with coverage (requires Xdebug or PCOV):
 php artisan test --coverage
 ```
 
-The test suite uses **SQLite in-memory** — no database setup required. 250 tests covering models, policies, controllers, and auth flows.
+The default test suite uses **SQLite in-memory** — no database setup required. It covers models, policies, controllers, security throttling, auth, approval, and Inertia flows. PostgreSQL pgcrypto encryption tests are skipped in the default SQLite run; run them with `DB_CONNECTION=pgsql` plus valid `APP_PUBLIC_KEY` and `APP_PRIVATE_KEY` values when validating encrypted user storage.
 
 ---
 
@@ -180,6 +191,14 @@ APP_EMAIL_HASH_KEY=              # independent secret for deterministic email lo
 
 SESSION_DRIVER=database
 
+LOGIN_MAX_ATTEMPTS=5
+LOGIN_LOCKOUT_SECONDS=300
+DYNAMIC_RATE_LIMIT_ENABLED=true
+DYNAMIC_RATE_LIMIT_IP_ATTEMPTS=120
+DYNAMIC_RATE_LIMIT_NETWORK_ATTEMPTS=600
+DYNAMIC_RATE_LIMIT_WINDOW_SECONDS=60
+DYNAMIC_RATE_LIMIT_BLOCK_SECONDS=900
+
 MAIL_MAILER=brevo
 BREVO_KEY=your-brevo-api-key
 MAIL_FROM_ADDRESS=you@example.com
@@ -196,6 +215,14 @@ MAIL_FROM_NAME="BudgetTrack"
    ```bash
    railway run php artisan admin:make you@example.com
    ```
+
+5. Approve new users from `Settings` → `Users` before they can access dashboard, finance resources, settings, or profile pages.
+
+When running production commands through Railway from macOS against Neon with `DB_SSLMODE=verify-full`, keep SSL verification enabled and override the root certificate path if the Railway Linux path is not present locally:
+
+```bash
+railway run --environment production --service budget-tracker -- env DB_SSLROOTCERT=/opt/homebrew/etc/openssl@3/cert.pem php artisan migrate --force
+```
 
 ### Continuous deployment via GitHub Actions
 
@@ -221,8 +248,10 @@ app/
 ├── Http/
 │   ├── Controllers/        # BudgetController, DepenseController, RevenuController,
 │   │                         CategorieController, DashboardController,
-│   │                         SettingsController, CurrencyController, LogoController
-│   ├── Middleware/         # EnsureUserIsAdmin, HandleInertiaRequests
+│   │                         SettingsController, CurrencyController, LogoController,
+│   │                         UserManagementController
+│   ├── Middleware/         # EnsureUserIsAdmin, EnsureUserIsApproved,
+│   │                         ThrottleDynamicRequests, HandleInertiaRequests
 │   └── Requests/           # Form request validation + authorization classes
 │                             (StoreCategorieRequest, UpdateCategorieRequest,
 │                              DeleteCategorieRequest, StoreBudgetRequest, …)
@@ -242,7 +271,7 @@ resources/js/
     ├── Categories/         # Index
     ├── Depenses/           # Index
     ├── Revenus/            # Index
-    └── Settings/           # Index
+    └── Settings/           # Index, Users
 
 database/
 ├── migrations/
@@ -255,8 +284,11 @@ database/
 
 - **Category scoping** — `categories.user_id` is `NULL` for global (admin/seeded) categories and set to the creator's id for personal ones. `Categorie::visibleFor($user)` and `Categorie::enabledFor($user)` scopes are used everywhere so users never see each other's personal categories or their own disabled ones. Per-user enable/disable state is stored in a separate `categorie_user_settings` pivot table to avoid mutating shared data.
 - **Form Request authorization** — ownership checks (`is_admin || user_id === auth id`) live in `authorize()` on each Form Request (`UpdateCategorieRequest`, `DeleteCategorieRequest`) so authorization always runs before validation, not after.
+- **User approval before resource access** — registrations create pending users. `EnsureUserIsApproved` protects dashboard, finance, settings, and profile routes, while admins approve or revoke users in `/settings/users`.
+- **Layered request throttling** — login attempts are limited independently from global traffic throttling. Login uses separate counter and lockout keys so the lockout timer starts when the failed-attempt threshold is reached. Global web requests are throttled by IP and by derived network key through `ThrottleDynamicRequests`.
 - **No raw SQL** — all queries go through Eloquent for MySQL/PostgreSQL compatibility
 - **Private logo storage** — uploaded logos use `Storage::disk('local')` and are served via `LogoController`, never accessible via a public path
+- **Brand favicon assets** — `public/favicon.svg` is the primary GUI CONNECT favicon and `public/favicon.ico` is the multi-size fallback for older browsers
 - **Trusted proxies** — `trustProxies(at: '*')` in `bootstrap/app.php` ensures Railway's HTTPS proxy headers are respected, which is required for signed email verification URLs to work correctly
 - **Brevo over SMTP** — Railway blocks outbound port 587; Brevo's HTTP API is used instead via `symfony/brevo-mailer`
 - **All amounts in XOF (Franc CFA)** — formatted with `Intl.NumberFormat` via the `useFormatMoney` composable
