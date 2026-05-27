@@ -32,12 +32,12 @@ class ActivityLog extends Model
     // ── Event badge colours (used in the Vue page) ────────────────────────────
 
     public static array $eventColors = [
-        'created'        => 'green',
-        'updated'        => 'blue',
-        'deleted'        => 'red',
-        'login'          => 'indigo',
-        'logout'         => 'gray',
-        'registered'     => 'teal',
+        'created' => 'green',
+        'updated' => 'blue',
+        'deleted' => 'red',
+        'login' => 'indigo',
+        'logout' => 'gray',
+        'registered' => 'teal',
         'password_reset' => 'yellow',
     ];
 }

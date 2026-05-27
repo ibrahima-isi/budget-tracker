@@ -24,7 +24,12 @@ class MakeAdminCommand extends Command
             return self::FAILURE;
         }
 
-        $user->forceFill(['is_admin' => true])->save();
+        $user->forceFill([
+            'is_admin' => true,
+            'is_approved' => true,
+            'approved_at' => now(),
+            'approved_by' => null,
+        ])->save();
         $this->info("User [{$user->name}] is now an administrator.");
 
         return self::SUCCESS;

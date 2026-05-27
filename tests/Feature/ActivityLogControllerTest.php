@@ -12,12 +12,13 @@ class ActivityLogControllerTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $regular;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->admin   = User::factory()->create(['is_admin' => true,  'email_verified_at' => now()]);
+        $this->admin = User::factory()->create(['is_admin' => true,  'email_verified_at' => now()]);
         $this->regular = User::factory()->create(['is_admin' => false, 'email_verified_at' => now()]);
     }
 
@@ -106,7 +107,7 @@ class ActivityLogControllerTest extends TestCase
         ActivityLog::factory()->create(['user_name' => 'Unrelated']);
 
         // Search for literal '%' — should not match 'Unrelated'
-        $this->actingAs($this->admin)->get('/activity-logs?search=' . urlencode('%'))
+        $this->actingAs($this->admin)->get('/activity-logs?search='.urlencode('%'))
             ->assertInertia(fn ($page) => $page->has('logs.data', 1));
     }
 

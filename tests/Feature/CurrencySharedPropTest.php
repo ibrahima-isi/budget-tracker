@@ -60,8 +60,7 @@ class CurrencySharedPropTest extends TestCase
 
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->where('currencies', fn ($currencies) =>
-                    collect($currencies)->every(fn ($c) => $c['code'] !== 'XAF')
+                ->where('currencies', fn ($currencies) => collect($currencies)->every(fn ($c) => $c['code'] !== 'XAF')
                 )
             );
     }
@@ -124,10 +123,8 @@ class CurrencySharedPropTest extends TestCase
 
         $this->actingAs($this->user)->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->where('currencies', fn ($list) =>
-                    collect($list)->every(fn ($c) =>
-                        ! array_key_exists('created_at', $c) && ! array_key_exists('updated_at', $c)
-                    )
+                ->where('currencies', fn ($list) => collect($list)->every(fn ($c) => ! array_key_exists('created_at', $c) && ! array_key_exists('updated_at', $c)
+                )
                 )
             );
     }

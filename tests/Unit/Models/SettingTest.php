@@ -22,7 +22,7 @@ class SettingTest extends TestCase
 
     public function test_instance_returns_same_row_on_repeated_calls(): void
     {
-        $first  = Setting::instance();
+        $first = Setting::instance();
         $second = Setting::instance();
 
         $this->assertEquals($first->id, $second->id);
@@ -42,10 +42,10 @@ class SettingTest extends TestCase
     {
         $setting = Setting::instance();
         $setting->update([
-            'business_name'    => 'Acme Corp',
-            'business_email'   => 'contact@acme.com',
-            'phone'            => '+221 77 000 00 00',
-            'language'         => 'en',
+            'business_name' => 'Acme Corp',
+            'business_email' => 'contact@acme.com',
+            'phone' => '+221 77 000 00 00',
+            'language' => 'en',
             'default_currency' => 'EUR',
         ]);
 

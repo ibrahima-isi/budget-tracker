@@ -15,12 +15,12 @@ class RevenuSeeder extends Seeder
 
         for ($month = 1; $month <= now()->month; $month++) {
             Revenue::create([
-                'user_id'      => $user->id,
-                'source'       => 'Salaire',
-                'amount'       => 450000,
+                'user_id' => $user->id,
+                'source' => 'Salaire',
+                'amount' => 450000,
                 'revenue_date' => "$year-$month-01",
-                'month'        => $month,
-                'year'         => $year,
+                'month' => $month,
+                'year' => $year,
             ]);
         }
     }

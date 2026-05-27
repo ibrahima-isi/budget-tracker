@@ -13,9 +13,9 @@ class CategorieFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'  => $this->faker->unique()->word(),
+            'name' => $this->faker->unique()->word(),
             'color' => $this->faker->hexColor(),
-            'icon'  => $this->faker->randomElement(['shopping-cart', 'home', 'car', 'briefcase', 'heart']),
+            'icon' => $this->faker->randomElement(['shopping-cart', 'home', 'car', 'briefcase', 'heart']),
         ];
     }
 }

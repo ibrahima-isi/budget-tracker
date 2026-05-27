@@ -14,11 +14,11 @@ class CurrencyFactory extends Factory
         $code = strtoupper($this->faker->unique()->lexify('???'));
 
         return [
-            'code'       => $code,
-            'name'       => $this->faker->country() . ' Currency',
-            'symbol'     => $this->faker->lexify('??'),
+            'code' => $code,
+            'name' => $this->faker->country().' Currency',
+            'symbol' => $this->faker->lexify('??'),
             'is_default' => false,
-            'is_active'  => true,
+            'is_active' => true,
         ];
     }
 

@@ -4,6 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Models\ActivityLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class ActivityLogModelTest extends TestCase
@@ -13,7 +14,7 @@ class ActivityLogModelTest extends TestCase
     public function test_properties_are_cast_to_array(): void
     {
         $log = ActivityLog::create([
-            'event'      => 'created',
+            'event' => 'created',
             'properties' => ['old' => ['nom' => 'A'], 'new' => ['nom' => 'B']],
         ]);
 
@@ -26,7 +27,7 @@ class ActivityLogModelTest extends TestCase
     {
         $log = ActivityLog::create(['event' => 'login']);
 
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $log->fresh()->created_at);
+        $this->assertInstanceOf(Carbon::class, $log->fresh()->created_at);
     }
 
     public function test_event_colors_contains_all_standard_events(): void
@@ -49,7 +50,7 @@ class ActivityLogModelTest extends TestCase
 
     public function test_fillable_does_not_include_created_at(): void
     {
-        $fillable = (new ActivityLog())->getFillable();
+        $fillable = (new ActivityLog)->getFillable();
 
         $this->assertNotContains('created_at', $fillable);
     }

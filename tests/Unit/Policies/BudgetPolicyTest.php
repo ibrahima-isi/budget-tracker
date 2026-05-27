@@ -17,12 +17,12 @@ class BudgetPolicyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->policy = new BudgetPolicy();
+        $this->policy = new BudgetPolicy;
     }
 
     public function test_owner_can_view_budget(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $user->id]);
 
         $this->assertTrue($this->policy->view($user, $budget));
@@ -30,16 +30,16 @@ class BudgetPolicyTest extends TestCase
 
     public function test_non_owner_cannot_view_budget(): void
     {
-        $owner     = User::factory()->create();
-        $intruder  = User::factory()->create();
-        $budget    = Budget::factory()->create(['user_id' => $owner->id]);
+        $owner = User::factory()->create();
+        $intruder = User::factory()->create();
+        $budget = Budget::factory()->create(['user_id' => $owner->id]);
 
         $this->assertFalse($this->policy->view($intruder, $budget));
     }
 
     public function test_owner_can_update_budget(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $user->id]);
 
         $this->assertTrue($this->policy->update($user, $budget));
@@ -47,16 +47,16 @@ class BudgetPolicyTest extends TestCase
 
     public function test_non_owner_cannot_update_budget(): void
     {
-        $owner    = User::factory()->create();
+        $owner = User::factory()->create();
         $intruder = User::factory()->create();
-        $budget   = Budget::factory()->create(['user_id' => $owner->id]);
+        $budget = Budget::factory()->create(['user_id' => $owner->id]);
 
         $this->assertFalse($this->policy->update($intruder, $budget));
     }
 
     public function test_owner_can_delete_budget(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $user->id]);
 
         $this->assertTrue($this->policy->delete($user, $budget));
@@ -64,9 +64,9 @@ class BudgetPolicyTest extends TestCase
 
     public function test_non_owner_cannot_delete_budget(): void
     {
-        $owner    = User::factory()->create();
+        $owner = User::factory()->create();
         $intruder = User::factory()->create();
-        $budget   = Budget::factory()->create(['user_id' => $owner->id]);
+        $budget = Budget::factory()->create(['user_id' => $owner->id]);
 
         $this->assertFalse($this->policy->delete($intruder, $budget));
     }

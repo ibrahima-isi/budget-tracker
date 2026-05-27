@@ -17,10 +17,10 @@ class StoreRevenueRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'source'       => ['required', 'string', 'max:150'],
-            'amount'       => ['required', 'numeric', 'min:0'],
+            'source' => ['required', 'string', 'max:150'],
+            'amount' => ['required', 'numeric', 'min:0'],
             'revenue_date' => ['required', 'date'],
-            'note'         => ['nullable', 'string'],
+            'note' => ['nullable', 'string'],
             'currency_code' => ['nullable', 'string', 'max:10', Rule::exists('currencies', 'code')],
         ];
     }

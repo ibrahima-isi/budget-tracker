@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::table('categories', function (Blueprint $table) {
             // null = global (admin-created/seeded), non-null = user-specific
             $table->foreignId('user_id')
-                  ->nullable()
-                  ->after('id')
-                  ->constrained()
-                  ->nullOnDelete();
+                ->nullable()
+                ->after('id')
+                ->constrained()
+                ->nullOnDelete();
         });
     }
 

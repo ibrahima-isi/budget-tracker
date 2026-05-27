@@ -77,7 +77,7 @@ return [
 
         'brevo' => [
             'transport' => 'brevo',
-            'key'       => env('BREVO_KEY'),
+            'key' => env('BREVO_KEY'),
         ],
 
         'array' => [

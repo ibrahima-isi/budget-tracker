@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\ExpenseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Expense extends Model
 {
-    /** @use HasFactory<\Database\Factories\ExpenseFactory> */
+    /** @use HasFactory<ExpenseFactory> */
     use HasFactory;
 
     protected $table = 'expenses';
@@ -19,7 +20,7 @@ class Expense extends Model
 
     protected $casts = [
         'expense_date' => 'date',
-        'amount'       => 'decimal:2',
+        'amount' => 'decimal:2',
     ];
 
     public function user()

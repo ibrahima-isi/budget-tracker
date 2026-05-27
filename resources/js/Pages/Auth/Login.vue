@@ -2,10 +2,12 @@
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
-defineProps({
+const props = defineProps({
     canResetPassword: { type: Boolean },
     status:           { type: String },
+    lockoutUntil:     { type: Number, default: null },
 });
 
 const form = useForm({
@@ -14,7 +16,38 @@ const form = useForm({
     remember: false,
 });
 
+const now = ref(Date.now());
+let timer = null;
+
+const lockoutRemainingSeconds = computed(() => {
+    if (!props.lockoutUntil) return 0;
+
+    return Math.max(0, Math.ceil((props.lockoutUntil * 1000 - now.value) / 1000));
+});
+
+const lockoutRemainingLabel = computed(() => {
+    const seconds = lockoutRemainingSeconds.value;
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds % 60;
+
+    return `${minutes}:${String(rest).padStart(2, '0')}`;
+});
+
+onMounted(() => {
+    timer = window.setInterval(() => {
+        now.value = Date.now();
+    }, 1000);
+});
+
+onBeforeUnmount(() => {
+    if (timer) {
+        window.clearInterval(timer);
+    }
+});
+
 const submit = () => {
+    if (lockoutRemainingSeconds.value > 0) return;
+
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
     });
@@ -30,6 +63,13 @@ const submit = () => {
 
         <div v-if="status" class="mb-5 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-400">
             {{ status }}
+        </div>
+
+        <div
+            v-if="lockoutRemainingSeconds > 0"
+            class="mb-5 rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-sm text-amber-300"
+        >
+            {{ $t('auth.lockoutCountdown', { time: lockoutRemainingLabel }) }}
         </div>
 
         <form @submit.prevent="submit" class="space-y-5">
@@ -82,7 +122,7 @@ const submit = () => {
 
             <button
                 type="submit"
-                :disabled="form.processing"
+                :disabled="form.processing || lockoutRemainingSeconds > 0"
                 class="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 text-sm transition"
             >
                 {{ form.processing ? 'Connexion…' : 'Se connecter' }}

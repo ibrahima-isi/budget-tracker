@@ -13,11 +13,11 @@ class CurrencyTest extends TestCase
     public function test_is_default_and_is_active_cast_to_boolean(): void
     {
         $currency = Currency::create([
-            'code'       => 'XOF',
-            'name'       => 'Franc CFA',
-            'symbol'     => 'FCFA',
+            'code' => 'XOF',
+            'name' => 'Franc CFA',
+            'symbol' => 'FCFA',
             'is_default' => true,
-            'is_active'  => true,
+            'is_active' => true,
         ]);
 
         $this->assertIsBool($currency->is_default);
@@ -29,11 +29,11 @@ class CurrencyTest extends TestCase
     public function test_currency_fields_are_fillable(): void
     {
         $currency = Currency::create([
-            'code'       => 'EUR',
-            'name'       => 'Euro',
-            'symbol'     => '€',
+            'code' => 'EUR',
+            'name' => 'Euro',
+            'symbol' => '€',
             'is_default' => false,
-            'is_active'  => true,
+            'is_active' => true,
         ]);
 
         $this->assertDatabaseHas('currencies', ['code' => 'EUR']);
@@ -42,11 +42,11 @@ class CurrencyTest extends TestCase
     public function test_currency_can_be_updated(): void
     {
         $currency = Currency::create([
-            'code'       => 'USD',
-            'name'       => 'US Dollar',
-            'symbol'     => '$',
+            'code' => 'USD',
+            'name' => 'US Dollar',
+            'symbol' => '$',
             'is_default' => false,
-            'is_active'  => true,
+            'is_active' => true,
         ]);
 
         $currency->update(['is_active' => false]);

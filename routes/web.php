@@ -10,6 +10,7 @@ use App\Http\Controllers\LogoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RevenueController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\UserManagementController;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +30,7 @@ Route::get('/logo', [LogoController::class, 'show'])->name('logo');
 
 Route::get('/health', fn () => response()->json(['status' => 'ok']))->name('health');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // User preference: store selected currency in session
@@ -54,6 +55,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::delete('settings/logo', [SettingsController::class, 'destroyLogo'])->name('settings.logo.destroy');
 
+        Route::get('settings/users', [UserManagementController::class, 'index'])->name('settings.users.index');
+        Route::patch('settings/users/{user}/approve', [UserManagementController::class, 'approve'])->name('settings.users.approve');
+        Route::patch('settings/users/{user}/revoke-approval', [UserManagementController::class, 'revokeApproval'])->name('settings.users.revoke-approval');
+
         Route::post('settings/currencies', [CurrencyController::class, 'store'])->name('currencies.store');
         Route::patch('settings/currencies/{currency}', [CurrencyController::class, 'update'])->name('currencies.update');
         Route::patch('settings/currencies/{currency}/default', [CurrencyController::class, 'setDefault'])->name('currencies.default');
@@ -62,7 +67,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified', 'approved'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureUserIsApproved;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\PerformanceLogging;
+use App\Http\Middleware\ThrottleDynamicRequests;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,14 +20,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
 
-        $middleware->web(append: [
-            PerformanceLogging::class,
-            HandleInertiaRequests::class,
-            AddLinkHeadersForPreloadedAssets::class,
-        ]);
+        $middleware->web(
+            append: [
+                PerformanceLogging::class,
+                HandleInertiaRequests::class,
+                AddLinkHeadersForPreloadedAssets::class,
+            ],
+            prepend: [
+                ThrottleDynamicRequests::class,
+            ],
+        );
 
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+            'approved' => EnsureUserIsApproved::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -17,16 +17,16 @@ class StoreExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'budget_id'    => ['required', Rule::exists('budgets', 'id')->where('user_id', $this->user()->id)],
-            'category_id'  => ['nullable', Rule::exists('categories', 'id')->where(function ($q) {
+            'budget_id' => ['required', Rule::exists('budgets', 'id')->where('user_id', $this->user()->id)],
+            'category_id' => ['nullable', Rule::exists('categories', 'id')->where(function ($q) {
                 $q->where(function ($inner) {
                     $inner->whereNull('user_id')->orWhere('user_id', $this->user()->id);
                 });
             })],
-            'label'        => ['required', 'string', 'max:200'],
-            'amount'       => ['required', 'numeric', 'min:0'],
+            'label' => ['required', 'string', 'max:200'],
+            'amount' => ['required', 'numeric', 'min:0'],
             'expense_date' => ['required', 'date'],
-            'note'         => ['nullable', 'string', 'max:1000'],
+            'note' => ['nullable', 'string', 'max:1000'],
             'currency_code' => ['nullable', 'string', 'max:10', Rule::exists('currencies', 'code')],
         ];
     }

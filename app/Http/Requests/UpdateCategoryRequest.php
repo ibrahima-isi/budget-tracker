@@ -30,7 +30,7 @@ class UpdateCategoryRequest extends FormRequest
                     ->ignore($this->route('category')->id),
             ],
             'color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'icon'  => ['required', 'string', 'max:50'],
+            'icon' => ['required', 'string', 'max:50'],
         ];
     }
 }

@@ -43,13 +43,20 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey(), $this->lockoutSeconds());
+
+            if (RateLimiter::tooManyAttempts($this->throttleKey(), $this->maxAttempts())) {
+                $this->throwLockoutValidationException();
+            }
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
         }
+    }
 
+    public function clearThrottle(): void
+    {
         RateLimiter::clear($this->throttleKey());
     }
 
@@ -60,13 +67,19 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), $this->maxAttempts())) {
             return;
         }
 
+        $this->throwLockoutValidationException();
+    }
+
+    private function throwLockoutValidationException(): never
+    {
         event(new Lockout($this));
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
+        $this->session()->flash('login_lockout_until', now()->addSeconds($seconds)->timestamp);
 
         throw ValidationException::withMessages([
             'email' => trans('auth.throttle', [
@@ -74,6 +87,16 @@ class LoginRequest extends FormRequest
                 'minutes' => ceil($seconds / 60),
             ]),
         ]);
+    }
+
+    private function maxAttempts(): int
+    {
+        return (int) config('security.login.max_attempts', 5);
+    }
+
+    private function lockoutSeconds(): int
+    {
+        return (int) config('security.login.lockout_seconds', 300);
     }
 
     /**

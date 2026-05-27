@@ -15,31 +15,31 @@ class BudgetFactory extends Factory
         $type = $this->faker->randomElement(['mensuel', 'annuel']);
 
         return [
-            'user_id'        => User::factory(),
-            'type'           => $type,
-            'month'          => $type === 'mensuel' ? $this->faker->numberBetween(1, 12) : null,
-            'year'           => $this->faker->numberBetween(2024, 2026),
+            'user_id' => User::factory(),
+            'type' => $type,
+            'month' => $type === 'mensuel' ? $this->faker->numberBetween(1, 12) : null,
+            'year' => $this->faker->numberBetween(2024, 2026),
             'planned_amount' => $this->faker->randomFloat(2, 50000, 500000),
-            'label'          => $this->faker->optional()->sentence(3),
-            'currency_code'  => 'XOF',
+            'label' => $this->faker->optional()->sentence(3),
+            'currency_code' => 'XOF',
         ];
     }
 
     public function mensuel(): static
     {
         return $this->state(fn () => [
-            'type'  => 'mensuel',
+            'type' => 'mensuel',
             'month' => now()->month,
-            'year'  => now()->year,
+            'year' => now()->year,
         ]);
     }
 
     public function annuel(): static
     {
         return $this->state(fn () => [
-            'type'  => 'annuel',
+            'type' => 'annuel',
             'month' => null,
-            'year'  => now()->year,
+            'year' => now()->year,
         ]);
     }
 }

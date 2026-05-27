@@ -11,8 +11,8 @@ class VerifyEmailNotification extends BaseVerifyEmail
     protected function buildMailMessage($url): MailMessage
     {
         $settings = Setting::instance();
-        $name     = $settings->business_name;
-        $from     = $settings->business_email ?: config('mail.from.address');
+        $name = $settings->business_name;
+        $from = $settings->business_email ?: config('mail.from.address');
 
         return (new MailMessage)
             ->from($from, $name)

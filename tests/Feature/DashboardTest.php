@@ -119,30 +119,30 @@ class DashboardTest extends TestCase
     public function test_total_expenses_sums_current_month_only(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         // Current month
         Expense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'category_id'  => $cat->id,
-            'amount'       => 20000,
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 20000,
             'expense_date' => now()->format('Y-m-15'),
         ]);
         Expense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'category_id'  => $cat->id,
-            'amount'       => 30000,
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 30000,
             'expense_date' => now()->format('Y-m-10'),
         ]);
 
         // Previous month — must NOT be included
         Expense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'category_id'  => $cat->id,
-            'amount'       => 999999,
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 999999,
             'expense_date' => now()->subMonth()->format('Y-m-01'),
         ]);
 
@@ -153,19 +153,19 @@ class DashboardTest extends TestCase
     public function test_total_revenues_sums_current_month_only(): void
     {
         Revenue::factory()->create([
-            'user_id'      => $this->user->id,
-            'amount'       => 300000,
-            'month'        => now()->month,
-            'year'         => now()->year,
+            'user_id' => $this->user->id,
+            'amount' => 300000,
+            'month' => now()->month,
+            'year' => now()->year,
             'revenue_date' => now()->format('Y-m-01'),
         ]);
 
         // Previous month — must NOT be included
         Revenue::factory()->create([
-            'user_id'      => $this->user->id,
-            'amount'       => 999999,
-            'month'        => now()->subMonth()->month,
-            'year'         => now()->subMonth()->year,
+            'user_id' => $this->user->id,
+            'amount' => 999999,
+            'month' => now()->subMonth()->month,
+            'year' => now()->subMonth()->year,
             'revenue_date' => now()->subMonth()->format('Y-m-01'),
         ]);
 
@@ -176,20 +176,20 @@ class DashboardTest extends TestCase
     public function test_balance_equals_revenues_minus_expenses(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Revenue::factory()->create([
-            'user_id'      => $this->user->id,
-            'amount'       => 500000,
-            'month'        => now()->month,
-            'year'         => now()->year,
+            'user_id' => $this->user->id,
+            'amount' => 500000,
+            'month' => now()->month,
+            'year' => now()->year,
             'revenue_date' => now()->format('Y-m-01'),
         ]);
         Expense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'category_id'  => $cat->id,
-            'amount'       => 150000,
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 150000,
             'expense_date' => now()->format('Y-m-05'),
         ]);
 
@@ -200,8 +200,8 @@ class DashboardTest extends TestCase
     public function test_expenses_by_category_groups_correctly(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat1   = Category::factory()->create();
-        $cat2   = Category::factory()->create();
+        $cat1 = Category::factory()->create();
+        $cat2 = Category::factory()->create();
 
         Expense::factory()->create([
             'user_id' => $this->user->id, 'budget_id' => $budget->id,
@@ -225,9 +225,9 @@ class DashboardTest extends TestCase
 
     public function test_expenses_by_category_excludes_other_users_data(): void
     {
-        $other       = User::factory()->create();
+        $other = User::factory()->create();
         $otherBudget = Budget::factory()->mensuel()->create(['user_id' => $other->id]);
-        $cat         = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->create([
             'user_id' => $other->id, 'budget_id' => $otherBudget->id,
@@ -244,11 +244,11 @@ class DashboardTest extends TestCase
     public function test_recent_expenses_returns_at_most_5(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->currentPeriod()->count(8)->create([
-            'user_id'     => $this->user->id,
-            'budget_id'   => $budget->id,
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
             'category_id' => $cat->id,
         ]);
 
@@ -258,9 +258,9 @@ class DashboardTest extends TestCase
 
     public function test_recent_expenses_only_shows_current_user_data(): void
     {
-        $other       = User::factory()->create();
+        $other = User::factory()->create();
         $otherBudget = Budget::factory()->create(['user_id' => $other->id]);
-        $cat         = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->count(3)->create([
             'user_id' => $other->id, 'budget_id' => $otherBudget->id, 'category_id' => $cat->id,
@@ -304,28 +304,28 @@ class DashboardTest extends TestCase
     {
         $budget = Budget::factory()->create([
             'user_id' => $this->user->id,
-            'type'    => 'mensuel',
-            'month'   => 4,
-            'year'    => 2025,
+            'type' => 'mensuel',
+            'month' => 4,
+            'year' => 2025,
         ]);
         $cat = Category::factory()->create();
 
         // April 2025 expense — should be counted
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $budget->id,
-            'category_id'   => $cat->id,
-            'amount'        => 50000,
-            'expense_date'  => '2025-04-15',
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 50000,
+            'expense_date' => '2025-04-15',
             'currency_code' => 'XOF',
         ]);
         // Current month expense — must NOT be counted
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $budget->id,
-            'category_id'   => $cat->id,
-            'amount'        => 999999,
-            'expense_date'  => now()->format('Y-m-10'),
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 999999,
+            'expense_date' => now()->format('Y-m-10'),
             'currency_code' => 'XOF',
         ]);
 
@@ -337,20 +337,20 @@ class DashboardTest extends TestCase
     {
         // April 2025 revenue
         Revenue::factory()->create([
-            'user_id'       => $this->user->id,
-            'amount'        => 300000,
-            'month'         => 4,
-            'year'          => 2025,
-            'revenue_date'  => '2025-04-01',
+            'user_id' => $this->user->id,
+            'amount' => 300000,
+            'month' => 4,
+            'year' => 2025,
+            'revenue_date' => '2025-04-01',
             'currency_code' => 'XOF',
         ]);
         // Current month — must NOT be counted
         Revenue::factory()->create([
-            'user_id'       => $this->user->id,
-            'amount'        => 999999,
-            'month'         => now()->month,
-            'year'          => now()->year,
-            'revenue_date'  => now()->format('Y-m-01'),
+            'user_id' => $this->user->id,
+            'amount' => 999999,
+            'month' => now()->month,
+            'year' => now()->year,
+            'revenue_date' => now()->format('Y-m-01'),
             'currency_code' => 'XOF',
         ]);
 
@@ -561,22 +561,22 @@ class DashboardTest extends TestCase
     public function test_currency_all_includes_all_currencies(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $budget->id,
-            'category_id'   => $cat->id,
-            'amount'        => 10000,
-            'expense_date'  => now()->format('Y-m-10'),
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 10000,
+            'expense_date' => now()->format('Y-m-10'),
             'currency_code' => 'XOF',
         ]);
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $budget->id,
-            'category_id'   => $cat->id,
-            'amount'        => 200,
-            'expense_date'  => now()->format('Y-m-11'),
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 200,
+            'expense_date' => now()->format('Y-m-11'),
             'currency_code' => 'EUR',
         ]);
 
@@ -587,22 +587,22 @@ class DashboardTest extends TestCase
     public function test_currency_filter_excludes_other_currencies(): void
     {
         $budget = Budget::factory()->mensuel()->create(['user_id' => $this->user->id, 'currency_code' => 'XOF']);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $budget->id,
-            'category_id'   => $cat->id,
-            'amount'        => 10000,
-            'expense_date'  => now()->format('Y-m-10'),
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 10000,
+            'expense_date' => now()->format('Y-m-10'),
             'currency_code' => 'XOF',
         ]);
         Expense::factory()->create([
-            'user_id'       => $this->user->id,
-            'budget_id'     => $budget->id,
-            'category_id'   => $cat->id,
-            'amount'        => 999,
-            'expense_date'  => now()->format('Y-m-11'),
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 999,
+            'expense_date' => now()->format('Y-m-11'),
             'currency_code' => 'EUR',
         ]);
 

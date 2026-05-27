@@ -23,9 +23,11 @@ class DatabaseSeeder extends Seeder
 
         // Créer un user admin de test
         $user = User::factory()->create([
-            'name'     => 'Admin',
-            'email'    => 'admin@example.com',
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
             'is_admin' => true,
+            'is_approved' => true,
+            'approved_at' => now(),
         ]);
 
         $this->call([BudgetSeeder::class, RevenuSeeder::class, DepenseSeeder::class]);

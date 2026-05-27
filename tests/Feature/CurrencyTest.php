@@ -24,8 +24,8 @@ class CurrencyTest extends TestCase
     public function test_user_can_create_currency(): void
     {
         $this->actingAs($this->user)->post('/settings/currencies', [
-            'code'   => 'EUR',
-            'name'   => 'Euro',
+            'code' => 'EUR',
+            'name' => 'Euro',
             'symbol' => '€',
         ])->assertRedirect('/settings');
 
@@ -35,8 +35,8 @@ class CurrencyTest extends TestCase
     public function test_currency_code_is_uppercased_on_store(): void
     {
         $this->actingAs($this->user)->post('/settings/currencies', [
-            'code'   => 'eur',
-            'name'   => 'Euro',
+            'code' => 'eur',
+            'name' => 'Euro',
             'symbol' => '€',
         ]);
 
@@ -55,8 +55,8 @@ class CurrencyTest extends TestCase
         Currency::create(['code' => 'USD', 'name' => 'Dollar', 'symbol' => '$', 'is_default' => false, 'is_active' => true]);
 
         $this->actingAs($this->user)->post('/settings/currencies', [
-            'code'   => 'USD',
-            'name'   => 'Another Dollar',
+            'code' => 'USD',
+            'name' => 'Another Dollar',
             'symbol' => '$',
         ])->assertSessionHasErrors(['code']);
     }
@@ -67,8 +67,8 @@ class CurrencyTest extends TestCase
 
         // Submitting 'usd' will be uppercased to 'USD' → unique violation
         $this->actingAs($this->user)->post('/settings/currencies', [
-            'code'   => 'usd',
-            'name'   => 'Another Dollar',
+            'code' => 'usd',
+            'name' => 'Another Dollar',
             'symbol' => '$',
         ])->assertSessionHasErrors(['code']);
     }
@@ -80,8 +80,8 @@ class CurrencyTest extends TestCase
         $currency = Currency::create(['code' => 'USD', 'name' => 'Dollar', 'symbol' => '$', 'is_default' => false, 'is_active' => true]);
 
         $this->actingAs($this->user)->patch("/settings/currencies/{$currency->id}", [
-            'code'   => 'USD',
-            'name'   => 'US Dollar',
+            'code' => 'USD',
+            'name' => 'US Dollar',
             'symbol' => '$',
         ])->assertRedirect('/settings');
 
@@ -93,8 +93,8 @@ class CurrencyTest extends TestCase
         $currency = Currency::create(['code' => 'USD', 'name' => 'Dollar', 'symbol' => '$', 'is_default' => false, 'is_active' => true]);
 
         $this->actingAs($this->user)->patch("/settings/currencies/{$currency->id}", [
-            'code'   => 'USD',
-            'name'   => 'Updated Name',
+            'code' => 'USD',
+            'name' => 'Updated Name',
             'symbol' => '$',
         ])->assertRedirect('/settings');
     }
@@ -105,8 +105,8 @@ class CurrencyTest extends TestCase
         $usd = Currency::create(['code' => 'USD', 'name' => 'Dollar', 'symbol' => '$', 'is_default' => false, 'is_active' => true]);
 
         $this->actingAs($this->user)->patch("/settings/currencies/{$usd->id}", [
-            'code'   => 'EUR',
-            'name'   => 'Euro attempt',
+            'code' => 'EUR',
+            'name' => 'Euro attempt',
             'symbol' => '€',
         ])->assertSessionHasErrors(['code']);
     }
@@ -116,8 +116,8 @@ class CurrencyTest extends TestCase
         $currency = Currency::create(['code' => 'USD', 'name' => 'Dollar', 'symbol' => '$', 'is_default' => false, 'is_active' => true]);
 
         $this->actingAs($this->user)->patch("/settings/currencies/{$currency->id}", [
-            'code'   => 'usd',
-            'name'   => 'US Dollar',
+            'code' => 'usd',
+            'name' => 'US Dollar',
             'symbol' => '$',
         ]);
 

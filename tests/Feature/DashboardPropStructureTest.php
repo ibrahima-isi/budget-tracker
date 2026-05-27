@@ -61,20 +61,20 @@ class DashboardPropStructureTest extends TestCase
     public function test_annual_balance_equals_revenues_minus_expenses(): void
     {
         $budget = Budget::factory()->create(['user_id' => $this->user->id]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Revenue::factory()->create([
-            'user_id'      => $this->user->id,
-            'amount'       => 1200000,
-            'month'        => now()->month,
-            'year'         => now()->year,
+            'user_id' => $this->user->id,
+            'amount' => 1200000,
+            'month' => now()->month,
+            'year' => now()->year,
             'revenue_date' => now()->format('Y-m-01'),
         ]);
         Expense::factory()->create([
-            'user_id'      => $this->user->id,
-            'budget_id'    => $budget->id,
-            'category_id'  => $cat->id,
-            'amount'       => 300000,
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
+            'category_id' => $cat->id,
+            'amount' => 300000,
             'expense_date' => now()->format('Y-m-10'),
         ]);
 
@@ -85,11 +85,11 @@ class DashboardPropStructureTest extends TestCase
     public function test_recent_expenses_includes_category_relation(): void
     {
         $budget = Budget::factory()->create(['user_id' => $this->user->id]);
-        $cat    = Category::factory()->create(['name' => 'Alimentation']);
+        $cat = Category::factory()->create(['name' => 'Alimentation']);
 
         Expense::factory()->currentPeriod()->create([
-            'user_id'     => $this->user->id,
-            'budget_id'   => $budget->id,
+            'user_id' => $this->user->id,
+            'budget_id' => $budget->id,
             'category_id' => $cat->id,
         ]);
 

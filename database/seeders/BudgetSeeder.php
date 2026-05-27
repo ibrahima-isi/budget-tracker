@@ -14,23 +14,23 @@ class BudgetSeeder extends Seeder
         $year = now()->year;
 
         Budget::create([
-            'user_id'        => $user->id,
-            'type'           => 'annuel',
-            'month'          => null,
-            'year'           => $year,
+            'user_id' => $user->id,
+            'type' => 'annuel',
+            'month' => null,
+            'year' => $year,
             'planned_amount' => 3600000,
-            'label'          => "Budget Annuel $year",
+            'label' => "Budget Annuel $year",
         ]);
 
-        $monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+        $monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
         for ($m = 1; $m <= now()->month; $m++) {
             Budget::create([
-                'user_id'        => $user->id,
-                'type'           => 'mensuel',
-                'month'          => $m,
-                'year'           => $year,
+                'user_id' => $user->id,
+                'type' => 'mensuel',
+                'month' => $m,
+                'year' => $year,
                 'planned_amount' => 300000,
-                'label'          => "Budget {$monthNames[$m - 1]} $year",
+                'label' => "Budget {$monthNames[$m - 1]} $year",
             ]);
         }
     }

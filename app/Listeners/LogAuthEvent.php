@@ -5,8 +5,8 @@ namespace App\Listeners;
 use App\Services\ActivityLogger;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Auth\Events\Registered;
 
 class LogAuthEvent
 {

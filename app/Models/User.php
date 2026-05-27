@@ -27,6 +27,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'email_hash',
         'password',
+        'is_approved',
+        'approved_at',
+        'approved_by',
     ];
 
     protected $hidden = [
@@ -40,6 +43,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_approved' => 'boolean',
+            'approved_at' => 'datetime',
         ];
     }
 
@@ -58,18 +63,19 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $svc = app(EncryptionService::class);
         $isAdmin = ($attributes['is_admin'] ?? false) ? 'true' : 'false';
+        $isApproved = ($attributes['is_approved'] ?? false) ? 'true' : 'false';
         $password = self::normalizedPassword($attributes['password'] ?? '');
         $emailHash = $svc->emailHash((string) $attributes['email']);
-        $plain = self::plainColumnAttributes($attributes, ['email_verified_at', 'remember_token']);
+        $plain = self::plainColumnAttributes($attributes, ['email_verified_at', 'remember_token', 'approved_at', 'approved_by']);
 
         // createEncrypted returns a decrypted model, so fail before inserting if
         // the private key cannot be used safely.
         $svc->privateKey();
 
         try {
-            $id = DB::transaction(function () use ($attributes, $password, $emailHash, $svc, $isAdmin, $plain) {
+            $id = DB::transaction(function () use ($attributes, $password, $emailHash, $svc, $isAdmin, $isApproved, $plain) {
                 $id = DB::selectOne(
-                    'SELECT create_user(?, ?, ?, ?, ?, ?::boolean) AS id',
+                    'SELECT create_user(?, ?, ?, ?, ?, ?::boolean, ?::boolean) AS id',
                     [
                         $attributes['name'],
                         $attributes['email'],
@@ -77,6 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail
                         $emailHash,
                         $svc->publicKey(),
                         $isAdmin,
+                        $isApproved,
                     ]
                 )->id;
 
@@ -207,7 +214,7 @@ class User extends Authenticatable implements MustVerifyEmail
         // Update non-encrypted fields normally via Eloquent
         $plain = self::plainColumnAttributes(
             $attributes,
-            ['email_verified_at', 'password', 'remember_token', 'is_admin']
+            ['email_verified_at', 'password', 'remember_token', 'is_admin', 'is_approved', 'approved_at', 'approved_by']
         );
 
         if (isset($plain['password'])) {
@@ -322,11 +329,32 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => $row['password'],
             'remember_token' => $row['remember_token'] ?? null,
             'is_admin' => $row['is_admin'],
+            'is_approved' => $row['is_approved'] ?? false,
+            'approved_at' => $row['approved_at'] ?? null,
+            'approved_by' => $row['approved_by'] ?? null,
             'created_at' => $row['created_at'],
             'updated_at' => $row['updated_at'],
         ], true);
 
         return $user;
+    }
+
+    public function approve(?self $approver = null): bool
+    {
+        return $this->forceFill([
+            'is_approved' => true,
+            'approved_at' => now(),
+            'approved_by' => $approver?->id,
+        ])->save();
+    }
+
+    public function revokeApproval(): bool
+    {
+        return $this->forceFill([
+            'is_approved' => false,
+            'approved_at' => null,
+            'approved_by' => null,
+        ])->save();
     }
 
     private static function normalizedPassword(mixed $password): string
@@ -438,6 +466,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'id' => $this->id,
             'is_admin' => $this->is_admin,
+            'is_approved' => $this->is_approved,
         ];
     }
 }

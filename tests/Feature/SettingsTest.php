@@ -65,10 +65,10 @@ class SettingsTest extends TestCase
     public function test_user_can_update_all_settings_fields(): void
     {
         $this->actingAs($this->user)->post('/settings', [
-            'business_name'    => 'Acme Corp',
-            'business_email'   => 'contact@acme.com',
-            'phone'            => '+221 77 000 00 00',
-            'language'         => 'en',
+            'business_name' => 'Acme Corp',
+            'business_email' => 'contact@acme.com',
+            'phone' => '+221 77 000 00 00',
+            'language' => 'en',
             'default_currency' => 'EUR',
         ])->assertRedirect('/settings');
 
@@ -83,12 +83,12 @@ class SettingsTest extends TestCase
     public function test_optional_fields_can_be_omitted(): void
     {
         $this->actingAs($this->user)->post('/settings', [
-            'business_name'    => 'Test Corp',
-            'language'         => 'fr',
+            'business_name' => 'Test Corp',
+            'language' => 'fr',
             'default_currency' => 'XOF',
             // business_email, phone, logo omitted
         ])->assertRedirect('/settings')
-          ->assertSessionHasNoErrors();
+            ->assertSessionHasNoErrors();
     }
 
     public function test_update_validates_required_fields(): void
@@ -100,9 +100,9 @@ class SettingsTest extends TestCase
     public function test_update_validates_email_format(): void
     {
         $this->actingAs($this->user)->post('/settings', [
-            'business_name'    => 'Test',
-            'business_email'   => 'not-an-email',
-            'language'         => 'fr',
+            'business_name' => 'Test',
+            'business_email' => 'not-an-email',
+            'language' => 'fr',
             'default_currency' => 'XOF',
         ])->assertSessionHasErrors(['business_email']);
     }
@@ -110,8 +110,8 @@ class SettingsTest extends TestCase
     public function test_update_validates_language_enum(): void
     {
         $this->actingAs($this->user)->post('/settings', [
-            'business_name'    => 'Test',
-            'language'         => 'zh',  // not supported
+            'business_name' => 'Test',
+            'language' => 'zh',  // not supported
             'default_currency' => 'XOF',
         ])->assertSessionHasErrors(['language']);
     }
@@ -120,8 +120,8 @@ class SettingsTest extends TestCase
     {
         foreach (['fr', 'en', 'es'] as $lang) {
             $this->actingAs($this->user)->post('/settings', [
-                'business_name'    => 'Test',
-                'language'         => $lang,
+                'business_name' => 'Test',
+                'language' => $lang,
                 'default_currency' => 'XOF',
             ])->assertRedirect('/settings');
         }
@@ -136,10 +136,10 @@ class SettingsTest extends TestCase
         $file = UploadedFile::fake()->image('logo.png', 200, 200);
 
         $this->actingAs($this->user)->post('/settings', [
-            'business_name'    => 'Test Corp',
-            'language'         => 'fr',
+            'business_name' => 'Test Corp',
+            'language' => 'fr',
             'default_currency' => 'XOF',
-            'logo'             => $file,
+            'logo' => $file,
         ])->assertRedirect('/settings');
 
         $setting = Setting::instance();
@@ -157,10 +157,10 @@ class SettingsTest extends TestCase
 
         $newFile = UploadedFile::fake()->image('new.png');
         $this->actingAs($this->user)->post('/settings', [
-            'business_name'    => 'Test Corp',
-            'language'         => 'fr',
+            'business_name' => 'Test Corp',
+            'language' => 'fr',
             'default_currency' => 'XOF',
-            'logo'             => $newFile,
+            'logo' => $newFile,
         ]);
 
         Storage::disk('local')->assertMissing($oldPath);
@@ -174,10 +174,10 @@ class SettingsTest extends TestCase
         $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
         $this->actingAs($this->user)->post('/settings', [
-            'business_name'    => 'Test',
-            'language'         => 'fr',
+            'business_name' => 'Test',
+            'language' => 'fr',
             'default_currency' => 'XOF',
-            'logo'             => $file,
+            'logo' => $file,
         ])->assertSessionHasErrors(['logo']);
     }
 
@@ -188,10 +188,10 @@ class SettingsTest extends TestCase
         $file = UploadedFile::fake()->image('big.jpg')->size(3000); // 3MB
 
         $this->actingAs($this->user)->post('/settings', [
-            'business_name'    => 'Test',
-            'language'         => 'fr',
+            'business_name' => 'Test',
+            'language' => 'fr',
             'default_currency' => 'XOF',
-            'logo'             => $file,
+            'logo' => $file,
         ])->assertSessionHasErrors(['logo']);
     }
 

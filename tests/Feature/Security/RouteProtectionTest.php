@@ -2,12 +2,17 @@
 
 namespace Tests\Feature\Security;
 
+use App\Models\Budget;
+use App\Models\Category;
+use App\Models\Expense;
+use App\Models\Revenue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * Verifies that every protected route enforces authentication AND email verification.
+ * Verifies that protected routes enforce authentication, email verification, and approval.
  */
 class RouteProtectionTest extends TestCase
 {
@@ -23,7 +28,7 @@ class RouteProtectionTest extends TestCase
 
     // ── Guest redirected to /login ─────────────────────────────────────────────
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('protectedGetRoutesProvider')]
+    #[DataProvider('protectedGetRoutesProvider')]
     public function test_guest_cannot_access_protected_get_route(string $route): void
     {
         $this->get($route)->assertRedirect('/login');
@@ -32,16 +37,18 @@ class RouteProtectionTest extends TestCase
     public static function protectedGetRoutesProvider(): array
     {
         return [
-            'dashboard'  => ['/dashboard'],
-            'budgets'    => ['/budgets'],
-            'expenses'   => ['/expenses'],
-            'revenues'   => ['/revenues'],
+            'dashboard' => ['/dashboard'],
+            'budgets' => ['/budgets'],
+            'expenses' => ['/expenses'],
+            'revenues' => ['/revenues'],
             'categories' => ['/categories'],
-            'settings'   => ['/settings'],
+            'settings' => ['/settings'],
+            'settings users' => ['/settings/users'],
+            'profile' => ['/profile'],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('protectedPostRoutesProvider')]
+    #[DataProvider('protectedPostRoutesProvider')]
     public function test_guest_cannot_post_to_protected_route(string $route): void
     {
         $this->post($route)->assertRedirect('/login');
@@ -50,11 +57,11 @@ class RouteProtectionTest extends TestCase
     public static function protectedPostRoutesProvider(): array
     {
         return [
-            'budgets'    => ['/budgets'],
-            'expenses'   => ['/expenses'],
-            'revenues'   => ['/revenues'],
+            'budgets' => ['/budgets'],
+            'expenses' => ['/expenses'],
+            'revenues' => ['/revenues'],
             'categories' => ['/categories'],
-            'settings'   => ['/settings'],
+            'settings' => ['/settings'],
             'currencies' => ['/settings/currencies'],
         ];
     }
@@ -126,7 +133,7 @@ class RouteProtectionTest extends TestCase
 
     // ── Unverified user redirected to /verify-email ────────────────────────────
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('verifiedGetRoutesProvider')]
+    #[DataProvider('verifiedGetRoutesProvider')]
     public function test_unverified_user_cannot_access_verified_route(string $route): void
     {
         $this->actingAs($this->unverified)->get($route)->assertRedirect('/verify-email');
@@ -135,16 +142,18 @@ class RouteProtectionTest extends TestCase
     public static function verifiedGetRoutesProvider(): array
     {
         return [
-            'dashboard'  => ['/dashboard'],
-            'budgets'    => ['/budgets'],
-            'expenses'   => ['/expenses'],
-            'revenues'   => ['/revenues'],
+            'dashboard' => ['/dashboard'],
+            'budgets' => ['/budgets'],
+            'expenses' => ['/expenses'],
+            'revenues' => ['/revenues'],
             'categories' => ['/categories'],
-            'settings'   => ['/settings'],
+            'settings' => ['/settings'],
+            'settings users' => ['/settings/users'],
+            'profile' => ['/profile'],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('verifiedPostRoutesProvider')]
+    #[DataProvider('verifiedPostRoutesProvider')]
     public function test_unverified_user_cannot_post_to_verified_route(string $route): void
     {
         $this->actingAs($this->unverified)->post($route)->assertRedirect('/verify-email');
@@ -153,31 +162,57 @@ class RouteProtectionTest extends TestCase
     public static function verifiedPostRoutesProvider(): array
     {
         return [
-            'budgets'    => ['/budgets'],
-            'expenses'   => ['/expenses'],
-            'revenues'   => ['/revenues'],
+            'budgets' => ['/budgets'],
+            'expenses' => ['/expenses'],
+            'revenues' => ['/revenues'],
             'categories' => ['/categories'],
-            'settings'   => ['/settings'],
+            'settings' => ['/settings'],
+        ];
+    }
+
+    // ── Unapproved verified user redirected to /login ─────────────────────────
+
+    #[DataProvider('approvedGetRoutesProvider')]
+    public function test_unapproved_user_cannot_access_approved_route(string $route): void
+    {
+        $user = User::factory()->unapproved()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($user)
+            ->get($route)
+            ->assertRedirect('/login')
+            ->assertSessionHas('status');
+    }
+
+    public static function approvedGetRoutesProvider(): array
+    {
+        return [
+            'dashboard' => ['/dashboard'],
+            'budgets' => ['/budgets'],
+            'expenses' => ['/expenses'],
+            'revenues' => ['/revenues'],
+            'categories' => ['/categories'],
+            'settings' => ['/settings'],
+            'profile' => ['/profile'],
         ];
     }
 
     public function test_unverified_user_cannot_delete_budget(): void
     {
-        $budget = \App\Models\Budget::factory()->create(['user_id' => $this->unverified->id]);
+        $budget = Budget::factory()->create(['user_id' => $this->unverified->id]);
         $this->actingAs($this->unverified)->delete("/budgets/{$budget->id}")->assertRedirect('/verify-email');
     }
 
     public function test_unverified_user_cannot_delete_revenue(): void
     {
-        $revenue = \App\Models\Revenue::factory()->create(['user_id' => $this->unverified->id]);
+        $revenue = Revenue::factory()->create(['user_id' => $this->unverified->id]);
         $this->actingAs($this->unverified)->delete("/revenues/{$revenue->id}")->assertRedirect('/verify-email');
     }
 
     public function test_unverified_user_cannot_delete_expense(): void
     {
-        $cat     = \App\Models\Category::factory()->create();
-        $budget  = \App\Models\Budget::factory()->create(['user_id' => $this->unverified->id]);
-        $expense = \App\Models\Expense::factory()->create([
+        $cat = Category::factory()->create();
+        $budget = Budget::factory()->create(['user_id' => $this->unverified->id]);
+        $expense = Expense::factory()->create([
             'user_id' => $this->unverified->id, 'budget_id' => $budget->id, 'category_id' => $cat->id,
         ]);
         $this->actingAs($this->unverified)->delete("/expenses/{$expense->id}")->assertRedirect('/verify-email');

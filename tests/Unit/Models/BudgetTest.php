@@ -22,9 +22,9 @@ class BudgetTest extends TestCase
 
     public function test_expense_amount_sums_all_linked_expenses(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $user->id, 'planned_amount' => 200000]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->create(['user_id' => $user->id, 'budget_id' => $budget->id, 'category_id' => $cat->id, 'amount' => 30000]);
         Expense::factory()->create(['user_id' => $user->id, 'budget_id' => $budget->id, 'category_id' => $cat->id, 'amount' => 20000]);
@@ -34,9 +34,9 @@ class BudgetTest extends TestCase
 
     public function test_balance_is_planned_minus_expense(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $user->id, 'planned_amount' => 100000]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->create(['user_id' => $user->id, 'budget_id' => $budget->id, 'category_id' => $cat->id, 'amount' => 40000]);
 
@@ -46,9 +46,9 @@ class BudgetTest extends TestCase
 
     public function test_balance_is_negative_when_over_budget(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $user->id, 'planned_amount' => 10000]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->create(['user_id' => $user->id, 'budget_id' => $budget->id, 'category_id' => $cat->id, 'amount' => 15000]);
 
@@ -63,9 +63,9 @@ class BudgetTest extends TestCase
 
     public function test_budget_has_many_expenses(): void
     {
-        $user   = User::factory()->create();
+        $user = User::factory()->create();
         $budget = Budget::factory()->create(['user_id' => $user->id]);
-        $cat    = Category::factory()->create();
+        $cat = Category::factory()->create();
 
         Expense::factory()->count(3)->create(['user_id' => $user->id, 'budget_id' => $budget->id, 'category_id' => $cat->id]);
 

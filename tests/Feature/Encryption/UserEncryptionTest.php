@@ -7,6 +7,7 @@ namespace Tests\Feature\Encryption;
 use App\Models\User;
 use App\Services\EncryptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -38,7 +39,7 @@ class UserEncryptionTest extends TestCase
         if ($dbConnection !== 'pgsql') {
             $this->markTestSkipped(
                 'UserEncryptionTest requires PostgreSQL with pgcrypto. '
-                . 'Set DB_CONNECTION=pgsql and configure APP_PUBLIC_KEY / APP_PRIVATE_KEY.'
+                .'Set DB_CONNECTION=pgsql and configure APP_PUBLIC_KEY / APP_PRIVATE_KEY.'
             );
         }
 
@@ -50,7 +51,7 @@ class UserEncryptionTest extends TestCase
             $this->encryption->publicKey();
             $this->encryption->privateKey();
         } catch (\RuntimeException $e) {
-            $this->markTestSkipped('Encryption keys not configured: ' . $e->getMessage());
+            $this->markTestSkipped('Encryption keys not configured: '.$e->getMessage());
         }
     }
 
@@ -61,8 +62,8 @@ class UserEncryptionTest extends TestCase
     public function test_create_encrypted_stores_bytea_in_db(): void
     {
         $user = User::createEncrypted([
-            'name'     => 'Alice Dupont',
-            'email'    => 'alice@example.com',
+            'name' => 'Alice Dupont',
+            'email' => 'alice@example.com',
             'password' => bcrypt('secret'),
         ]);
 
@@ -78,8 +79,8 @@ class UserEncryptionTest extends TestCase
     public function test_create_encrypted_stores_email_hash(): void
     {
         $user = User::createEncrypted([
-            'name'     => 'Bob Martin',
-            'email'    => 'Bob@Example.COM',
+            'name' => 'Bob Martin',
+            'email' => 'Bob@Example.COM',
             'password' => bcrypt('secret'),
         ]);
 
@@ -97,8 +98,8 @@ class UserEncryptionTest extends TestCase
     public function test_find_decrypted_returns_plaintext_fields(): void
     {
         $created = User::createEncrypted([
-            'name'     => 'Charlie Brown',
-            'email'    => 'charlie@example.com',
+            'name' => 'Charlie Brown',
+            'email' => 'charlie@example.com',
             'password' => bcrypt('secret'),
         ]);
 
@@ -121,8 +122,8 @@ class UserEncryptionTest extends TestCase
     public function test_find_by_email_returns_correct_user(): void
     {
         User::createEncrypted([
-            'name'     => 'Dana White',
-            'email'    => 'dana@example.com',
+            'name' => 'Dana White',
+            'email' => 'dana@example.com',
             'password' => bcrypt('secret'),
         ]);
 
@@ -135,8 +136,8 @@ class UserEncryptionTest extends TestCase
     public function test_find_by_email_is_case_insensitive(): void
     {
         User::createEncrypted([
-            'name'     => 'Eve Crypto',
-            'email'    => 'eve@example.com',
+            'name' => 'Eve Crypto',
+            'email' => 'eve@example.com',
             'password' => bcrypt('secret'),
         ]);
 
@@ -155,8 +156,8 @@ class UserEncryptionTest extends TestCase
     public function test_update_encrypted_re_encrypts_name(): void
     {
         $user = User::createEncrypted([
-            'name'     => 'Frank Old',
-            'email'    => 'frank@example.com',
+            'name' => 'Frank Old',
+            'email' => 'frank@example.com',
             'password' => bcrypt('secret'),
         ]);
 
@@ -171,16 +172,16 @@ class UserEncryptionTest extends TestCase
     public function test_update_encrypted_re_encrypts_email_and_updates_hash(): void
     {
         $user = User::createEncrypted([
-            'name'     => 'Grace Hop',
-            'email'    => 'grace@old.com',
+            'name' => 'Grace Hop',
+            'email' => 'grace@old.com',
             'password' => bcrypt('secret'),
         ]);
 
         $user->updateEncrypted(['email' => 'grace@new.com']);
 
-        $refreshed    = User::findDecrypted($user->id);
+        $refreshed = User::findDecrypted($user->id);
         $expectedHash = $this->encryption->emailHash('grace@new.com');
-        $rawHash      = DB::selectOne('SELECT email_hash FROM users WHERE id = ?', [$user->id])->email_hash;
+        $rawHash = DB::selectOne('SELECT email_hash FROM users WHERE id = ?', [$user->id])->email_hash;
 
         $this->assertSame('grace@new.com', $refreshed->email);
         $this->assertSame($expectedHash, $rawHash);
@@ -193,13 +194,13 @@ class UserEncryptionTest extends TestCase
     public function test_auth_attempt_succeeds_with_correct_credentials(): void
     {
         User::createEncrypted([
-            'name'     => 'Henry Auth',
-            'email'    => 'henry@example.com',
+            'name' => 'Henry Auth',
+            'email' => 'henry@example.com',
             'password' => bcrypt('my-password'),
         ]);
 
-        $result = \Illuminate\Support\Facades\Auth::attempt([
-            'email'    => 'henry@example.com',
+        $result = Auth::attempt([
+            'email' => 'henry@example.com',
             'password' => 'my-password',
         ]);
 
@@ -209,13 +210,13 @@ class UserEncryptionTest extends TestCase
     public function test_auth_attempt_fails_with_wrong_password(): void
     {
         User::createEncrypted([
-            'name'     => 'Iris Auth',
-            'email'    => 'iris@example.com',
+            'name' => 'Iris Auth',
+            'email' => 'iris@example.com',
             'password' => bcrypt('correct-password'),
         ]);
 
-        $result = \Illuminate\Support\Facades\Auth::attempt([
-            'email'    => 'iris@example.com',
+        $result = Auth::attempt([
+            'email' => 'iris@example.com',
             'password' => 'wrong-password',
         ]);
 

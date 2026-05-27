@@ -30,7 +30,7 @@ class LikeInjectionTest extends TestCase
         ActivityLog::factory()->create(['user_name' => 'Bob Normal']);
 
         // Searching for % should only find the row with literal % in name
-        $this->actingAs($this->admin)->get('/activity-logs?search=' . urlencode('%'))
+        $this->actingAs($this->admin)->get('/activity-logs?search='.urlencode('%'))
             ->assertInertia(fn ($page) => $page->has('logs.data', 1));
     }
 
@@ -39,7 +39,7 @@ class LikeInjectionTest extends TestCase
         ActivityLog::factory()->create(['user_name' => 'Alice_Under']);
         ActivityLog::factory()->create(['user_name' => 'Bob']); // should NOT match single-char wildcard
 
-        $this->actingAs($this->admin)->get('/activity-logs?search=' . urlencode('_'))
+        $this->actingAs($this->admin)->get('/activity-logs?search='.urlencode('_'))
             ->assertInertia(fn ($page) => $page->has('logs.data', 1));
     }
 
@@ -48,7 +48,7 @@ class LikeInjectionTest extends TestCase
         ActivityLog::factory()->create(['user_name' => 'Alice\\Test']);
 
         $this->actingAs($this->admin)
-            ->get('/activity-logs?search=' . urlencode('\\'))
+            ->get('/activity-logs?search='.urlencode('\\'))
             ->assertOk(); // must not throw a DB error
     }
 }

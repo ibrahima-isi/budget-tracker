@@ -64,7 +64,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'encrypted',          // ← EncryptedUserProvider
-            'model'  => env('AUTH_MODEL', User::class),
+            'model' => env('AUTH_MODEL', User::class),
         ],
     ],
 

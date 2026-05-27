@@ -78,9 +78,16 @@ function chooseCurrency(code) {
                                 <NavLink
                                     v-if="$page.props.auth.user?.is_admin"
                                     :href="route('settings.index')"
-                                    :active="route().current('settings.*')"
+                                    :active="route().current('settings.index')"
                                 >
                                     {{ $t('nav.settings') }}
+                                </NavLink>
+                                <NavLink
+                                    v-if="$page.props.auth.user?.is_admin"
+                                    :href="route('settings.users.index')"
+                                    :active="route().current('settings.users.*')"
+                                >
+                                    {{ $t('nav.users') }}
                                 </NavLink>
                                 <NavLink
                                     v-if="$page.props.auth.user?.is_admin"
@@ -221,9 +228,16 @@ function chooseCurrency(code) {
                         <ResponsiveNavLink
                             v-if="$page.props.auth.user?.is_admin"
                             :href="route('settings.index')"
-                            :active="route().current('settings.*')"
+                            :active="route().current('settings.index')"
                         >
                             {{ $t('nav.settings') }}
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.user?.is_admin"
+                            :href="route('settings.users.index')"
+                            :active="route().current('settings.users.*')"
+                        >
+                            {{ $t('nav.users') }}
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             v-if="$page.props.auth.user?.is_admin"

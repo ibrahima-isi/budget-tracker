@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\ActivityLog;
 use App\Models\Budget;
 use App\Models\Category;
-use App\Models\Expense;
 use App\Models\Revenue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,7 +35,7 @@ class ActivityLogObserverTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'        => 'created',
+            'event' => 'created',
             'subject_type' => 'Category',
         ]);
     }
@@ -50,9 +49,9 @@ class ActivityLogObserverTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'        => 'updated',
+            'event' => 'updated',
             'subject_type' => 'Category',
-            'subject_id'   => $cat->id,
+            'subject_id' => $cat->id,
         ]);
     }
 
@@ -63,9 +62,9 @@ class ActivityLogObserverTest extends TestCase
         $this->actingAs($this->user)->delete("/categories/{$cat->id}");
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'        => 'deleted',
+            'event' => 'deleted',
             'subject_type' => 'Category',
-            'subject_id'   => $cat->id,
+            'subject_id' => $cat->id,
         ]);
     }
 
@@ -78,9 +77,9 @@ class ActivityLogObserverTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'        => 'created',
+            'event' => 'created',
             'subject_type' => 'Budget',
-            'user_id'      => $this->user->id,
+            'user_id' => $this->user->id,
         ]);
     }
 
@@ -91,9 +90,9 @@ class ActivityLogObserverTest extends TestCase
         $this->actingAs($this->user)->delete("/budgets/{$budget->id}");
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'        => 'deleted',
+            'event' => 'deleted',
             'subject_type' => 'Budget',
-            'subject_id'   => $budget->id,
+            'subject_id' => $budget->id,
         ]);
     }
 
@@ -106,7 +105,7 @@ class ActivityLogObserverTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('activity_logs', [
-            'event'        => 'created',
+            'event' => 'created',
             'subject_type' => 'Revenue',
         ]);
     }
