@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="GUI CONNECT">
+    <title>GUI CONNECT</title>
+    <rect width="64" height="64" rx="14" fill="#071923"/>
+    <path
+        d="M18 46C12.477 46 8 41.523 8 36V28C8 22.477 12.477 18 18 18H30"
+        fill="none"
+        stroke="#2DD4BF"
+        stroke-linecap="round"
+        stroke-width="6"
+    />
+    <path
+        d="M46 18C51.523 18 56 22.477 56 28V36C56 41.523 51.523 46 46 46H34"
+        fill="none"
+        stroke="#A3E635"
+        stroke-linecap="round"
+        stroke-width="6"
+    />
+    <path
+        d="M28 32H39"
+        fill="none"
+        stroke="#F8FAFC"
+        stroke-linecap="round"
+        stroke-width="5"
+    />
+    <text
+        x="32"
+        y="39"
+        fill="#F8FAFC"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="21"
+        font-weight="800"
+        letter-spacing="0"
+        text-anchor="middle"
+    >GC</text>
+</svg>

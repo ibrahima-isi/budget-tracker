@@ -38,6 +38,8 @@
         <meta name="author" content="{{ $seoOrganization['name'] }}">
         <meta name="application-name" content="{{ config('seo.site_name') }}">
         <link rel="canonical" href="{{ $canonicalUrl }}">
+        <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+        <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
 
         <meta property="og:type" content="website">
         <meta property="og:site_name" content="{{ config('seo.site_name') }}">
