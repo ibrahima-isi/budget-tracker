@@ -79,4 +79,49 @@ class LoginThrottlingTest extends TestCase
                 ->where('lockoutUntil', fn ($value) => is_int($value) && $value > now()->timestamp)
             );
     }
+
+    public function test_login_lockout_timer_starts_when_failure_threshold_is_reached(): void
+    {
+        config([
+            'security.login.max_attempts' => 5,
+            'security.login.lockout_seconds' => 300,
+        ]);
+
+        $user = User::factory()->create([
+            'email' => 'spaced-lockout@example.com',
+            'password' => 'password',
+        ]);
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->from('/login')->post('/login', [
+                'email' => $user->email,
+                'password' => 'wrong-password',
+            ])->assertSessionHasErrors('email');
+        }
+
+        $this->travel(299)->seconds();
+
+        $this->from('/login')->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ])->assertSessionHasErrors('email');
+
+        $this->travel(1)->seconds();
+
+        $this->from('/login')->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+
+        $this->travel(299)->seconds();
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertAuthenticatedAs($user);
+    }
 }

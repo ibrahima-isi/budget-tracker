@@ -43,9 +43,12 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey(), $this->lockoutSeconds());
+            $attempts = RateLimiter::hit($this->attemptsKey(), $this->lockoutSeconds());
 
-            if (RateLimiter::tooManyAttempts($this->throttleKey(), $this->maxAttempts())) {
+            if ($attempts >= $this->maxAttempts()) {
+                RateLimiter::clear($this->attemptsKey());
+                RateLimiter::hit($this->lockoutKey(), $this->lockoutSeconds());
+
                 $this->throwLockoutValidationException();
             }
 
@@ -57,7 +60,8 @@ class LoginRequest extends FormRequest
 
     public function clearThrottle(): void
     {
-        RateLimiter::clear($this->throttleKey());
+        RateLimiter::clear($this->attemptsKey());
+        RateLimiter::clear($this->lockoutKey());
     }
 
     /**
@@ -67,7 +71,7 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), $this->maxAttempts())) {
+        if (! RateLimiter::tooManyAttempts($this->lockoutKey(), 1)) {
             return;
         }
 
@@ -78,7 +82,7 @@ class LoginRequest extends FormRequest
     {
         event(new Lockout($this));
 
-        $seconds = RateLimiter::availableIn($this->throttleKey());
+        $seconds = RateLimiter::availableIn($this->lockoutKey());
         $this->session()->flash('login_lockout_until', now()->addSeconds($seconds)->timestamp);
 
         throw ValidationException::withMessages([
@@ -105,5 +109,15 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+    }
+
+    private function attemptsKey(): string
+    {
+        return 'login-attempts:'.$this->throttleKey();
+    }
+
+    private function lockoutKey(): string
+    {
+        return 'login-lockout:'.$this->throttleKey();
     }
 }
