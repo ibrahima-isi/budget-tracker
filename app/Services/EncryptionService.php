@@ -164,12 +164,12 @@ class EncryptionService
         }
 
         $sslMode = strtolower((string) ($connection['sslmode'] ?? ''));
-        if ($sslMode === 'verify-full') {
+        if (in_array($sslMode, ['verify-full', 'require'], true)) {
             return;
         }
 
         throw new RuntimeException(
-            'Encrypted user reads require PostgreSQL DB_SSLMODE=verify-full before APP_PRIVATE_KEY can be sent to the database. '
+            'Encrypted user reads require PostgreSQL DB_SSLMODE=verify-full or require before APP_PRIVATE_KEY can be sent to the database. '
             .'Set APP_ENCRYPTION_REQUIRE_VERIFIED_DB_TLS=false only for local test databases.'
         );
     }
